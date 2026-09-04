@@ -12,6 +12,7 @@ import "./library-store.tsp";
 import "./sysinfo.tsp";
 import "./gradebook.tsp";
 import "./mazec-purchase.tsp";
+import "./remote-converter.tsp";
 import "./auth.tsp";
 import "./user.tsp";
 import "./drive.tsp";
