@@ -3,7 +3,10 @@
 このファイルは `com.metamoji.share_classroom` APK (`apk/`) 内に存在する通信レイヤーの
 全体像を把握するための調査結果と、TypeSpecドキュメント化の状況をまとめたものです。
 
-## 完了済み(12系統・116エンドポイント)
+**一次調査で洗い出した通信レイヤーは全13系統、調査完了しました**(119エンドポイント。
+うち2系統は「独自のワイヤレベル契約なし」と確認した上で新規ファイル作成を見送り)。
+
+## 完了済み(13系統・119エンドポイント)
 
 - ✅ **`com.metamoji.cs.dc.CsCloudService`** — DigitalCabinet/ClassShareクラウドAPI(JSON-RPC風)。
   53メソッド全て解析済み。[auth.tsp](./auth.tsp) / [user.tsp](./user.tsp) / [drive.tsp](./drive.tsp) /
@@ -96,15 +99,21 @@
 - ✅ **`com/metamoji/nt/dl`** — 調査の結果、独自のワイヤレベル契約は無いことを確認
   (ヘッダ・認証・リトライ/チェックサムプロトコルなし、URLは`nt/notify`マニフェスト由来の単純GET)。
   新規ドキュメントは作成せず。
+- ✅ **`com/metamoji/rc` (`RcRemoteConverter*`)** — ファイル形式変換サービス。3エンドポイント
+  (`/convert/TentativeRegist` → `/convert/ConvertRequest` → `/convert/GetConvertedFile`、
+  2秒間隔ポーリング)の非同期ジョブフローを解析済み。`jobId1`/`jobId2`はクライアント生成ではなく
+  `TentativeRegist`のレスポンスから発行されるサーバー側ジョブ識別子で、後続2ステップの
+  認可トークンとして機能する(2ステップ目以降は`userId`/`password`を再送しない)ことを確認。
+  レスポンスの`errorCode`が(`CsCloudService`系と異なり)**文字列型**である点も発見。
+  [remote-converter.tsp](./remote-converter.tsp)に反映。
+  **⚠️ 重大な発見**: 唯一の呼び出し元`ImportActivity.importFileWithConvertingByRemoteConverter()`
+  自体が、APK全体を検索しても呼び出されておらず(`ImportActivity.importFile()`の実際の分岐にも
+  対応拡張子一覧にも含まれない)、**v3.15.1.0では到達不能なデッドコード**であることが判明
+  (`mazec/purchase`の課金機能、`lb`の`purchaseURL()`と同種のケース)。
 
-## 未解析(残り1件)
+## 未解析
 
-| # | パッケージ | 役割 | 既知のエンドポイント/手がかり | 認証・ホスト |
-|---|---|---|---|---|
-| 1 | `com/metamoji/rc` (`RcRemoteConverter*`) | **ファイル形式変換サービス**("Remote Converter")。`CsCloudService`と同じDigitalCabinetホストを共有。 | `/convert/TentativeRegist`, `/convert/ConvertRequest`, `/convert/GetConvertedFile`。マルチパートPOST(userId/password/productName/productVersion/jobId1/jobId2/fromMime/toMime/fileEntity)。エラーコード例: `14`=ライセンスなし, `100`=変換中。 | `CsCloudService`と同じDigital Cabinetホスト(`ModelInfo$BuildOptions.DIGITAL_CABINET_URL_BASE`)。 |
-
-エンドポイント数が少なく(3個)、ホスト・パスも既に判明しているため、着手コストが低い
-「クイックウィン」。これが完了すれば、一次調査で洗い出した通信レイヤーは全て解析完了となる。
+なし。一次調査で洗い出した13系統すべてについて、精読・裏取りを完了しています。
 
 ## 調査方法メモ
 

@@ -10,8 +10,9 @@ DigitalCabinet クラウドAPI)を [TypeSpec](https://typespec.io/) として再
 実際の挙動と差異がある可能性があります。
 
 > ⚠️ **アプリは1つの統一APIではなく、少なくとも13系統の独立した通信レイヤーを持っています。**
-> 本ドキュメントはそのうち12系統(116エンドポイント)を解析済みです。詳細は下記「ファイル構成」表、
-> 調査優先順位・未解析分の判定根拠は [ROADMAP.md](./ROADMAP.md) を参照してください。
+> 本ドキュメントは全13系統(119エンドポイント)の調査を完了しています(うち2系統は
+> 「独自のワイヤレベル契約なし」と確認した上で新規ファイルを作成せず)。詳細は下記「ファイル構成」表、
+> 各系統の判定根拠は [ROADMAP.md](./ROADMAP.md) を参照してください。
 
 ## 解析範囲・手法
 
@@ -71,6 +72,7 @@ DigitalCabinet クラウドAPI)を [TypeSpec](https://typespec.io/) として再
 | [sysinfo.tsp](./sysinfo.tsp) | アプリ設定マニフェスト(EULA/バージョン/ヘルプリンク/ダウンロードURL、`NtSysInfoManager`) |
 | [gradebook.tsp](./gradebook.tsp) | 成績表・テストログ(小テスト実施ログ・採点・レポート提出状況、`forSchool.service`) |
 | [mazec-purchase.tsp](./mazec-purchase.tsp) | Mazec手書き辞書アドオンの更新チェック(課金機能自体はデッドコードと確認) |
+| [remote-converter.tsp](./remote-converter.tsp) | ファイル形式変換サービス(3ステップの非同期ジョブ。**呼び出し元が存在せず到達不能と確認**) |
 | [auth.tsp](./auth.tsp) | 認証・アカウント管理 (login / logout / register / パスワード / EULA / SSO 等) |
 | [user.tsp](./user.tsp) | ユーザー・組織(グループ)情報 |
 | [drive.tsp](./drive.tsp) | ドライブ(共有フォルダ)・メンバー管理・共有リンク |
