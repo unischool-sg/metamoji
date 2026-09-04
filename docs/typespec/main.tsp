@@ -5,6 +5,7 @@ import "./webdav.tsp";
 import "./distribute.tsp";
 import "./license-activation.tsp";
 import "./video.tsp";
+import "./collabo.tsp";
 import "./auth.tsp";
 import "./user.tsp";
 import "./drive.tsp";
