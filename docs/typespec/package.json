@@ -1,0 +1,16 @@
+{
+  "name": "metamoji-classshare-api-docs",
+  "version": "0.1.0",
+  "private": true,
+  "description": "com.metamoji.share_classroom APK解析から再構築した非公式APIドキュメント (TypeSpec)",
+  "type": "module",
+  "dependencies": {
+    "@typespec/compiler": "^0.63.0",
+    "@typespec/http": "^0.63.0",
+    "@typespec/openapi3": "^0.63.0"
+  },
+  "scripts": {
+    "compile": "tsp compile .",
+    "build": "tsp compile . --emit @typespec/openapi3"
+  }
+}
