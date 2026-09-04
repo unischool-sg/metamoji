@@ -180,6 +180,12 @@ function drawUnit(
     case "$pdf":
       drawPdfUnit(ctx, unit, opts.assets);
       break;
+    case "$shape":
+      drawShapeUnit(ctx, unit);
+      break;
+    case "$form":
+      drawFormUnit(ctx, unit);
+      break;
     case "$flipunit":
       drawFlipUnit(ctx, unit);
       break;
@@ -358,6 +364,119 @@ function drawPdfUnit(
   }
   ctx.save();
   ctx.drawImage(raster, unit.x, unit.y, unit.width, unit.height);
+  ctx.restore();
+}
+
+function drawShapeUnit(
+  ctx: CanvasRenderingContext2D,
+  unit: Extract<Unit, { type: "$shape" }>,
+): void {
+  const { x, y, width: w, height: h } = unit;
+  ctx.save();
+  ctx.lineWidth = unit.strokeWidth;
+  ctx.strokeStyle = unit.strokeColor;
+  ctx.lineJoin = "round";
+  ctx.lineCap = "round";
+  if (unit.dashed) ctx.setLineDash([unit.strokeWidth * 3, unit.strokeWidth * 2]);
+
+  const path = new Path2D();
+  switch (unit.shape) {
+    case "rect":
+      path.rect(x, y, w, h);
+      break;
+    case "roundRect": {
+      // Clamp so the radius cannot exceed half the shorter side, which would
+      // otherwise produce an inverted corner.
+      const r = Math.min(unit.cornerRadius, Math.min(w, h) / 2);
+      path.roundRect(x, y, w, h, r);
+      break;
+    }
+    case "ellipse":
+      path.ellipse(x + w / 2, y + h / 2, Math.abs(w / 2), Math.abs(h / 2), 0, 0, Math.PI * 2);
+      break;
+    case "triangle":
+      path.moveTo(x + w / 2, y);
+      path.lineTo(x + w, y + h);
+      path.lineTo(x, y + h);
+      path.closePath();
+      break;
+    case "diamond":
+      path.moveTo(x + w / 2, y);
+      path.lineTo(x + w, y + h / 2);
+      path.lineTo(x + w / 2, y + h);
+      path.lineTo(x, y + h / 2);
+      path.closePath();
+      break;
+    case "line":
+      path.moveTo(x, y);
+      path.lineTo(x + w, y + h);
+      break;
+    case "arrow": {
+      path.moveTo(x, y);
+      path.lineTo(x + w, y + h);
+      // Arrow head sized from the stroke width so it scales with the line.
+      const angle = Math.atan2(h, w);
+      const head = Math.max(8, unit.strokeWidth * 4);
+      const tipX = x + w;
+      const tipY = y + h;
+      for (const spread of [Math.PI - 0.4, Math.PI + 0.4]) {
+        path.moveTo(tipX, tipY);
+        path.lineTo(tipX + head * Math.cos(angle + spread), tipY + head * Math.sin(angle + spread));
+      }
+      break;
+    }
+  }
+
+  const closed = unit.shape !== "line" && unit.shape !== "arrow";
+  if (closed && unit.fillColor) {
+    ctx.globalAlpha = unit.fillOpacity;
+    ctx.fillStyle = unit.fillColor;
+    ctx.fill(path);
+    ctx.globalAlpha = 1;
+  }
+  if (unit.strokeWidth > 0) ctx.stroke(path);
+  ctx.restore();
+}
+
+function drawFormUnit(
+  ctx: CanvasRenderingContext2D,
+  unit: Extract<Unit, { type: "$form" }>,
+): void {
+  const { x, y, width: w, height: h } = unit;
+  ctx.save();
+
+  if (unit.backgroundColor) {
+    ctx.globalAlpha = unit.backgroundOpacity;
+    ctx.fillStyle = unit.backgroundColor;
+    ctx.fillRect(x, y, w, h);
+    ctx.globalAlpha = 1;
+  }
+
+  ctx.strokeStyle = unit.lineColor;
+  ctx.lineWidth = unit.lineWidth;
+  const path = new Path2D();
+
+  const rows = Math.max(1, unit.rows);
+  const cols = Math.max(1, unit.columns);
+
+  // Interior horizontal lines. All three form kinds have them.
+  for (let r = 1; r < rows; r++) {
+    const ly = y + (h / rows) * r;
+    path.moveTo(x, ly);
+    path.lineTo(x + w, ly);
+  }
+  // Vertical lines, for grids and tables only — a ruled sheet has none.
+  if (unit.form !== "ruled") {
+    for (let c = 1; c < cols; c++) {
+      const lx = x + (w / cols) * c;
+      path.moveTo(lx, y);
+      path.lineTo(lx, y + h);
+    }
+  }
+  // A table is enclosed by a border; a ruled or grid overlay is not.
+  if (unit.form === "table") path.rect(x, y, w, h);
+
+  ctx.stroke(path);
   ctx.restore();
 }
 

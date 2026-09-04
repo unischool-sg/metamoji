@@ -3,12 +3,16 @@
 import { newLayerId, newNoteId, newPageId, newUnitId } from "./ids";
 import type {
   FlipUnit,
+  FormKind,
+  FormUnit,
   ImageUnit,
   Layer,
   NoteDocument,
   Page,
   PaperStyle,
   PdfUnit,
+  ShapeKind,
+  ShapeUnit,
   TextUnit,
   DrawUnit,
 } from "./types";
@@ -139,5 +143,53 @@ export function createFlipUnit(x: number, y: number, backgroundColor = STICKY_CO
     backText: "",
     fontSize: 16,
     color: "#1f1f1f",
+  };
+}
+
+export function createShapeUnit(
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  shape: ShapeKind,
+  strokeColor = "#1f1f1f",
+  fillColor = "",
+): ShapeUnit {
+  return {
+    id: newUnitId(),
+    type: "$shape",
+    x, y, width, height,
+    rotation: 0,
+    contentScale: 1,
+    shape,
+    strokeColor,
+    strokeWidth: 2,
+    fillColor,
+    fillOpacity: 1,
+    cornerRadius: 12,
+    dashed: false,
+  };
+}
+
+export function createFormUnit(
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  form: FormKind,
+): FormUnit {
+  return {
+    id: newUnitId(),
+    type: "$form",
+    x, y, width, height,
+    rotation: 0,
+    contentScale: 1,
+    form,
+    columns: form === "ruled" ? 1 : 4,
+    rows: 6,
+    lineColor: "#8a94a6",
+    lineWidth: 1,
+    backgroundColor: "",
+    backgroundOpacity: 1,
   };
 }

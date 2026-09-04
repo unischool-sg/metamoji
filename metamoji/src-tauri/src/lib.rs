@@ -1,6 +1,7 @@
 pub mod atdoc;
 mod commands;
 mod error;
+pub mod export;
 pub mod model;
 mod state;
 pub mod storage;
@@ -45,6 +46,17 @@ fn atdoc_probe(path: String) -> AppResult<u16> {
     Ok(atdoc::parse_header(&raw)?.format_version)
 }
 
+/// Writes the note out as a PDF. Pages arrive already rendered, so the export
+/// matches the screen exactly — see `export.rs` for why that trade was made.
+#[tauri::command]
+fn export_pdf(
+    path: String,
+    title: String,
+    pages: Vec<export::ExportPage>,
+) -> AppResult<()> {
+    export::write_pdf(&path, &title, &pages)
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -84,6 +96,7 @@ pub fn run() {
             commands::file_write_bytes,
             atdoc_import,
             atdoc_probe,
+            export_pdf,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

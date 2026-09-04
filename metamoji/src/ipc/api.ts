@@ -42,6 +42,12 @@ export interface AtdocImportResult {
   report: ImportReport;
 }
 
+export interface ExportPagePayload {
+  dataUrl: string;
+  width: number;
+  height: number;
+}
+
 /**
  * True when running inside Tauri. `vite dev` can also be opened in a plain
  * browser, which is convenient for working on the editor without a Rust
@@ -183,4 +189,17 @@ export async function atdocImport(
 
 export async function atdocProbe(path: string): Promise<number> {
   return invoke<number>("atdoc_probe", { path });
+}
+
+// ---------------------------------------------------------------------------
+// Export
+// ---------------------------------------------------------------------------
+
+export async function exportPdf(
+  path: string,
+  title: string,
+  pages: ExportPagePayload[],
+): Promise<void> {
+  if (!isTauri()) throw new Error("PDF の書き出しはデスクトップアプリでのみ利用できます");
+  return invoke("export_pdf", { path, title, pages });
 }

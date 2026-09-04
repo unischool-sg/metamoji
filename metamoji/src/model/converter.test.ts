@@ -1,7 +1,14 @@
 import { describe, expect, it } from "vitest";
 
 import { fromGeneric, toGeneric } from "./converter";
-import { createDocument, createFlipUnit, createImageUnit, createTextUnit } from "./factory";
+import {
+  createDocument,
+  createFlipUnit,
+  createFormUnit,
+  createImageUnit,
+  createShapeUnit,
+  createTextUnit,
+} from "./factory";
 import { addNode, type GenericTree } from "./generic";
 import { newStrokeId } from "./ids";
 import { strokeBounds } from "./stroke";
@@ -56,7 +63,15 @@ function populated(): NoteDocument {
   sticky.frontText = "おもて";
   sticky.backText = "うら";
 
-  layer.units.push(ink, text, image, sticky);
+  const shape = createShapeUnit(500, 500, 180, 120, "roundRect", "#d93025", "#ffe14d");
+  shape.dashed = true;
+  shape.cornerRadius = 20;
+
+  const form = createFormUnit(700, 100, 300, 240, "table");
+  form.columns = 3;
+  form.rows = 5;
+
+  layer.units.push(ink, text, image, sticky, shape, form);
   return doc;
 }
 
@@ -70,7 +85,33 @@ describe("converter", () => {
     expect(restored.pages).toHaveLength(1);
 
     const units = restored.pages[0].layers[0].units;
-    expect(units.map((u) => u.type)).toEqual(["$draw", "$text", "$image", "$flipunit"]);
+    expect(units.map((u) => u.type)).toEqual([
+      "$draw", "$text", "$image", "$flipunit", "$shape", "$form",
+    ]);
+  });
+
+  it("preserves shape properties", () => {
+    const restored = fromGeneric(toGeneric(populated()));
+    const shape = restored.pages[0].layers[0].units[4];
+    expect(shape.type).toBe("$shape");
+    if (shape.type !== "$shape") return;
+
+    expect(shape.shape).toBe("roundRect");
+    expect(shape.strokeColor).toBe("#d93025");
+    expect(shape.fillColor).toBe("#ffe14d");
+    expect(shape.cornerRadius).toBe(20);
+    expect(shape.dashed).toBe(true);
+  });
+
+  it("preserves form properties", () => {
+    const restored = fromGeneric(toGeneric(populated()));
+    const form = restored.pages[0].layers[0].units[5];
+    expect(form.type).toBe("$form");
+    if (form.type !== "$form") return;
+
+    expect(form.form).toBe("table");
+    expect(form.columns).toBe(3);
+    expect(form.rows).toBe(5);
   });
 
   it("preserves stroke geometry and pen attributes exactly", () => {

@@ -38,11 +38,13 @@ import {
   MT_DRAW,
   MT_DUMMY,
   MT_FLIP,
+  MT_FORM,
   MT_IMAGE,
   MT_LAYER,
   MT_NOTE,
   MT_PAGE,
   MT_PDF,
+  MT_SHAPE,
   MT_TEXT,
   isUnitModelType,
 } from "./modelTypes";
@@ -51,6 +53,8 @@ import type {
   BgImageUnit,
   DrawUnit,
   FlipUnit,
+  FormKind,
+  FormUnit,
   ImageUnit,
   InkPoint,
   Layer,
@@ -62,6 +66,8 @@ import type {
   PenAttributes,
   PenType,
   Rect,
+  ShapeKind,
+  ShapeUnit,
   Stroke,
   TextAlign,
   TextUnit,
@@ -204,6 +210,26 @@ function unitToProps(unit: Unit): PropDict {
       props.scale = unit.scale;
       props.orientation = unit.orientation;
       if (unit.rasterTicket) props.rasterTicket = unit.rasterTicket;
+      break;
+
+    case "$shape":
+      props.shape = unit.shape;
+      props.strokeColor = unit.strokeColor;
+      props.strokeWidth = unit.strokeWidth;
+      props.fillColor = unit.fillColor;
+      props.fillOpacity = unit.fillOpacity;
+      props.cornerRadius = unit.cornerRadius;
+      props.dashed = unit.dashed;
+      break;
+
+    case "$form":
+      props.form = unit.form;
+      props.columns = unit.columns;
+      props.rows = unit.rows;
+      props.lineColor = unit.lineColor;
+      props.lineWidth = unit.lineWidth;
+      props.backgroundColor = unit.backgroundColor;
+      props.backgroundOpacity = unit.backgroundOpacity;
       break;
 
     case "$flipunit":
@@ -451,6 +477,42 @@ export function unitFromGeneric(node: GenericModel): Unit | null {
       };
       return attachExtra(unit, p, [
         "ticket", "page", "offsetX", "offsetY", "scale", "orientation", "rasterTicket",
+      ]);
+    }
+
+    case MT_SHAPE: {
+      const unit: ShapeUnit = {
+        ...base,
+        type: "$shape",
+        shape: getString(p, "shape", "rect") as ShapeKind,
+        strokeColor: getString(p, "strokeColor", "#1f1f1f"),
+        strokeWidth: getNumber(p, "strokeWidth", 2),
+        fillColor: getString(p, "fillColor", ""),
+        fillOpacity: getNumber(p, "fillOpacity", 1),
+        cornerRadius: getNumber(p, "cornerRadius", 12),
+        dashed: getBool(p, "dashed", false),
+      };
+      return attachExtra(unit, p, [
+        "shape", "strokeColor", "strokeWidth", "fillColor",
+        "fillOpacity", "cornerRadius", "dashed",
+      ]);
+    }
+
+    case MT_FORM: {
+      const unit: FormUnit = {
+        ...base,
+        type: "$form",
+        form: getString(p, "form", "grid") as FormKind,
+        columns: getInt(p, "columns", 4),
+        rows: getInt(p, "rows", 6),
+        lineColor: getString(p, "lineColor", "#8a94a6"),
+        lineWidth: getNumber(p, "lineWidth", 1),
+        backgroundColor: getString(p, "backgroundColor", ""),
+        backgroundOpacity: getNumber(p, "backgroundOpacity", 1),
+      };
+      return attachExtra(unit, p, [
+        "form", "columns", "rows", "lineColor", "lineWidth",
+        "backgroundColor", "backgroundOpacity",
       ]);
     }
 

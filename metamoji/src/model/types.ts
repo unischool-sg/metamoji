@@ -166,6 +166,55 @@ export interface PdfUnit extends UnitBase {
   rasterTicket?: string;
 }
 
+/**
+ * Vector shape.
+ *
+ * The original models shapes through the `un/form/*` family with a shared
+ * prefixed-style property scheme (docs/05 §5) — `{prefix}-color`,
+ * `{prefix}-fillColor` and so on, instantiated several times per unit. That
+ * indirection exists to let one class serve tables, rules and calendars at
+ * once. A shape here is just a shape, with named fields.
+ */
+export type ShapeKind =
+  | "rect"
+  | "roundRect"
+  | "ellipse"
+  | "line"
+  | "arrow"
+  | "triangle"
+  | "diamond";
+
+export interface ShapeUnit extends UnitBase {
+  type: "$shape";
+  shape: ShapeKind;
+  strokeColor: string;
+  strokeWidth: number;
+  /** Empty string means no fill. */
+  fillColor: string;
+  fillOpacity: number;
+  /** Corner radius for `roundRect`, in document units. */
+  cornerRadius: number;
+  dashed: boolean;
+}
+
+/**
+ * Ruled/grid overlay drawn inside its own frame — the useful half of the
+ * original's `$ruledline` / `$squared` form units (docs/05 §5).
+ */
+export type FormKind = "table" | "ruled" | "grid";
+
+export interface FormUnit extends UnitBase {
+  type: "$form";
+  form: FormKind;
+  /** Column and row counts; `ruled` uses rows only. */
+  columns: number;
+  rows: number;
+  lineColor: string;
+  lineWidth: number;
+  backgroundColor: string;
+  backgroundOpacity: number;
+}
+
 /** Sticky note / flip card (docs/05 §4 `$flipunit`). */
 export interface FlipUnit extends UnitBase {
   type: "$flipunit";
@@ -196,6 +245,8 @@ export type Unit =
   | BgImageUnit
   | PdfUnit
   | FlipUnit
+  | ShapeUnit
+  | FormUnit
   | DummyUnit;
 
 export type UnitType = Unit["type"];
@@ -208,6 +259,8 @@ const _unitTypeCheck: Record<UnitType, UnitModelType> = {
   $bgimage: "$bgimage",
   $pdf: "$pdf",
   $flipunit: "$flipunit",
+  $shape: "$shape",
+  $form: "$form",
   $dummy: "$dummy",
 };
 void _unitTypeCheck;
