@@ -123,8 +123,15 @@ interface MazecDictionaryUpdateCheck {
    * - ベースURL: `https://cdn-test.metamoji.com/` (ハードコード、本番ホストへの切り替えなし)
    * - パス組み立て: `String.format("%ssysinfo_%s.json", getCDNServer(), productName)`。
    *   `productName` は `AddonStoreUtil.getProductName()` の固定値 `"Android-Share-G-ClassRoom"`。
+   *
+   * ⚠️ 実際のワイヤ上のパスは [sysinfo.tsp](./sysinfo.tsp) の `SysInfo.getSysInfo`
+   * (`com.metamoji.nt.notify.NtSysInfoManager`)と**文字列としては同一**
+   * (`sysinfo_Android-Share-G-ClassRoom.json`)だが、**ホストが異なる別エンドポイント**
+   * (こちらは`cdn-test.metamoji.com`固定、`last`クエリなし)。TypeSpecのルートはホストを
+   * 区別できないため、衝突回避のためだけに `legacy-mazec-dictionary/` という
+   * (実際のURLには存在しない)ドキュメント上のプレフィックスを付与している。
    */
   @get
-  @route("sysinfo_Android-Share-G-ClassRoom.json")
+  @route("legacy-mazec-dictionary/sysinfo_Android-Share-G-ClassRoom.json")
   op getSysInfo(): MazecSysInfoResponse;
 }
