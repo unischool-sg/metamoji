@@ -116,6 +116,10 @@ export class CanvasController {
   private frame = 0;
   private sceneDirty = true;
   private overlayDirty = true;
+  /** False until the container reports a non-zero size — see `resize`. */
+  private hasBeenSized = false;
+  /** Ensures the automatic fit-to-page happens once per opened document. */
+  private hasFitted = false;
 
   constructor(private callbacks: ControllerCallbacks) {}
 
@@ -174,6 +178,9 @@ export class CanvasController {
     const { scene, overlay } = this;
     if (!scene || !overlay) return;
     const rect = scene.parentElement?.getBoundingClientRect();
+    // A hidden or not-yet-laid-out container measures zero. Sizing the canvases
+    // to that would be worse than leaving them alone, so wait for the
+    // ResizeObserver to report a real size.
     if (!rect || rect.width === 0 || rect.height === 0) return;
 
     // Capping DPR at 2 keeps the backing store sane on 5K displays, where the
@@ -186,6 +193,19 @@ export class CanvasController {
       canvas.style.height = `${rect.height}px`;
     }
     this.invalidateAll();
+
+    // The first real size is the first moment "fit the page" means anything.
+    // Fitting before this — which is what happens if the note opens while the
+    // window is still being laid out, or while the view is hidden — computes a
+    // zoom from a 300x150 default canvas and leaves the page at a wrong scale
+    // that nothing later corrects.
+    if (!this.hasBeenSized) {
+      this.hasBeenSized = true;
+      if (this.doc && !this.hasFitted) {
+        this.hasFitted = true;
+        this.fitPage();
+      }
+    }
   }
 
   // -- state in -------------------------------------------------------------
@@ -197,6 +217,12 @@ export class CanvasController {
     this.pageIndex = pageIndex;
     this.session = session;
     if (docChanged || pageChanged) this.invalidateAll();
+    // A document that arrives after the canvas was already sized still needs
+    // its initial fit; `resize` only fits when it is the one going first.
+    if (docChanged && doc && this.hasBeenSized && !this.hasFitted) {
+      this.hasFitted = true;
+      this.fitPage();
+    }
   }
 
   setTool(tool: ToolMode): void {
@@ -242,6 +268,10 @@ export class CanvasController {
     const page = this.page();
     const scene = this.scene;
     if (!page || !scene) return;
+    // Guard against the default 300x150 canvas: fitting to that produces a
+    // scale the user never asked for and cannot see being wrong.
+    if (!this.hasBeenSized || scene.clientWidth === 0 || scene.clientHeight === 0) return;
+
     const rect: Rect = {
       x: 0,
       y: 0,
@@ -452,7 +482,7 @@ export class CanvasController {
 
     const screen = this.localPoint(e);
     const world = screenToWorld(this.viewport, screen.x, screen.y);
-    this.overlay.setPointerCapture(e.pointerId);
+    this.capturePointer(e.pointerId);
 
     const base = {
       pointerId: e.pointerId,
@@ -568,6 +598,31 @@ export class CanvasController {
       }
     }
     return map;
+  }
+
+  /**
+   * Pointer capture keeps events coming while the pointer leaves the canvas.
+   * It is an optimisation, not a precondition: `setPointerCapture` throws
+   * `NotFoundError` when the pointer is no longer active — which happens for
+   * real when a pen leaves range or the OS cancels the pointer between the
+   * event being queued and this handler running. Letting that propagate would
+   * abort the rest of `pointerdown`, so the gesture would silently never start.
+   */
+  private capturePointer(pointerId: number): void {
+    try {
+      this.overlay?.setPointerCapture(pointerId);
+    } catch {
+      // Without capture the gesture still works; it just ends early if the
+      // pointer leaves the canvas.
+    }
+  }
+
+  private releasePointer(pointerId: number): void {
+    try {
+      this.overlay?.releasePointerCapture(pointerId);
+    } catch {
+      // Already released, or never captured.
+    }
   }
 
   private onPointerMove = (e: PointerEvent): void => {
@@ -725,7 +780,7 @@ export class CanvasController {
   private onPointerUp = (e: PointerEvent): void => {
     const gesture = this.gesture;
     if (!gesture || e.pointerId !== gesture.pointerId) return;
-    this.overlay?.releasePointerCapture(e.pointerId);
+    this.releasePointer(e.pointerId);
 
     if (gesture.kind === "ink") this.commitStroke();
     if (gesture.kind === "marquee" && gesture.marquee) {

@@ -11,6 +11,7 @@ import { useEffect, useRef } from "react";
 import { CanvasController, type ToolMode } from "../canvas/controller";
 import type { AssetResolver } from "../render/renderer";
 import type { ModelId, Point } from "../model/types";
+import type { Viewport } from "../render/viewport";
 import { useEditorStore } from "../store/editorStore";
 
 interface Props {
@@ -18,9 +19,16 @@ interface Props {
   assets: AssetResolver;
   onPlace: (tool: ToolMode, world: Point) => void;
   onEditText: (unitId: ModelId) => void;
+  onViewportChange: (viewport: Viewport) => void;
 }
 
-export function CanvasHost({ controllerRef, assets, onPlace, onEditText }: Props) {
+export function CanvasHost({
+  controllerRef,
+  assets,
+  onPlace,
+  onEditText,
+  onViewportChange,
+}: Props) {
   const sceneRef = useRef<HTMLCanvasElement>(null);
   const overlayRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -28,8 +36,8 @@ export function CanvasHost({ controllerRef, assets, onPlace, onEditText }: Props
   // Callbacks are read through a ref so that changing them never tears down the
   // controller — remounting it mid-session would drop the viewport and any
   // in-flight gesture.
-  const handlers = useRef({ onPlace, onEditText });
-  handlers.current = { onPlace, onEditText };
+  const handlers = useRef({ onPlace, onEditText, onViewportChange });
+  handlers.current = { onPlace, onEditText, onViewportChange };
 
   const doc = useEditorStore((s) => s.doc);
   const session = useEditorStore((s) => s.session);
@@ -38,8 +46,7 @@ export function CanvasHost({ controllerRef, assets, onPlace, onEditText }: Props
   const selection = useEditorStore((s) => s.selection);
   const eraserSize = useEditorStore((s) => s.eraserSize);
   const penPresetId = useEditorStore((s) => s.penPresetId);
-  const penColor = useEditorStore((s) => s.penColor);
-  const penWidth = useEditorStore((s) => s.penWidth);
+  const penSettings = useEditorStore((s) => s.penSettings);
   const setSelection = useEditorStore((s) => s.setSelection);
 
   // Created inside the effect, not in a ref initialiser: React StrictMode
@@ -52,7 +59,7 @@ export function CanvasHost({ controllerRef, assets, onPlace, onEditText }: Props
 
     const controller = new CanvasController({
       onSelectionChange: (ids) => setSelection(ids),
-      onViewportChange: () => {},
+      onViewportChange: (vp) => handlers.current.onViewportChange(vp),
       onPlace: (tool, world) => handlers.current.onPlace(tool, world),
       onEditText: (unitId) => handlers.current.onEditText(unitId),
     });
@@ -87,7 +94,7 @@ export function CanvasHost({ controllerRef, assets, onPlace, onEditText }: Props
 
   useEffect(() => {
     controllerRef.current?.setPen(useEditorStore.getState().currentPen());
-  }, [controllerRef, penPresetId, penColor, penWidth]);
+  }, [controllerRef, penPresetId, penSettings]);
 
   useEffect(() => {
     controllerRef.current?.setAssets(assets);

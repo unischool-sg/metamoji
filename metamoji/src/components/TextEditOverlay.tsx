@@ -6,10 +6,10 @@
  * building caret movement, selection and — the real blocker — Japanese IME
  * composition from scratch. The browser already has all three, correct, for
  * free. The cost is keeping the overlay's font metrics in step with the
- * renderer's, which is why both go through the same font string.
+ * renderer's, which is why both go through the same font size and family.
  */
 
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 
 import type { EditSession } from "../editor/session";
 import type { ModelId, Page } from "../model/types";
@@ -50,40 +50,59 @@ export function TextEditOverlay({ unitId, page, session, viewport, onClose }: Pr
     el.setSelectionRange(el.value.length, el.value.length);
   }, [unitId]);
 
+  const commit = useCallback(
+    (close: boolean) => {
+      if (!unit || !located) return;
+      if (unit.type !== "$text" && unit.type !== "$flipunit") return;
+
+      if (value !== initial) {
+        const after =
+          unit.type === "$text"
+            ? { text: value }
+            : unit.flipState === 0
+              ? { frontText: value }
+              : { backText: value };
+        const before =
+          unit.type === "$text"
+            ? { text: initial }
+            : unit.flipState === 0
+              ? { frontText: initial }
+              : { backText: initial };
+
+        session.transact("文字を編集", () => {
+          session.record({
+            kind: "unit.update",
+            pageId: page.id,
+            layerId: located.layerId,
+            unitId,
+            before,
+            after,
+          });
+        });
+      }
+      if (close) onClose();
+    },
+    [unit, located, value, initial, session, page.id, unitId, onClose],
+  );
+
+  // Blur is the normal path, but it is not the only way this overlay goes away:
+  // closing the note, switching page, or an undo that removes the unit all
+  // unmount it without one. Without this, the edit would be silently lost.
+  const commitRef = useRef(commit);
+  commitRef.current = commit;
+  const committed = useRef(false);
+
+  useEffect(() => {
+    committed.current = false;
+    return () => {
+      if (!committed.current) commitRef.current(false);
+    };
+  }, [unitId]);
+
   if (!unit || !located) return null;
   if (unit.type !== "$text" && unit.type !== "$flipunit") return null;
 
-  const commit = () => {
-    if (value !== initial) {
-      const after =
-        unit.type === "$text"
-          ? { text: value }
-          : unit.flipState === 0
-            ? { frontText: value }
-            : { backText: value };
-      const before =
-        unit.type === "$text"
-          ? { text: initial }
-          : unit.flipState === 0
-            ? { frontText: initial }
-            : { backText: initial };
-
-      session.transact("文字を編集", () => {
-        session.record({
-          kind: "unit.update",
-          pageId: page.id,
-          layerId: located.layerId,
-          unitId,
-          before,
-          after,
-        });
-      });
-    }
-    onClose();
-  };
-
   const topLeft = worldToScreen(viewport, unit.x, unit.y);
-  const fontSize = unit.type === "$text" ? unit.fontSize : unit.fontSize;
   const padding = unit.type === "$text" ? 6 : 12;
 
   return (
@@ -92,13 +111,17 @@ export function TextEditOverlay({ unitId, page, session, viewport, onClose }: Pr
       className="text-overlay"
       value={value}
       onChange={(e) => setValue(e.target.value)}
-      onBlur={commit}
+      onBlur={() => {
+        committed.current = true;
+        commit(true);
+      }}
       onKeyDown={(e) => {
         // Escape abandons the edit. Enter must stay a newline — this is a text
         // box, and on a Japanese IME Enter also confirms a conversion, so
         // binding it to commit would eat the confirmation keystroke.
         if (e.key === "Escape") {
           e.preventDefault();
+          committed.current = true;
           onClose();
         }
       }}
@@ -107,7 +130,7 @@ export function TextEditOverlay({ unitId, page, session, viewport, onClose }: Pr
         top: topLeft.y,
         width: unit.width * viewport.scale,
         height: unit.height * viewport.scale,
-        fontSize: fontSize * viewport.scale,
+        fontSize: unit.fontSize * viewport.scale,
         lineHeight: unit.type === "$text" ? unit.lineHeight : 1.45,
         padding: padding * viewport.scale,
         color: unit.color,

@@ -36,11 +36,14 @@ export function Inspector() {
 
 function PenSection() {
   const penPresetId = useEditorStore((s) => s.penPresetId);
-  const penColor = useEditorStore((s) => s.penColor);
-  const penWidth = useEditorStore((s) => s.penWidth);
+  const penSettings = useEditorStore((s) => s.penSettings);
   const setPenPreset = useEditorStore((s) => s.setPenPreset);
   const setPenColor = useEditorStore((s) => s.setPenColor);
   const setPenWidth = useEditorStore((s) => s.setPenWidth);
+
+  const active = penSettings[penPresetId];
+  const penColor = active?.color ?? PEN_COLORS[0];
+  const penWidth = active?.width ?? PEN_WIDTHS[1];
 
   return (
     <>
@@ -60,7 +63,7 @@ function PenSection() {
                 width: 22,
                 height: Math.max(2, Math.min(preset.width, 10)),
                 borderRadius: 999,
-                background: penColor,
+                background: penSettings[preset.id]?.color ?? preset.color,
                 opacity: preset.opacity,
               }}
             />

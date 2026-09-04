@@ -28,10 +28,6 @@ impl<'a> Reader<'a> {
         self.buf.len().saturating_sub(self.pos)
     }
 
-    pub fn is_empty(&self) -> bool {
-        self.remaining() == 0
-    }
-
     fn need(&self, n: usize) -> AppResult<()> {
         if self.remaining() < n {
             return Err(AppError::other(format!(
@@ -146,7 +142,7 @@ mod tests {
         let mut r = Reader::new(&[0x01, 0x00, 0x02, 0x00, 0x00, 0x00]);
         assert_eq!(r.u16().unwrap(), 1);
         assert_eq!(r.u32().unwrap(), 2);
-        assert!(r.is_empty());
+        assert_eq!(r.remaining(), 0);
     }
 
     #[test]

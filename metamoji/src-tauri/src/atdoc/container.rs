@@ -100,13 +100,20 @@ pub fn read_block(buf: &[u8], pos: u64) -> AppResult<&[u8]> {
 // Model table
 // ---------------------------------------------------------------------------
 
+/// One 28-byte slot of the model table (docs/04 §4).
+///
+/// `last_child` and `prev_sibling` are not read by the importer — walking
+/// `first_child`/`next_sibling` is enough — but they are part of the on-disk
+/// record and naming them keeps this struct a faithful description of it.
 #[derive(Debug, Clone, Copy)]
 pub struct ModelTableItem {
     pub data_position: u64,
     pub parent: i32,
     pub first_child: i32,
+    #[allow(dead_code)]
     pub last_child: i32,
     pub next_sibling: i32,
+    #[allow(dead_code)]
     pub prev_sibling: i32,
 }
 
@@ -205,6 +212,9 @@ pub struct ExtraTable {
 #[derive(Debug, Clone, Copy, Default)]
 pub struct PreloadItem {
     pub type_index: u16,
+    /// Model schema version. Unused today; it is what a future importer would
+    /// consult to migrate an older model's property names.
+    #[allow(dead_code)]
     pub version: u16,
 }
 
@@ -215,10 +225,6 @@ impl ExtraTable {
             return None; // tombstoned slot
         }
         self.type_dict.get(item.type_index as usize).map(|s| s.as_str())
-    }
-
-    pub fn version(&self, index: usize) -> u16 {
-        self.preload.get(index).map(|p| p.version).unwrap_or(0)
     }
 }
 
@@ -498,7 +504,7 @@ mod tests {
             preload: parse_preload_table(&block).unwrap(),
         };
         assert_eq!(extra.model_type(0), Some("$layer"));
-        assert_eq!(extra.version(0), 2);
+        assert_eq!(extra.preload[0].version, 2);
     }
 
     #[test]

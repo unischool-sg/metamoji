@@ -6,7 +6,7 @@
  * event is inside the controller, not here.
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { open } from "@tauri-apps/plugin-dialog";
 
@@ -21,6 +21,7 @@ import { createFlipUnit, createImageUnit, createTextUnit } from "../model/factor
 import { newTicket } from "../model/ids";
 import type { ModelId, Point } from "../model/types";
 import { currentLayer } from "../model/types";
+import { IDENTITY_VIEWPORT, type Viewport } from "../render/viewport";
 import { useAssetCache } from "../hooks/useAssetCache";
 import { useEditorStore } from "../store/editorStore";
 
@@ -48,6 +49,23 @@ export function EditorScreen() {
 
   const [loadError, setLoadError] = useState<string | null>(null);
   const [editingUnitId, setEditingUnitId] = useState<ModelId | null>(null);
+  // The live viewport is kept in a ref so panning and zooming never re-render
+  // the editor. It is mirrored into state only while a text box is open, since
+  // that overlay is positioned in screen space and has to follow the canvas.
+  const viewportRef = useRef<Viewport>(IDENTITY_VIEWPORT);
+  const [overlayViewport, setOverlayViewport] = useState<Viewport>(IDENTITY_VIEWPORT);
+  const editingRef = useRef<ModelId | null>(null);
+  editingRef.current = editingUnitId;
+
+  const handleViewportChange = useCallback((vp: Viewport) => {
+    viewportRef.current = vp;
+    if (editingRef.current) setOverlayViewport(vp);
+  }, []);
+
+  const beginTextEdit = useCallback((unitId: ModelId) => {
+    setOverlayViewport(viewportRef.current);
+    setEditingUnitId(unitId);
+  }, []);
   const assets = useAssetCache(noteId ?? null, doc);
 
   // -- load ---------------------------------------------------------------
@@ -72,11 +90,6 @@ export function EditorScreen() {
       void api.noteClose(noteId);
     };
   }, [noteId, openDocument, closeDocument]);
-
-  useEffect(() => {
-    if (doc) controllerRef.current?.fitPage();
-    // Fit once per document, not on every edit.
-  }, [doc?.id]);
 
   // -- autosave -----------------------------------------------------------
 
@@ -185,7 +198,7 @@ export function EditorScreen() {
             unit,
           });
         });
-        setEditingUnitId(unit.id);
+        beginTextEdit(unit.id);
         state.setTool("select");
         state.setSelection([unit.id]);
         return;
@@ -202,7 +215,7 @@ export function EditorScreen() {
             unit,
           });
         });
-        setEditingUnitId(unit.id);
+        beginTextEdit(unit.id);
         state.setTool("select");
         state.setSelection([unit.id]);
         return;
@@ -245,17 +258,10 @@ export function EditorScreen() {
         state.setSelection([unit.id]);
       }
     },
-    [],
+    [beginTextEdit],
   );
 
   const page = doc?.pages[pageIndex];
-  const viewport = useMemo(
-    () => controllerRef.current?.getViewport(),
-    // Recomputed on every render on purpose: it feeds the text overlay's
-    // position, which must track pan and zoom.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [doc, pageIndex, editingUnitId],
-  );
 
   if (loadError) {
     return (
@@ -324,17 +330,18 @@ export function EditorScreen() {
           controllerRef={controllerRef}
           assets={assets}
           onPlace={handlePlace}
-          onEditText={setEditingUnitId}
+          onEditText={beginTextEdit}
+          onViewportChange={handleViewportChange}
         />
         <Inspector />
       </div>
 
-      {editingUnitId && page && session && viewport && (
+      {editingUnitId && page && session && (
         <TextEditOverlay
           unitId={editingUnitId}
           page={page}
           session={session}
-          viewport={viewport}
+          viewport={overlayViewport}
           onClose={() => {
             setEditingUnitId(null);
             controllerRef.current?.invalidateAll();

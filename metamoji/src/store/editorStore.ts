@@ -11,7 +11,13 @@
 import { create } from "zustand";
 
 import { EditSession } from "../editor/session";
-import { PEN_COLORS, PEN_PRESETS, PEN_WIDTHS, type ToolId } from "../editor/tools";
+import {
+  PEN_PRESETS,
+  defaultPenSettings,
+  penFromPreset,
+  type PenSlotSettings,
+  type ToolId,
+} from "../editor/tools";
 import { createDocument, createPage } from "../model/factory";
 import type { ModelId, NoteDocument, PenAttributes, Unit } from "../model/types";
 import { currentLayer, findPage } from "../model/types";
@@ -26,8 +32,8 @@ interface EditorState {
 
   activeTool: ToolId;
   penPresetId: string;
-  penColor: string;
-  penWidth: number;
+  /** Colour and width per pen slot, so switching pens keeps each one's look. */
+  penSettings: Record<string, PenSlotSettings>;
   eraserSize: number;
 
   selection: ModelId[];
@@ -75,8 +81,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
 
   activeTool: "pen",
   penPresetId: PEN_PRESETS[0].id,
-  penColor: PEN_COLORS[0],
-  penWidth: PEN_WIDTHS[1],
+  penSettings: defaultPenSettings(),
   eraserSize: 16,
 
   selection: [],
@@ -134,24 +139,31 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       selection: activeTool === "select" ? s.selection : [],
     })),
 
-  setPenPreset: (penPresetId) => {
-    const preset = PEN_PRESETS.find((p) => p.id === penPresetId);
-    set({ penPresetId, ...(preset ? { penWidth: preset.width } : {}) });
-  },
-  setPenColor: (penColor) => set({ penColor }),
-  setPenWidth: (penWidth) => set({ penWidth }),
+  setPenPreset: (penPresetId) => set({ penPresetId }),
+
+  setPenColor: (color) =>
+    set((s) => ({
+      penSettings: {
+        ...s.penSettings,
+        [s.penPresetId]: { ...s.penSettings[s.penPresetId], color },
+      },
+    })),
+
+  setPenWidth: (width) =>
+    set((s) => ({
+      penSettings: {
+        ...s.penSettings,
+        [s.penPresetId]: { ...s.penSettings[s.penPresetId], width },
+      },
+    })),
+
   setEraserSize: (eraserSize) => set({ eraserSize }),
 
   currentPen: () => {
-    const { penPresetId, penColor, penWidth } = get();
+    const { penPresetId, penSettings } = get();
     const preset = PEN_PRESETS.find((p) => p.id === penPresetId) ?? PEN_PRESETS[0];
-    return {
-      penType: preset.penType,
-      color: penColor,
-      width: penWidth,
-      opacity: preset.opacity,
-      pressureSensitivity: preset.pressureSensitivity,
-    };
+    const settings = penSettings[penPresetId] ?? { color: preset.color, width: preset.width };
+    return penFromPreset(preset, settings);
   },
 
   setPageIndex: (index) => {

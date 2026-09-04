@@ -1,9 +1,9 @@
 pub mod atdoc;
 mod commands;
 mod error;
-mod model;
+pub mod model;
 mod state;
-mod storage;
+pub mod storage;
 
 use tauri::{Emitter, Manager};
 

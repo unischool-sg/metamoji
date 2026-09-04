@@ -8,6 +8,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import type { GenericTree } from "../model/generic";
+import { memoryBackend } from "./memoryBackend";
 
 export interface NoteSummary {
   id: string;
@@ -42,9 +43,10 @@ export interface AtdocImportResult {
 }
 
 /**
- * True when running inside Tauri. Vite's dev server can also be opened in a
- * plain browser, which is convenient for UI work; in that case the calls below
- * fall back to in-memory behaviour instead of throwing.
+ * True when running inside Tauri. `vite dev` can also be opened in a plain
+ * browser, which is convenient for working on the editor without a Rust
+ * rebuild in the loop; there, the calls below fall back to an in-memory backend
+ * instead of throwing on a missing `invoke`.
  */
 export const isTauri = (): boolean =>
   typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
@@ -54,12 +56,16 @@ export const isTauri = (): boolean =>
 // ---------------------------------------------------------------------------
 
 export async function appStatus(): Promise<AppStatus> {
+  if (!isTauri()) return memoryBackend.appStatus();
   return invoke<AppStatus>("app_status");
 }
 
 export async function onAppReady(fn: (status: AppStatus) => void): Promise<() => void> {
-  const unlisten = await listen<AppStatus>("app://ready", (e) => fn(e.payload));
-  return unlisten;
+  if (!isTauri()) {
+    fn(memoryBackend.appStatus());
+    return () => {};
+  }
+  return listen<AppStatus>("app://ready", (e) => fn(e.payload));
 }
 
 // ---------------------------------------------------------------------------
@@ -67,22 +73,27 @@ export async function onAppReady(fn: (status: AppStatus) => void): Promise<() =>
 // ---------------------------------------------------------------------------
 
 export async function libraryList(includeTrashed = false): Promise<NoteSummary[]> {
+  if (!isTauri()) return memoryBackend.libraryList();
   return invoke<NoteSummary[]>("library_list", { includeTrashed });
 }
 
 export async function libraryCreate(tree: GenericTree, title: string): Promise<NoteSummary> {
+  if (!isTauri()) return memoryBackend.libraryCreate(tree, title);
   return invoke<NoteSummary>("library_create", { tree, title });
 }
 
 export async function libraryRename(id: string, title: string): Promise<void> {
+  if (!isTauri()) return memoryBackend.libraryRename(id, title);
   return invoke("library_rename", { id, title });
 }
 
 export async function librarySetTrashed(id: string, trashed: boolean): Promise<void> {
+  if (!isTauri()) return memoryBackend.librarySetTrashed(id, trashed);
   return invoke("library_set_trashed", { id, trashed });
 }
 
 export async function libraryDelete(id: string): Promise<void> {
+  if (!isTauri()) return memoryBackend.libraryDelete(id);
   return invoke("library_delete", { id });
 }
 
@@ -99,6 +110,7 @@ export async function libraryDuplicate(
 // ---------------------------------------------------------------------------
 
 export async function noteLoad(id: string): Promise<GenericTree> {
+  if (!isTauri()) return memoryBackend.noteLoad(id);
   return invoke<GenericTree>("note_load", { id });
 }
 
@@ -108,10 +120,12 @@ export async function noteSave(
   createdAt: string,
   revision: number,
 ): Promise<string> {
+  if (!isTauri()) return memoryBackend.noteSave(tree, title, createdAt, revision);
   return invoke<string>("note_save", { tree, title, createdAt, revision });
 }
 
 export async function noteClose(id: string): Promise<void> {
+  if (!isTauri()) return;
   return invoke("note_close", { id });
 }
 
@@ -121,6 +135,7 @@ export async function noteSetThumbnail(
   revision: number,
   pngDataUrl: string,
 ): Promise<void> {
+  if (!isTauri()) return memoryBackend.noteSetThumbnail(id, pageId, revision, pngDataUrl);
   return invoke("note_set_thumbnail", { id, pageId, revision, pngBase64: pngDataUrl });
 }
 
@@ -133,10 +148,12 @@ export async function assetPut(
   ticket: string,
   dataUrl: string,
 ): Promise<string> {
+  if (!isTauri()) return memoryBackend.assetPut(noteId, ticket, dataUrl);
   return invoke<string>("asset_put", { noteId, ticket, dataUrl });
 }
 
 export async function assetGet(noteId: string, ticket: string): Promise<string> {
+  if (!isTauri()) return memoryBackend.assetGet(noteId, ticket);
   return invoke<string>("asset_get", { noteId, ticket });
 }
 
@@ -160,6 +177,7 @@ export async function atdocImport(
   path: string,
   newRootId: string,
 ): Promise<AtdocImportResult> {
+  if (!isTauri()) return memoryBackend.atdocImport();
   return invoke<AtdocImportResult>("atdoc_import", { path, newRootId });
 }
 

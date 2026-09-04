@@ -94,7 +94,7 @@ export const PEN_COLORS = [
   "#188038",
   "#f29900",
   "#9334e6",
-  "#e8710a",
+  "#ffe14d",
   "#ffffff",
 ];
 
@@ -103,11 +103,29 @@ export const PEN_WIDTHS = [1.2, 2.4, 4, 6, 10, 16];
 /** Eraser sizes, in document units. */
 export const ERASER_SIZES = [8, 16, 32, 64];
 
-export function penFromPreset(preset: PenPreset, color: string, width: number): PenAttributes {
+/** Colour and width, remembered per pen slot. */
+export interface PenSlotSettings {
+  color: string;
+  width: number;
+}
+
+/**
+ * Each pen slot keeps its own colour and width, the way the original's seven
+ * quick-access pen buttons do (docs/09 §3). Sharing one colour across all pens
+ * would mean picking the highlighter always turned it black, or picking black
+ * turned the highlighter black too — both are wrong.
+ */
+export function defaultPenSettings(): Record<string, PenSlotSettings> {
+  return Object.fromEntries(
+    PEN_PRESETS.map((p) => [p.id, { color: p.color, width: p.width }]),
+  );
+}
+
+export function penFromPreset(preset: PenPreset, settings: PenSlotSettings): PenAttributes {
   return {
     penType: preset.penType,
-    color: preset.penType === "highlighter" ? color : color,
-    width,
+    color: settings.color,
+    width: settings.width,
     opacity: preset.opacity,
     pressureSensitivity: preset.pressureSensitivity,
   };

@@ -1,7 +1,166 @@
-# Tauri + React + Typescript
+# MetaMoJi (Tauri + React)
 
-This template should help get you started developing with Tauri, React and Typescript in Vite.
+`docs/` の解析結果をもとに、MetaMoJi Share Classroom をデスクトップアプリとして
+作り直したもの。Tauri v2 + React 19 + TypeScript + Vite。
 
-## Recommended IDE Setup
+## 現在のスコープ
 
-- [VS Code](https://code.visualstudio.com/) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
+`docs/03-tauri-migration-notes.md` §1 のスコープ A(スタンドアロン・ノートアプリ)
+に相当する範囲を実装済み。B(クラウド同期)・C(教室協働)は未実装だが、
+後述の「拡張の接続点」で設計上の余地を残してある。
+
+実装済み:
+
+- 手書き入力(筆圧対応)、消しゴム、選択・移動・変形
+- テキスト、画像、付箋(フリップ)Unit
+- 複数ページ、レイヤーの表示切り替え、用紙スタイル(無地/横罫/方眼/ドット)
+- Undo/Redo、自動保存、ノート一覧とサムネイル
+- `.atdoc` インポート
+
+意図的に未実装:
+
+- **手書き文字認識**。元アプリの mazec はプロプライエタリで流用できない
+  (`docs/03` §2)。ストロークの取得・保存・描画のみを行う。
+  認識を後から足す場合は `Recognizer` インターフェースを1つ足すだけで済むよう、
+  ストロークは時刻と筆圧を保持している。
+- クラウド同期、教室協働、課金・ライセンス。
+
+## 開発
+
+```bash
+bun install
+bun run tauri dev
+```
+
+| コマンド | 内容 |
+|---|---|
+| `bun run tauri dev` | アプリを開発モードで起動 |
+| `bun run tauri build` | 配布用ビルド |
+| `bun run test` | フロントエンドのテスト |
+| `bun run typecheck` | 型チェック |
+| `cd src-tauri && cargo test` | Rust のテスト(`.atdoc` パーサ含む) |
+
+## 設計
+
+### レイヤー構成
+
+```
+              [型付きドメインモデル]        types.ts / factory.ts
+                      ↕  converter.ts
+              [汎用モデルツリー]            generic.ts
+              (型タグ + プロパティ辞書)
+                      ↕  IPC
+   Rust        [SQLite]                     storage.rs
+                      ↑
+              [.atdoc インポータ]           atdoc/
+```
+
+エディタとレンダラは**型付きモデル**だけを見る。保存・インポート・(将来の)同期は
+すべて**汎用モデルツリー**を経由する。この分離が、ユーザー指定の
+「軽いレンダラを作りつつ、内部で入出力の互換性を保つ converter」にあたる。
+
+汎用ツリーは元アプリの「モデルツリー + 型タグ付きプロパティ辞書」という考え方
+(`docs/01` §2)をそのまま踏襲しており、`.atdoc` インポータの出力先も同じ形。
+そのため legacy 取り込みは別パイプラインではなく converter の問題になっている。
+
+往復での欠落を防ぐため:
+
+- converter が解釈しなかったプロパティは `_extra` に退避し、保存時に書き戻す
+- 未対応の Unit 種別は `$dummy` として原本を保持する
+  (元アプリの `$dummy` Unit と同じ発想 — `docs/05` §4)
+
+### 編集と Undo
+
+`docs/15` §6 の4つの提言をそのまま実装している。
+
+- コマンドはドメインごとに分割(443個のフラットな enum は作らない)
+- `beginEdit`/`endEdit` は再入可能。**1ジェスチャー = 1 CompoundEdit = 1 Undo**
+- `endEdit` は**必ず1つの `ModelChanged`** を発行する。
+  元アプリは `sendDirection` が十数個の Unit クラスに散在しており、
+  新しい Unit 型を足すたびに配信の書き忘れリスクがあった(`docs/15` §4)。
+  ここでは配信するかどうかを Unit 側が知る必要がない。
+- `canUndo`/`canRedo` は購読可能な状態で、ボタンは明示的な更新なしに追従する
+
+### 描画
+
+`docs/10` の Sprite/Layer/Stage シーングラフは**再現していない**。あれは
+すべての再描画が Android の View 境界をまたぐ環境で意味があった構造で、
+自前のキャンバスではドキュメントツリー自体がシーングラフとして機能する。
+
+採用したのは効果のある部分だけ:
+
+- ビューポートカリング(Unit 単位の矩形判定)
+- wet/dry インク分離 — 確定インクは `scene` に一度描き、ペン先のストロークだけを
+  `overlay` に単独で描く。ポインタ移動が React にも確定インクにも触れないため、
+  ストローク遅延がページの内容量に依存しない
+- 画面・サムネイル・書き出しが同じ描画関数を通る(`docs/10` §7 の `Context` の seam)
+
+線幅可変のインクは**アウトライン多角形を1回 fill** する。サンプルごとに円を
+スタンプする方式は、半透明のマーカーが重なりで濁るうえ描画呼び出しが
+サンプル数に比例するため採らなかった。
+
+### 保存形式
+
+- `library.db` — ノート一覧のカタログ
+- ノート1件 = `<id>.mmnote`(SQLite ファイル1つ)
+
+モデル行は `docs/04` §10 が推奨する `(id, parent_id, model_type, props_json)`。
+1ノート1ファイルにしているのは、コピー・バックアップ・書き出しが素直になり、
+1件の破損がライブラリ全体に波及しないため。将来の同期用に `revision` を
+最初から持たせてある。
+
+## `.atdoc` インポート
+
+**docs の2つの記述は誤っている。** 実装にあたって smali を読み直した結果:
+
+| docs の記述 | 実際 |
+|---|---|
+| `docs/04` §9: `PlainValueSerializer` のタグ体系は未解析 | 単純な switch で完全に読める。全14タグを解読し、実ファイルに対してバイト単位で検証済み |
+| `docs/05` §8: インク幾何はネイティブの `DrawUnitComponent` 内にあり IModel には露出しない | `DrawUnitComponent.smali` は `System.loadLibrary` のスタブで、native メソッドを1つも宣言していない。ストローク座標は通常の `PointArray` プロパティとして保存されている |
+
+`docs/04` §3 §5 にも2点の誤りがあり、コード中のコメントに記録した。
+
+### 復元できるもの / できないもの
+
+| 内容 | 精度 |
+|---|---|
+| コンテナ、モデルツリー、モデルタイプ、プロパティ値 | 完全 |
+| **手書きストローク**(座標・色・太さ・不透明度・ペン種別・変形) | 復元可能 |
+| ページ、レイヤー、画像、Unit の配置 | 完全 |
+| 点ごとの筆圧 | **不可**。元形式が float32 の x/y のみを保持しているため。一定値になり、線幅はペンスタイル由来になる |
+| リッチテキストの本文 | **未対応**。テキストモデルはプロパティマップの後ろに `DataArchiver` 形式のペイロードを追加しており、これは別のエンコーディング。位置と書式のみ取り込む |
+| 未実装 Unit 種別(動画・音声・アンケート等) | 位置とサイズを保った**プレースホルダー**として取り込む。バイト列は破棄しない |
+
+Undo テーブルから到達できるモデルは**意図的に除外**している。`docs/05` §7 が
+警告するとおり、Undo レコードは `n*`/`o*` という別語彙を使っており、
+コンテンツスキーマに混ぜると壊れる。
+
+### テスト
+
+リポジトリに `.atdoc` のサンプルは無いが、`apk/assets/init/` に
+**同じ形式の実ドキュメント**が同梱されている。これを golden corpus として使用:
+
+```
+start guide: v2 | 1303 models | 4 pages | 1076 strokes | 0 undecoded
+```
+
+`apk/` が無いチェックアウトではこのテストは自動的にスキップされる。
+
+`.atdoc` の**関連付けは登録していない**。両方インストールされている環境で
+本家アプリの関連付けを奪ってしまうため、取り込みはメニューからの明示操作のみ。
+
+## 拡張の接続点
+
+将来 B/C を足すときに触る箇所は、いずれも既に空いている。
+
+**フェーズ B(クラウド同期)** — モデル層の変更は不要。
+`EditSession` の `ModelChanged` を購読する observer を1つ足すだけで編集経路に
+入り込める。`revision` は最初から存在し、`AppStatus.needsLogin` は
+元アプリの `isNeedLogin` StateFlow(`docs/14` §3)の後継としてすでに配線済み。
+
+**フェーズ C(教室協働)** — 同じく `ModelChanged` に observer を足す。
+`EditSource` が `local`/`undo`/`redo`/`remote` を区別しているので、
+リモートの編集をそのまま送り返すエコーを避けられる。
+`LayerType` には `system:personal` / `system:offline_personal` を予約済みで、
+`docs/14` §2 のオフライン編集マージ(操作リプレイではなくレイヤー移動)を
+既存の delta 語彙だけで表現できる — CRDT/OT は不要。
