@@ -32,6 +32,12 @@
   [distribute.tsp](./distribute.tsp)に反映。DistributeClass/GetDistributeStatusは`restHost`
   (テナント別ホスト)、crashlogs/uploadは`rootServer`(ブートストラップホスト)を使う点に注意
   (`misc.tsp`の`postCrashLogs`とは別系統のクラッシュログ送信経路)。
+- ✅ **`com/metamoji/lc` (`LicenseUtil`)** — ライセンスキーアクティベーションAPI。
+  `license/activate2`, `license/getremainingdays` の2エンドポイント全て解析済み。
+  改ざん検知用の`tt_hash`(MD5)アルゴリズムまで含めて[license-activation.tsp](./license-activation.tsp)
+  に反映。ただし製品ID定数が `"Android-Note-Business_3.1.8"` (別製品由来) であり、
+  `share_classroom`で実際にこの画面へ到達する経路は未確認(コード自体は`EntryActivity`/
+  `LicenseKeyInputProxyActivity`から到達可能で生きている)。レガシー/共有ライブラリ機能の可能性。
 
 ## 未解析パッケージ一覧(優先順位順)
 
@@ -41,7 +47,7 @@
 |---|---|---|---|---|
 | ~~1~~ | ~~`com/metamoji/network` (`NwWebDAVRequest`)~~ | ✅ **解析完了**。[webdav.tsp](./webdav.tsp) と上記「完了済み」を参照。 | — | — |
 | ~~2~~ | ~~`com/metamoji/dvm/cs` (`DvmCloudService`)~~ | ✅ **解析完了**。[distribute.tsp](./distribute.tsp) と上記「完了済み」を参照。 | — | — |
-| 3 | `com/metamoji/lc` | **ライセンスアクティベーション専用API**。`CsCloudService`とは完全に別ホスト。 | ホスト: `https://license.metamoji.com/mmjlicense/`(検証用: `license-test.metamoji.com`)。パス: `license/activate2`, `license/getremainingdays`。 | 独自のJSON+ハッシュ(HMAC風)プロトコル(`HttpUtil.postJson`)。 |
+| ~~3~~ | ~~`com/metamoji/lc`~~ | ✅ **解析完了**。[license-activation.tsp](./license-activation.tsp) と上記「完了済み」を参照。 | — | — |
 | 4 | `com/metamoji/ns/service` (`NsCollabo*`) | **リアルタイム授業ルーム共有("ClassShare"の名を冠する中核機能)**。ルーム作成・参加・ロール管理・設定同期。23ファイル中18ファイルが直接通信。 | `/cosmos/ModifyRole`, `/mmjcloud/ShareViewGetList`, `/mmjcloud/ShareViewGetMyRole`, `/mmjcloud/ShareViewGetRoomInfo`, `/mmjcloud/ShareViewGetRoomSetting`, `/mmjcloud/ShareViewSetRoomInfo`, `/mmjcloud/ShareViewSetRoomSetting`, `gallery/PostForShareAnytime` 等。`For{CheckRole,CreateRoom,CreateUniqueID,GetMemberList,GetRoomInfo,...}`というコマンドパターンで整理されており、TypeSpec化しやすい構造。 | `sessionID`ベース。ロール概念(`presenter`/`speaker`/`visitor`)、ルームタイプ(`casual`/`formal`/`limited`)あり。UA文字列 `"Android-Share-G-ClassRoom"`。 |
 | 5 | `com/metamoji/media/video/network` (`VfCloud`, `NwServerAccessor`等) | **動画ノート機能(録画・アップロード・再生)**。アプリの目玉機能の一つ。71ファイル中の中核は`VfCloud`(+Companion), `VfIdMappingService`, `NwUpload`, `NwServerAccessor`, `NwUserInfoUpdater`の5クラス。 | 動的に割り当てられる"Flora"メディアサーバー(`flora/api/v1/`)に対し、`getlist`/`reserve`/`getclipcount`/`getclipinfo`/`getcoinfo`/`getposterframe`/`deleteclip`/`getserverstatus`/`getuploadpoint`/`exportclipinfo`等のコマンドクエリでアクセス。 | 独自ログイン/トークン方式(`accessToken`/`refreshToken`/`loginUser`/`loginCompany`)。サーバー予約フロー(`reserveServerId`)あり。 |
 | 6 | `com/metamoji/rc` (`RcRemoteConverter*`) | **ファイル形式変換サービス**("Remote Converter")。`CsCloudService`と同じDigitalCabinetホストを共有。 | `/convert/TentativeRegist`, `/convert/ConvertRequest`, `/convert/GetConvertedFile`。マルチパートPOST(userId/password/productName/productVersion/jobId1/jobId2/fromMime/toMime/fileEntity)。エラーコード例: `14`=ライセンスなし, `100`=変換中。 | `CsCloudService`と同じDigital Cabinetホスト(`ModelInfo$BuildOptions.DIGITAL_CABINET_URL_BASE`)。 |

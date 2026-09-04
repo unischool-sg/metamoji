@@ -11,9 +11,10 @@ DigitalCabinet クラウドAPI)を [TypeSpec](https://typespec.io/) として再
 
 > ⚠️ **本ドキュメントが網羅するのは `CsCloudService` (53エンドポイント)、WebDAVデータプレーン
 > (`NwWebDAVRequest`, [webdav.tsp](./webdav.tsp))、クラス配信/クラッシュログ
-> (`DvmCloudService`, [distribute.tsp](./distribute.tsp)) のみです。**
+> (`DvmCloudService`, [distribute.tsp](./distribute.tsp))、ライセンスアクティベーション
+> (`LicenseUtil`, [license-activation.tsp](./license-activation.tsp)) のみです。**
 > アプリは他にも独立した通信レイヤー(リアルタイム授業ルーム共有、動画ノートのアップロード、
-> ライセンスアクティベーション、ファイル変換サービス等)を複数持っており、それらは未解析です。
+> ファイル変換サービス等)を複数持っており、それらは未解析です。
 > 調査済みの範囲・優先順位は [ROADMAP.md](./ROADMAP.md) を参照してください。
 
 ## 解析範囲・手法
@@ -65,6 +66,7 @@ DigitalCabinet クラウドAPI)を [TypeSpec](https://typespec.io/) として再
 | [common.tsp](./common.tsp) | 共通リクエスト/レスポンス基底モデル、共有の値オブジェクト |
 | [webdav.tsp](./webdav.tsp) | WebDAVデータプレーン(ノート本体のGET/PUT/DELETE/HEAD/MKCOL/MOVE/PROPFIND/PROPPATCH) |
 | [distribute.tsp](./distribute.tsp) | クラス配信(ノート変換ジョブ登録/ステータス取得)・クラッシュログアップロード(`DvmCloudService`) |
+| [license-activation.tsp](./license-activation.tsp) | ライセンスキーのオンラインアクティベーション/残日数照会(`LicenseUtil`、別ホスト`license.metamoji.com`) |
 | [auth.tsp](./auth.tsp) | 認証・アカウント管理 (login / logout / register / パスワード / EULA / SSO 等) |
 | [user.tsp](./user.tsp) | ユーザー・組織(グループ)情報 |
 | [drive.tsp](./drive.tsp) | ドライブ(共有フォルダ)・メンバー管理・共有リンク |
