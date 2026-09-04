@@ -148,3 +148,85 @@ fn malformed_input_is_rejected_rather_than_panicking() {
     truncated.extend_from_slice(&[0u8; 8]);
     assert!(atdoc::import(truncated, "note_test").is_err());
 }
+
+/// The full user flow: import a real document, persist it, reopen it.
+///
+/// The importer and the store are each tested on their own, but this is the
+/// path that actually matters — an import that cannot be saved and reopened
+/// with its strokes intact has not imported anything.
+#[test]
+fn an_imported_document_survives_being_saved_and_reopened() {
+    use metamoji_lib::storage::{now_iso, AppPaths, NoteStore};
+
+    let Some(root) = corpus_root() else {
+        eprintln!("skipping: apk/ corpus not present in this checkout");
+        return;
+    };
+    let guide = root.join("guide/startguide.dat");
+    if !guide.is_file() {
+        eprintln!("skipping: start guide not present");
+        return;
+    }
+
+    let bytes = std::fs::read(&guide).expect("start guide should be readable");
+    let imported = atdoc::import(bytes, "note_imported").expect("import");
+    assert!(imported.report.stroke_count > 0, "expected strokes");
+
+    let dir = std::env::temp_dir().join(format!(
+        "metamoji-import-{}",
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_nanos()
+    ));
+    std::fs::create_dir_all(&dir).expect("temp dir");
+    let paths = AppPaths::new(dir.clone()).expect("paths");
+    let now = now_iso();
+
+    {
+        let mut store = NoteStore::open(&paths.note_path("note_imported")).expect("open");
+        store
+            .write_tree(&imported.tree, "取り込み", &now, &now, 0)
+            .expect("write");
+    }
+
+    let reopened = {
+        let store = NoteStore::open(&paths.note_path("note_imported")).expect("reopen");
+        store.read_tree().expect("read")
+    };
+
+    assert_eq!(reopened.models.len(), imported.tree.models.len());
+    assert_eq!(reopened.root_id, imported.tree.root_id);
+
+    // Strokes are the whole point; count them on both sides and compare.
+    let count_strokes = |tree: &metamoji_lib::model::GenericTree| -> usize {
+        tree.models
+            .values()
+            .filter(|m| m.model_type == "$draw")
+            .filter_map(|m| m.props.get("strokes"))
+            .filter_map(|v| v.as_array())
+            .map(|a| a.len())
+            .sum()
+    };
+    let before = count_strokes(&imported.tree);
+    let after = count_strokes(&reopened);
+    assert_eq!(before, after, "strokes were lost across the save/reload");
+    assert!(before > 500, "expected a rich document, got {before} strokes");
+
+    // A stroke must still carry usable geometry and styling after the trip.
+    let sample = reopened
+        .models
+        .values()
+        .filter(|m| m.model_type == "$draw")
+        .filter_map(|m| m.props.get("strokes"))
+        .filter_map(|v| v.as_array())
+        .flatten()
+        .next()
+        .expect("at least one stroke");
+    assert!(sample["points"]["$points"].as_array().expect("points").len() >= 4);
+    assert!(sample["color"].as_str().expect("color").starts_with('#'));
+    assert!(sample["width"].as_f64().expect("width") > 0.0);
+
+    eprintln!("imported and round-tripped {before} strokes");
+    std::fs::remove_dir_all(&dir).ok();
+}
