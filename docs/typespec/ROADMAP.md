@@ -5,6 +5,47 @@
 
 **一次調査で洗い出した通信レイヤーは全13系統、調査完了しました**(119エンドポイント。
 うち2系統は「独自のワイヤレベル契約なし」と確認した上で新規ファイル作成を見送り)。
+さらに全13系統確定後、**APK全体を対象にした最終網羅性監査**(下記参照)を実施し、
+見落としが無いことを確認済みです。
+
+## 最終網羅性監査(2026-09-04実施)
+
+13系統の解析完了後、「本当に他に通信していないか」を検証するため、`com/metamoji`配下
+全体を対象に以下の観点で再監査しました。
+
+1. `Lokhttp3/`を直接参照する全ファイルをパッケージ単位で列挙し、既知13系統と突合。
+2. `HttpURLConnection`/`HttpsURLConnection`(okhttp以外の通信手段)の使用有無。
+3. `java.net.Socket`/`SSLSocket`(生ソケット)の使用有無。
+4. Firebase/Crashlytics/Google Analytics等サードパーティSDKの通信有無。
+5. `*CloudService`/`*HttpClient`/`*ApiClient`/`*RestClient`という命名パターンの総ざらい。
+6. `AndroidManifest.xml`のservice/receiver宣言・パーミッション一覧。
+
+**結果、新たに文書化すべきAPI面は見つかりませんでした。** 既知13系統に含まれない
+okhttp3参照が4箇所見つかりましたが、いずれも既存の発見の範囲内でした:
+
+- `com/metamoji/mazec/util/HttpUtil` — APK全体を検索しても呼び出し元が無く、確実にデッドコード。
+- `com/metamoji/media/video/dialog/RemoteFileItem.loadThumbnail()` — `video.tsp`ですでに
+  文書化済みの`VfClipInfo.posterframe`URLへの単純GET。新規エンドポイントではない。
+- `com/metamoji/noteanytime/NoteAnytimeApplication$5` および トップレベルの
+  `com/metamoji/video`パッケージ(`Amv*`、動画プレーヤー/トリミングUIコンポーネント一式)
+  — 共有OkHttpClientを注入されるだけの汎用埋め込みプレーヤーで、それ自体は
+  MetaMoji固有のエンドポイントを持たない(与えられたURLを取得するだけ)。
+- `com/metamoji/noteanytime/cm/IntentContent` — Android共有インテント経由でファイルを
+  インポートする際、ユーザー/OS側から渡された任意のURLに対しGETするだけで、
+  MetaMoji側の固定エンドポイントではない。
+
+その他の確認事項:
+- `HttpURLConnection`系のAPIは`com/metamoji`配下で一切使われていない(okhttp3に統一)。
+- 生ソケット通信は`com/metamoji/ns/socket`(`NsCollaboSocket`)のみで、これは
+  `collabo.tsp`で既に「スコープ外」と明記済みのリアルタイムルーム同期プロトコルと同一。
+- Firebase/Crashlytics/Google Analytics等のSDKは一切検出されず(プッシュ通知基盤も無し。
+  `sysinfo.tsp`のポーリング型「お知らせ」機構がその代替として機能している)。
+- `*CloudService`/`*HttpClient`系の命名パターンは`NwHttpClient`/`CsHttpClient`/
+  `SdHttpClient`/`SdCloudService`/`CsCloudService`/`DvmCloudService`の6クラスのみで、
+  全て既存13系統でカバー済み。
+- マニフェストの`DmIntentServiceRunner`/`SyncEventService`は、いずれも既存の
+  `DmDCSyncManager`(WebDAV同期、`webdav.tsp`)を呼び出すだけのOSサービスラッパーで、
+  新規エンドポイントは含まない。
 
 ## 完了済み(13系統・119エンドポイント)
 
