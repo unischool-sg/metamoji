@@ -22,9 +22,18 @@
 8. [08-mazec-native-interface.md](08-mazec-native-interface.md) — mazec手書き認識エンジンのネイティブ(JNI)インターフェース、対応言語、辞書構造
 9. [09-strings-and-assets-catalog.md](09-strings-and-assets-catalog.md) — UI文字列・アイコン・カラー/フォント等アセットの網羅カタログ
 
+### 詳細レベル(第2次深掘り: 内部アーキテクチャ)
+
+10. [10-rendering-engine.md](10-rendering-engine.md) — 描画エンジン(`df.sprite`のSprite/Layer/Stageシーングラフ、Graphics/Paint/Path、Rasterizer、LayerView/TextureView合成、Viewportのパン/ズーム、`AllInOneGesture`ジェスチャー認識、インク描画エンジンとの統合)
+11. [11-pdf-format-spec.md](11-pdf-format-spec.md) — 自前PDFパーサー/フィルタ/暗号化(RC4〜AES-256)/コンテンツストリーム解釈/ライター/生徒別レイヤーエクスポートの詳細
+12. [12-dm-sync-framework.md](12-dm-sync-framework.md) — Core Data風ローカルDBフレームワーク(`Dm`)のマネージャ層、同期トリガー、コンフリクト解決アルゴリズム(サーバー優先+複製保存)
+13. [13-chart-engine-and-shared-utilities.md](13-chart-engine-and-shared-utilities.md) — チャートエンジン(`ch`)、モデル⇄XMLシリアライズ層(`cv`)、共通ユーティリティ基盤(`cm`)、選択ハンドルUI(`rb`)、ライブラリストア(`lb`)
+14. [14-login-startup-offline-edit.md](14-login-startup-offline-edit.md) — ログインドライバー5種+QRブートストラップ、アプリ起動シーケンス、オフライン編集のレイヤー分離マージ方式
+15. [15-undo-command-architecture.md](15-undo-command-architecture.md) — `NtCommand`のディスパッチ体系、編集トランザクション(`EditContext`/`CompoundUndo`)、Direction配信への分岐点
+
 ### 関連リソース(別セッションによる並行調査)
 
-- [typespec/](typespec/) — `com.metamoji.cs.dc.CsCloudService`(DigitalCabinet/ClassShareクラウドAPI, 53エンドポイント)とWebDAVデータプレーンをTypeSpecとして再構築したもの。本ドキュメント群(特に[06-classroom-protocol-spec.md](06-classroom-protocol-spec.md))とは別の通信レイヤー(`CsCloudService`)を対象にしており、相互に補完関係にある。未解析領域は[typespec/ROADMAP.md](typespec/ROADMAP.md)を参照。
+- [typespec/](typespec/) — `com.metamoji.cs.dc.CsCloudService`ほか全13系統・119エンドポイントの通信レイヤーをTypeSpecとして再構築したもの(最終網羅性監査済み、追加調査不要と結論)。本ドキュメント群(特に[06-classroom-protocol-spec.md](06-classroom-protocol-spec.md))とは別角度からの調査であり、相互に補完関係にある。**新規にAPI仕様を追加する場合はここを正とする。**
 
 ## 解析方法・注意事項
 
