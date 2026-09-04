@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <View android:layout_width="@dimen/SimpleModeColumnWidth_Header" android:layout_height="wrap_content" />
+    <View android:layout_width="@dimen/SimpleModeColumnWidth_Header2" android:layout_height="wrap_content" />
+    <TextView android:id="@id/title" android:paddingTop="@dimen/cabinetDetailDateTextTopPadding" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginBottom="3.0dp" android:text="@string/Cabinet_Title" style="@style/CabinetSimpleText.Header" />
+    <TextView android:id="@id/updateDate" android:layout_width="@dimen/SimpleModeColumnWidth_RenewDate" android:layout_height="wrap_content" android:layout_marginBottom="3.0dp" style="@style/CabinetSimpleText.Header" />
+</LinearLayout>

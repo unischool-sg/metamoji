@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:orientation="vertical" android:id="@id/widget_item" android:padding="4.0dp" android:clipChildren="false" android:clipToPadding="false" android:layout_width="72.0dp" android:layout_height="wrap_content"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <FrameLayout android:layout_width="64.0dp" android:layout_height="64.0dp">
+        <ImageView android:layout_gravity="center" android:id="@id/widget_item_image" android:background="@drawable/cabinet_thumbnail_dropshadow" android:layout_width="wrap_content" android:layout_height="wrap_content" android:scaleType="fitCenter" android:contentDescription="@null" />
+        <com.metamoji.ui.common.UiImageButton android:id="@id/widget_item_delete" android:background="@null" android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/library_delete" android:contentDescription="@null" android:translationX="-4.0dp" android:translationY="-4.0dp" />
+    </FrameLayout>
+    <TextView android:textSize="10.0dp" android:textColor="@android:color/black" android:ellipsize="end" android:gravity="center_horizontal" android:id="@id/widget_item_title" android:layout_width="match_parent" android:layout_height="wrap_content" android:maxLines="2" android:lines="2" />
+</LinearLayout>

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout android:layout_width="match_parent" android:layout_height="match_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:local="http://schemas.android.com/apk/res-auto">
+    <include layout="@layout/control_dialog_background" />
+    <LinearLayout style="@style/UiDialogStyle">
+        <include layout="@layout/control_dialog_header" />
+        <LinearLayout android:layout_height="match_parent" android:minHeight="400.0dp" style="@style/UiDialogBodyStyle">
+            <LinearLayout android:orientation="horizontal" android:id="@id/manage_mode_panel" android:layout_width="match_parent" android:layout_height="wrap_content">
+                <com.metamoji.ui.common.UiButton android:layout_gravity="left" android:id="@id/add_group_btn" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="10.0dp" android:layout_marginTop="20.0dp" android:minWidth="100.0dp" local:button_type="normal" local:maintitle="@string/School_GroupListDlg_Add_Group_Btn" local:maintitle_gravity="center_horizontal" />
+                <View android:layout_width="0.0dp" android:layout_height="0.0dp" android:layout_weight="1.0" />
+                <com.metamoji.ui.common.UiButton android:enabled="false" android:layout_gravity="right" android:id="@id/delete_group_btn" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="10.0dp" android:layout_marginTop="20.0dp" android:minWidth="100.0dp" local:button_type="normal" local:maintitle="@string/School_GroupListDlg_Delete_Group_Btn" local:maintitle_gravity="center_horizontal" />
+            </LinearLayout>
+            <com.metamoji.forSchool.ui.ScListView android:id="@id/listView" android:background="@drawable/collabo_bar_list_frame" android:layout_width="match_parent" android:layout_height="0.0dp" android:divider="@null" android:layout_weight="1.0" />
+        </LinearLayout>
+    </LinearLayout>
+</RelativeLayout>

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:orientation="horizontal" android:background="@null" android:layout_width="match_parent" android:layout_height="wrap_content"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <include android:id="@id/editor_bottombar_pagelist" android:visibility="visible" layout="@layout/editor_pagelist_controls" />
+    <include android:id="@id/editor_bottombar_jumplist" android:visibility="gone" layout="@layout/editor_jumplist_controls" />
+    <Space android:id="@id/editor_bottombar_commands_align" android:layout_width="0.0dp" android:layout_height="0.0dp" android:layout_weight="1.0" />
+    <LinearLayout android:orientation="horizontal" android:id="@id/editor_bottombar_linerLayout" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="10.0dp">
+        <ImageButton android:id="@id/editor_bottombar_wristguard" android:background="@null" android:visibility="gone" android:layout_width="46.0dp" android:layout_height="33.0dp" android:layout_marginLeft="6.0dp" android:src="@drawable/editor_bottombar_wg" android:scaleType="fitCenter" android:contentDescription="@null" />
+        <ImageButton android:id="@id/editor_bottombar_dwindow" android:background="@null" android:visibility="gone" android:layout_width="46.0dp" android:layout_height="33.0dp" android:layout_marginLeft="4.0dp" android:src="@drawable/editor_bottombar_dwindow" android:scaleType="fitCenter" android:contentDescription="@null" />
+    </LinearLayout>
+</LinearLayout>

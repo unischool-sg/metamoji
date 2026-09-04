@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_pressed="true">
+        <layer-list>
+            <item android:drawable="@drawable/button_tab_center_on" android:left="0.0dp" android:top="0.0dp" android:right="0.0dp" android:bottom="0.0dp" />
+            <item android:left="3.0dp" android:top="3.0dp" android:right="3.0dp" android:bottom="2.0dp">
+                <bitmap android:gravity="center" android:src="@drawable/location_bottom_right" />
+            </item>
+        </layer-list>
+    </item>
+    <item android:state_checked="true">
+        <layer-list>
+            <item android:drawable="@drawable/button_tab_center_on" android:left="0.0dp" android:top="0.0dp" android:right="0.0dp" android:bottom="0.0dp" />
+            <item android:left="3.0dp" android:top="3.0dp" android:right="3.0dp" android:bottom="2.0dp">
+                <bitmap android:gravity="center" android:src="@drawable/location_bottom_right" />
+            </item>
+        </layer-list>
+    </item>
+    <item>
+        <layer-list>
+            <item android:drawable="@drawable/button_tab_center" android:left="0.0dp" android:top="0.0dp" android:right="0.0dp" android:bottom="0.0dp" />
+            <item android:left="3.0dp" android:top="3.0dp" android:right="3.0dp" android:bottom="2.0dp">
+                <bitmap android:gravity="center" android:src="@drawable/location_bottom_right" />
+            </item>
+        </layer-list>
+    </item>
+</selector>

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:local="http://schemas.android.com/apk/res-auto">
+    <include layout="@layout/control_dialog_background" />
+    <LinearLayout style="@style/UiDialogStyle">
+        <include layout="@layout/control_dialog_header" />
+        <ScrollView style="@style/UiDialogScrollViewStyle">
+            <LinearLayout android:gravity="center_horizontal" style="@style/UiDialogBodyWithScrollStyle">
+                <Space android:layout_width="match_parent" android:layout_height="20.0dp" />
+                <TextView android:textSize="20.0sp" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="20.0dp" android:text="@string/Promotion_SNS_Message" />
+                <LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginLeft="20.0dp" android:layout_marginRight="20.0dp">
+                    <com.metamoji.ui.common.UiButton android:id="@id/dlg_sns_promo_btn_facebook" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_weight="1.0" local:button_type="sub" local:maintitle="@string/Promotion_SNS_Facebook" />
+                    <Space android:layout_width="20.0dp" android:layout_height="match_parent" />
+                    <com.metamoji.ui.common.UiButton android:id="@id/dlg_sns_promo_btn_twitter" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_weight="1.0" local:button_type="sub" local:maintitle="@string/Promotion_SNS_Twitter" />
+                </LinearLayout>
+                <Space android:layout_width="match_parent" android:layout_height="20.0dp" />
+            </LinearLayout>
+        </ScrollView>
+    </LinearLayout>
+</RelativeLayout>

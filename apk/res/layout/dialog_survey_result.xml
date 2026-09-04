@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout android:layout_width="match_parent" android:layout_height="match_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:local="http://schemas.android.com/apk/res-auto">
+    <include layout="@layout/control_dialog_background" />
+    <LinearLayout style="@style/UiDialogStyle">
+        <include layout="@layout/control_dialog_header" />
+        <ScrollView style="@style/UiDialogScrollViewStyle">
+            <LinearLayout style="@style/UiDialogBodyWithScrollStyle">
+                <LinearLayout android:orientation="horizontal" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/controlSpaceWide" style="@style/UiDialogGroupUpStyle">
+                    <TextView android:textSize="15.0dp" android:ellipsize="none" android:id="@id/question_text" android:singleLine="false" android:breakStrategy="high_quality" style="@style/UiDialogLabelStyle" />
+                </LinearLayout>
+                <LinearLayout android:orientation="vertical" android:id="@id/resultLayout" android:layout_width="wrap_content" android:layout_height="wrap_content">
+                    <LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="match_parent" android:layout_marginBottom="@dimen/controlSpace">
+                        <com.metamoji.ui.common.UiTextView android:text="@string/MMJNT_LSTR_SURVEY_UNIT_RESULT" android:layout_weight="1.0" style="@style/UiDialogGroupTitleStyle" />
+                        <com.metamoji.ui.common.UiRadioGroup android:layout_gravity="end" android:orientation="horizontal" android:id="@id/radiogroup_graph_type" android:layout_width="wrap_content" android:layout_height="wrap_content" local:justify_width_withlargestchild="true">
+                            <com.metamoji.ui.common.UiRadioButton android:id="@id/button_pie_chart" android:layout_width="wrap_content" android:layout_height="wrap_content" local:maintitle="@string/MMJNT_LSTR_SURVEY_UNIT_PIE_CHART" local:radiobutton_type="small_left" />
+                            <com.metamoji.ui.common.UiRadioButton android:id="@id/button_bar_chart" android:layout_width="wrap_content" android:layout_height="wrap_content" local:maintitle="@string/MMJNT_LSTR_SURVEY_UNIT_BAR_GRAPH" local:radiobutton_type="small_center" />
+                            <com.metamoji.ui.common.UiRadioButton android:id="@id/button_table" android:layout_width="wrap_content" android:layout_height="wrap_content" local:maintitle="@string/MMJNT_LSTR_SURVEY_UNIT_TABLE" local:radiobutton_type="small_center" />
+                            <com.metamoji.ui.common.UiRadioButton android:id="@id/button_spec_table" android:layout_width="wrap_content" android:layout_height="wrap_content" local:maintitle="@string/MMJNT_LSTR_SURVEY_UNIT_SPEC_TABLE" local:radiobutton_type="small_right" />
+                        </com.metamoji.ui.common.UiRadioGroup>
+                    </LinearLayout>
+                    <FrameLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="match_parent" android:layout_marginBottom="@dimen/controlSpaceWide">
+                        <com.metamoji.un.survey.ui.UnSurveyResultListView android:id="@id/resultListView" android:background="@drawable/collabo_bar_list_frame" android:scrollbars="vertical" android:layout_width="match_parent" android:layout_height="100.0dp" android:divider="@null" android:layout_weight="1.0" />
+                        <com.metamoji.un.survey.ui.UnSurveyChartImageView android:id="@id/pieChartView" android:layout_width="match_parent" android:layout_height="100.0dp" android:layout_weight="1.0" />
+                        <com.metamoji.un.survey.ui.UnSurveyChartImageView android:id="@id/barChartView" android:layout_width="match_parent" android:layout_height="100.0dp" android:layout_weight="1.0" />
+                        <com.metamoji.un.survey.ui.UnSurveySpecLayout android:orientation="vertical" android:id="@id/specLayout" android:layout_width="match_parent" android:layout_height="420.0dp" android:weightSum="100.0">
+                            <ListView android:id="@id/specListView" android:background="@drawable/collabo_bar_list_frame" android:scrollbars="vertical" android:layout_width="match_parent" android:layout_height="0.0dp" android:layout_marginBottom="@dimen/controlSpace" android:divider="@color/lightgray" android:dividerHeight="1.0dp" android:layout_weight="55.0" />
+                            <com.metamoji.ui.common.UiButton android:layout_gravity="right" android:id="@id/outputCsvButton" android:layout_width="wrap_content" android:layout_height="wrap_content" android:minWidth="100.0dp" android:layout_weight="1.0" local:button_type="normal" local:maintitle="@string/MMJNT_LSTR_SCORELISTDLG_BTN_CSV" local:maintitle_gravity="center_horizontal" />
+                        </com.metamoji.un.survey.ui.UnSurveySpecLayout>
+                    </FrameLayout>
+                </LinearLayout>
+                <LinearLayout android:orientation="vertical" android:id="@id/yourAnswerLayout" android:layout_width="match_parent" android:layout_height="match_parent">
+                    <LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="match_parent" android:layout_marginBottom="@dimen/controlSpace">
+                        <com.metamoji.ui.common.UiTextView android:text="@string/MMJNT_LSTR_SURVEY_UNIT_YOUR_ANSWER" android:layout_weight="1.0" style="@style/UiDialogGroupTitleStyle" />
+                        <com.metamoji.ui.common.UiButton android:layout_gravity="right" android:id="@id/clearAnswerButton" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="10.0dp" android:minWidth="100.0dp" local:button_type="normal" local:maintitle="@string/MMJNT_LSTR_SURVEY_UNIT_CLEAR_ANSWER" local:maintitle_gravity="center_horizontal" />
+                    </LinearLayout>
+                    <LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="match_parent" android:layout_marginBottom="@dimen/controlSpaceWide">
+                        <com.metamoji.forSchool.ui.ScListView android:id="@id/yourAnswerListView" android:background="@drawable/collabo_bar_list_frame" android:scrollbars="vertical" android:layout_width="match_parent" android:layout_height="100.0dp" android:divider="@color/lightgray" android:dividerHeight="1.0dp" android:layout_weight="1.0" />
+                    </LinearLayout>
+                </LinearLayout>
+                <LinearLayout android:orientation="vertical" android:id="@id/managementPanel" android:layout_width="match_parent" android:layout_height="match_parent" android:layout_marginBottom="@dimen/controlSpace">
+                    <com.metamoji.ui.common.UiTextView android:id="@id/managementTextView" android:text="@string/MMJNT_LSTR_SURVEY_UNIT_MANAGEMENT" style="@style/UiDialogGroupTitleStyle" />
+                    <LinearLayout android:orientation="horizontal" android:id="@id/layout_allow_answer" style="@style/UiDialogGroupUpStyleTop">
+                        <com.metamoji.ui.common.UiTextView android:layout_marginRight="@dimen/controlSpace" android:text="@string/MMJNT_LSTR_SURVEY_UNIT_ALLOW_ANSWER" style="@style/UiDialogLabelStyle" />
+                        <com.metamoji.ui.common.UiSwitch android:id="@id/switch_allow_answer" style="@style/UiDialogSwitchStyle" />
+                    </LinearLayout>
+                    <LinearLayout android:orientation="horizontal" android:id="@id/layout_publish_result_to_student" android:layout_marginBottom="@dimen/controlSpaceWide" style="@style/UiDialogGroupUpStyleBottom">
+                        <com.metamoji.ui.common.UiTextView android:layout_marginRight="@dimen/controlSpace" android:text="@string/MMJNT_LSTR_SURVEY_UNIT_PUBLISH_RESULT_TO_STUDENT" style="@style/UiDialogLabelStyle" />
+                        <com.metamoji.ui.common.UiSwitch android:id="@id/switch_publish_result_to_student" style="@style/UiDialogSwitchStyle" />
+                    </LinearLayout>
+                    <LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="match_parent">
+                        <com.metamoji.ui.common.UiButton android:layout_gravity="left" android:id="@id/clearAllAnswerButton" android:layout_width="wrap_content" android:layout_height="wrap_content" android:minWidth="100.0dp" local:button_type="normal" local:maintitle="@string/MMJNT_LSTR_SURVEY_UNIT_CLEAR_ALL_ANSWERS" local:maintitle_gravity="center_horizontal" />
+                        <View android:layout_width="0.0dp" android:layout_height="0.0dp" android:layout_weight="1.0" />
+                        <com.metamoji.ui.common.UiButton android:layout_gravity="right" android:id="@id/settingsButton" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="10.0dp" android:minWidth="100.0dp" local:button_type="normal" local:maintitle="@string/MMJNT_LSTR_SURVEY_UNIT_SETTING" local:maintitle_gravity="center_horizontal" />
+                    </LinearLayout>
+                </LinearLayout>
+            </LinearLayout>
+        </ScrollView>
+    </LinearLayout>
+</RelativeLayout>

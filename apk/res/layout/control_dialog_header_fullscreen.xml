@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout style="@style/UiDialogHeaderFullScreenStyle"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <com.metamoji.ui.common.UiButtonHeader android:layout_gravity="start|center" android:id="@id/dlg_left_button" android:paddingTop="@dimen/headerButtonPaddingTop" android:layout_width="wrap_content" android:layout_height="match_parent" />
+    <com.metamoji.ui.common.UiTextView android:id="@id/dlg_title" style="@style/UiDialogTitleStyle" />
+    <com.metamoji.ui.common.UiButtonHeader android:layout_gravity="end|center" android:id="@id/dlg_right_button" android:paddingTop="@dimen/headerButtonPaddingTop" android:layout_width="wrap_content" android:layout_height="match_parent" />
+</LinearLayout>

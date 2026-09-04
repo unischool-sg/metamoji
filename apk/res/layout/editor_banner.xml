@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout android:id="@id/editor_banner" android:background="@color/historytabbar_background" android:visibility="gone" android:layout_width="match_parent" android:layout_height="50.0dp"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <LinearLayout android:orientation="vertical" android:layout_width="match_parent" android:layout_height="wrap_content">
+        <ImageView android:layout_gravity="center" android:id="@id/bannerView" android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/banner_metamojinote_ja" />
+    </LinearLayout>
+    <LinearLayout android:layout_gravity="center" android:orientation="vertical" android:layout_width="match_parent" android:layout_height="wrap_content">
+        <ImageView android:layout_gravity="right" android:id="@id/showBannerHideDialogView" android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/icon_banner_hide_info" />
+    </LinearLayout>
+</FrameLayout>

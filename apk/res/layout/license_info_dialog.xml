@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout android:paddingLeft="10.0dp" android:paddingTop="10.0dp" android:paddingRight="10.0dp" android:paddingBottom="10.0dp"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:local="http://schemas.android.com/apk/res-auto">
+    <include layout="@layout/control_dialog_background_center" />
+    <LinearLayout style="@style/UiDialogCenterStyle">
+        <include layout="@layout/control_dialog_header" />
+        <TextView android:textSize="18.0dp" android:textStyle="bold" android:gravity="center" android:id="@id/license_message1" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_margin="20.0dp" android:text="message1" />
+        <TextView android:textSize="18.0dp" android:textStyle="bold" android:gravity="center" android:id="@id/license_message2" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_margin="20.0dp" android:text="message2" />
+        <TextView android:textSize="16.0dp" android:gravity="center" android:id="@id/license_message3" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_margin="20.0dp" android:text="message3" />
+        <com.metamoji.ui.common.UiButton android:gravity="center" android:id="@id/license_info_ok_button" android:paddingLeft="40.0dp" android:paddingTop="10.0dp" android:paddingRight="40.0dp" android:paddingBottom="10.0dp" android:layout_width="match_parent" android:layout_height="wrap_content" local:button_type="sub" local:maintitle="@string/Msg_OK" />
+    </LinearLayout>
+</RelativeLayout>

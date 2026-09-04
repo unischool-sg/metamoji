@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout android:layout_width="match_parent" android:layout_height="match_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <include layout="@layout/control_dialog_background" />
+    <LinearLayout android:orientation="vertical" android:id="@id/control_dialog" android:paddingLeft="@dimen/dialogPaddingLeft" android:paddingTop="@dimen/dialogPaddingTop" android:paddingRight="@dimen/dialogPaddingRight" android:paddingBottom="@dimen/dialogPaddingBottom" android:layout_width="match_parent" android:layout_height="match_parent" android:layout_alignParentRight="true">
+        <include layout="@layout/control_dialog_header" />
+        <LinearLayout android:orientation="vertical" android:id="@id/control_dialog_body" android:paddingLeft="0.0dp" android:paddingTop="0.0dp" android:paddingRight="0.0dp" android:paddingBottom="0.0dp" android:layout_width="match_parent" android:layout_height="0.0dp" android:layout_weight="1.0">
+            <LinearLayout android:gravity="center" android:orientation="horizontal" android:paddingLeft="@dimen/bodyPaddingLeft" android:paddingTop="6.0dp" android:paddingRight="@dimen/bodyPaddingRight" android:paddingBottom="8.0dp" android:layout_width="match_parent" android:layout_height="wrap_content">
+                <com.metamoji.ui.common.UiButton android:id="@id/csv_btn" android:layout_width="wrap_content" android:layout_height="wrap_content" android:minWidth="100.0dp" app:button_type="normal" app:maintitle="@string/MMJNT_LSTR_SCORELISTDLG_BTN_CSV" app:maintitle_gravity="center_horizontal" />
+                <View android:layout_width="0.0dp" android:layout_height="0.0dp" android:layout_weight="1.0" />
+                <LinearLayout android:gravity="center" android:orientation="horizontal" android:id="@id/reload_layout" android:visibility="gone" android:layout_width="wrap_content" android:layout_height="wrap_content">
+                    <com.metamoji.ui.common.UiTextView android:textStyle="bold" android:textColor="@color/text_standard" android:gravity="left|center" android:layout_width="wrap_content" android:layout_height="match_parent" android:text="@string/MMJNT_LSTR_SCORELISTDLG_AUTORELOAD" android:singleLine="true" />
+                    <LinearLayout android:layout_gravity="center_vertical" android:background="#1e000000" android:padding="1.0dp" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="4.0dp">
+                        <com.metamoji.ui.common.UiSwitch android:layout_gravity="center_vertical" android:id="@id/autoReloadSwitch" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_margin="0.0dp" android:layout_marginLeft="@dimen/controlSpace" style="@style/UiDialogSwitchStyle" />
+                    </LinearLayout>
+                    <com.metamoji.ui.common.UiButton android:id="@id/reload_btn" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="12.0dp" android:minWidth="100.0dp" app:button_type="normal" app:maintitle="@string/MMJNT_LSTR_SCORELISTDLG_RELOAD_BTN" app:maintitle_gravity="center_horizontal" />
+                </LinearLayout>
+            </LinearLayout>
+            <View android:id="@id/separator" android:background="@drawable/dlg_header_separator" android:layout_width="match_parent" android:layout_height="2.0dp" android:layout_marginStart="1.0dp" android:layout_marginEnd="1.0dp" />
+            <com.metamoji.forSchool.ui.UiHeaderListView android:id="@id/list_view" android:layout_width="match_parent" android:layout_height="0.0dp" android:layout_weight="1.0" />
+        </LinearLayout>
+    </LinearLayout>
+    <com.metamoji.ui.CustomMenuView android:id="@id/CustomMenuView" android:layout_width="match_parent" android:layout_height="match_parent" />
+</RelativeLayout>

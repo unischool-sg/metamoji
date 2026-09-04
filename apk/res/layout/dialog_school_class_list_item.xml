@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:orientation="horizontal" android:paddingLeft="2.0dp" android:paddingTop="1.0dp" android:paddingRight="2.0dp" android:paddingBottom="1.0dp" android:layout_width="match_parent" android:layout_height="wrap_content"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <CheckBox android:layout_gravity="center" android:id="@id/checkBox" android:paddingTop="6.0dp" android:paddingBottom="6.0dp" android:layout_width="24.0dp" android:layout_height="24.0dp" android:layout_marginLeft="4.0dp" android:button="@drawable/cabinet_check_box" />
+    <TextView android:textSize="14.0dp" android:textColor="@color/black" android:gravity="left|center" android:layout_gravity="left|center" android:id="@id/textView" android:layout_width="match_parent" android:layout_height="match_parent" android:layout_marginLeft="4.0dp" android:maxLines="1" android:singleLine="true" />
+</LinearLayout>

@@ -1,0 +1,99 @@
+.class Lcom/metamoji/lb/LbDownloadUtil$1;
+.super Ljava/lang/Object;
+.source "LbDownloadUtil.java"
+
+# interfaces
+.implements Ljava/lang/Runnable;
+
+
+# annotations
+.annotation system Ldalvik/annotation/EnclosingMethod;
+    value = Lcom/metamoji/lb/LbDownloadUtil;->doDownload(Ljava/lang/String;Ljava/io/File;Lcom/metamoji/lb/LbDownloadUtil$ILbDownloadUtilProgress;)Ljava/util/Map;
+.end annotation
+
+.annotation system Ldalvik/annotation/InnerClass;
+    accessFlags = 0x0
+    name = null
+.end annotation
+
+
+# instance fields
+.field final synthetic this$0:Lcom/metamoji/lb/LbDownloadUtil;
+
+.field final synthetic val$progressDlg:Lcom/metamoji/lb/LbDownloadUtil$ILbDownloadUtilProgress;
+
+.field final synthetic val$url:Ljava/lang/String;
+
+
+# direct methods
+.method constructor <init>(Lcom/metamoji/lb/LbDownloadUtil;Lcom/metamoji/lb/LbDownloadUtil$ILbDownloadUtilProgress;Ljava/lang/String;)V
+    .locals 0
+    .annotation system Ldalvik/annotation/MethodParameters;
+        accessFlags = {
+            0x8010,
+            0x1010,
+            0x1010
+        }
+        names = {
+            null,
+            null,
+            null
+        }
+    .end annotation
+
+    .annotation system Ldalvik/annotation/Signature;
+        value = {
+            "()V"
+        }
+    .end annotation
+
+    .line 109
+    iput-object p1, p0, Lcom/metamoji/lb/LbDownloadUtil$1;->this$0:Lcom/metamoji/lb/LbDownloadUtil;
+
+    iput-object p2, p0, Lcom/metamoji/lb/LbDownloadUtil$1;->val$progressDlg:Lcom/metamoji/lb/LbDownloadUtil$ILbDownloadUtilProgress;
+
+    iput-object p3, p0, Lcom/metamoji/lb/LbDownloadUtil$1;->val$url:Ljava/lang/String;
+
+    invoke-direct {p0}, Ljava/lang/Object;-><init>()V
+
+    return-void
+.end method
+
+
+# virtual methods
+.method public run()V
+    .locals 5
+
+    .line 112
+    new-instance v0, Lcom/metamoji/lb/LbDownloadUtil$LbDownloadTask;
+
+    iget-object v1, p0, Lcom/metamoji/lb/LbDownloadUtil$1;->this$0:Lcom/metamoji/lb/LbDownloadUtil;
+
+    invoke-direct {v0, v1}, Lcom/metamoji/lb/LbDownloadUtil$LbDownloadTask;-><init>(Lcom/metamoji/lb/LbDownloadUtil;)V
+
+    .line 113
+    iget-object v1, p0, Lcom/metamoji/lb/LbDownloadUtil$1;->val$progressDlg:Lcom/metamoji/lb/LbDownloadUtil$ILbDownloadUtilProgress;
+
+    if-eqz v1, :cond_0
+
+    .line 114
+    invoke-interface {v1, v0}, Lcom/metamoji/lb/LbDownloadUtil$ILbDownloadUtilProgress;->setCancelableTask(Lcom/metamoji/lb/LbDownloadUtil$LbDownloadTask;)V
+
+    .line 118
+    :cond_0
+    sget-object v1, Landroid/os/AsyncTask;->THREAD_POOL_EXECUTOR:Ljava/util/concurrent/Executor;
+
+    const/4 v2, 0x1
+
+    new-array v2, v2, [Ljava/lang/String;
+
+    const/4 v3, 0x0
+
+    iget-object v4, p0, Lcom/metamoji/lb/LbDownloadUtil$1;->val$url:Ljava/lang/String;
+
+    aput-object v4, v2, v3
+
+    invoke-virtual {v0, v1, v2}, Lcom/metamoji/lb/LbDownloadUtil$LbDownloadTask;->executeOnExecutor(Ljava/util/concurrent/Executor;[Ljava/lang/Object;)Landroid/os/AsyncTask;
+
+    return-void
+.end method

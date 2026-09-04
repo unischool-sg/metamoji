@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout android:id="@id/menubar" android:layout_width="match_parent" android:layout_height="@dimen/menu_bar_na_h"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <ImageView android:layout_gravity="bottom" android:layout_width="match_parent" android:layout_height="@dimen/menu_bar_na_back_h" android:src="@drawable/accessory_bar_back" android:scaleType="fitXY" />
+    <com.metamoji.mazec.ui.MenuBarLayout android:gravity="center_vertical" android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="@dimen/menu_bar_na_h">
+        <ImageView android:id="@id/menu" android:layout_width="@dimen/menu_bar_button_na_w" android:layout_height="@dimen/menu_bar_button_na_h" android:layout_marginLeft="@dimen/menu_bar_na_button_interval" android:src="@drawable/menu_button_na" android:scaleType="fitXY" />
+        <View android:layout_width="0.0dp" android:layout_height="match_parent" android:layout_weight="1.0" />
+        <ImageView android:id="@id/cursor_left_key" android:layout_width="@dimen/menu_bar_button_na_w" android:layout_height="@dimen/menu_bar_button_na_h" android:layout_marginLeft="@dimen/menu_bar_na_button_interval" android:src="@drawable/cursor_left_key_na" android:scaleType="fitXY" />
+        <View android:id="@id/spacer0" android:layout_width="0.0dp" android:layout_height="match_parent" />
+        <ImageView android:id="@id/cursor_right_key" android:layout_width="@dimen/menu_bar_button_na_w" android:layout_height="@dimen/menu_bar_button_na_h" android:layout_marginLeft="@dimen/menu_bar_na_button_interval" android:src="@drawable/cursor_right_key_na" android:scaleType="fitXY" />
+        <View android:id="@id/spacer1" android:layout_width="0.0dp" android:layout_height="match_parent" />
+        <FrameLayout android:id="@id/spece_frame" android:layout_width="@dimen/menu_bar_button_na_w" android:layout_height="@dimen/menu_bar_button_na_h" android:layout_marginLeft="@dimen/menu_bar_na_button_interval">
+            <ImageView android:id="@id/enter_space_g" android:layout_width="match_parent" android:layout_height="match_parent" android:src="@drawable/enter_space_na" android:scaleType="fitXY" />
+            <ImageView android:id="@id/enter_space_hw" android:layout_width="match_parent" android:layout_height="match_parent" android:src="@drawable/enter_space_hw_na" android:scaleType="fitXY" />
+            <ImageView android:id="@id/enter_space_fw" android:layout_width="match_parent" android:layout_height="match_parent" android:src="@drawable/enter_space_fw_na" android:scaleType="fitXY" />
+        </FrameLayout>
+        <View android:id="@id/spacer2" android:layout_width="0.0dp" android:layout_height="match_parent" />
+        <FrameLayout android:id="@id/delete_frame" android:layout_width="@dimen/menu_bar_button_na_w" android:layout_height="@dimen/menu_bar_button_na_h" android:layout_marginLeft="@dimen/menu_bar_na_button_interval">
+            <ImageView android:id="@id/delete_backward" android:layout_width="match_parent" android:layout_height="match_parent" android:src="@drawable/backspace_na" android:scaleType="fitXY" />
+            <ImageView android:id="@id/delete_stroke" android:layout_width="match_parent" android:layout_height="match_parent" android:src="@drawable/delete_stroke_na" android:scaleType="fitXY" />
+        </FrameLayout>
+        <View android:id="@id/spacer3" android:layout_width="0.0dp" android:layout_height="match_parent" />
+        <FrameLayout android:id="@id/enter_frame" android:layout_width="@dimen/menu_bar_right_button_na_w" android:layout_height="@dimen/menu_bar_button_na_h" android:layout_marginLeft="@dimen/menu_bar_na_button_interval">
+            <ImageView android:id="@id/new_line" android:layout_width="match_parent" android:layout_height="match_parent" android:src="@drawable/new_line_na" android:scaleType="fitXY" />
+            <ImageView android:id="@id/im_action" android:layout_width="match_parent" android:layout_height="match_parent" android:src="@drawable/im_action" android:scaleType="fitXY" />
+            <ImageView android:id="@id/enter_stroke" android:layout_width="match_parent" android:layout_height="match_parent" android:src="@drawable/enter_stroke_na" android:scaleType="fitXY" />
+            <ImageView android:id="@id/enter_convert" android:layout_width="match_parent" android:layout_height="match_parent" android:src="@drawable/enter_convert_na" android:scaleType="fitXY" />
+            <ImageView android:id="@id/skip_reedit" android:layout_width="match_parent" android:layout_height="match_parent" android:src="@drawable/skip_reedit_na" android:scaleType="fitXY" />
+        </FrameLayout>
+    </com.metamoji.mazec.ui.MenuBarLayout>
+</FrameLayout>

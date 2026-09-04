@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:orientation="vertical" android:layout_width="match_parent" android:layout_height="match_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <com.metamoji.noteanytime.FrameLayoutDetectableSoftInput android:id="@id/detectable_soft_input" android:layout_width="match_parent" android:layout_height="0.0dp" android:layout_weight="1.0">
+        <include layout="@layout/activity_editor_core" />
+        <FrameLayout android:id="@id/direction_velocity_view" android:visibility="gone" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="16.0dp">
+            <TextView android:textStyle="bold" android:textColor="@color/black" android:id="@id/direction_velocity_text" android:background="#99ffffff" android:padding="4.0dp" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="0.0" />
+        </FrameLayout>
+    </com.metamoji.noteanytime.FrameLayoutDetectableSoftInput>
+    <FrameLayout android:id="@id/softkeyboard_frame" android:visibility="gone" android:layout_width="match_parent" android:layout_height="wrap_content">
+        <FrameLayout android:id="@id/inputArea" android:visibility="gone" android:layout_width="match_parent" android:layout_height="wrap_content" />
+    </FrameLayout>
+</LinearLayout>

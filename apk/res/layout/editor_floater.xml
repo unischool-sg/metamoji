@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:orientation="horizontal" android:id="@id/floater_layout" android:background="@null" android:paddingLeft="10.0dp" android:paddingTop="4.0dp" android:paddingRight="10.0dp" android:paddingBottom="10.0dp" android:clickable="true" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginRight="48.0dp" android:layout_alignParentTop="true" android:layout_alignParentRight="true"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <ImageButton android:id="@id/floater_undo" android:background="@null" android:layout_width="40.0dp" android:layout_height="40.0dp" android:scaleType="fitXY" android:contentDescription="@null" />
+    <Space android:layout_width="0.0dp" android:layout_height="4.0dp" />
+    <ImageButton android:id="@id/floater_redo" android:background="@null" android:layout_width="40.0dp" android:layout_height="40.0dp" android:scaleType="fitXY" android:contentDescription="@null" />
+</LinearLayout>

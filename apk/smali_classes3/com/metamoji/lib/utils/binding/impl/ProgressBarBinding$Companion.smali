@@ -1,0 +1,139 @@
+.class public final Lcom/metamoji/lib/utils/binding/impl/ProgressBarBinding$Companion;
+.super Ljava/lang/Object;
+.source "ProgressBarBinding.kt"
+
+
+# annotations
+.annotation system Ldalvik/annotation/EnclosingClass;
+    value = Lcom/metamoji/lib/utils/binding/impl/ProgressBarBinding;
+.end annotation
+
+.annotation system Ldalvik/annotation/InnerClass;
+    accessFlags = 0x19
+    name = "Companion"
+.end annotation
+
+.annotation system Ldalvik/annotation/SourceDebugExtension;
+    value = "SMAP\nProgressBarBinding.kt\nKotlin\n*S Kotlin\n*F\n+ 1 ProgressBarBinding.kt\ncom/metamoji/lib/utils/binding/impl/ProgressBarBinding$Companion\n+ 2 fake.kt\nkotlin/jvm/internal/FakeKt\n*L\n1#1,88:1\n1#2:89\n*E\n"
+.end annotation
+
+.annotation runtime Lkotlin/Metadata;
+    d1 = {
+        "\u0000*\n\u0002\u0018\u0002\n\u0002\u0010\u0000\n\u0002\u0008\u0003\n\u0002\u0018\u0002\n\u0000\n\u0002\u0018\u0002\n\u0000\n\u0002\u0018\u0002\n\u0000\n\u0002\u0018\u0002\n\u0002\u0010\u0008\n\u0002\u0008\u0003\u0008\u0086\u0003\u0018\u00002\u00020\u0001B\t\u0008\u0002\u00a2\u0006\u0004\u0008\u0002\u0010\u0003JH\u0010\u0004\u001a\u00020\u00052\u0006\u0010\u0006\u001a\u00020\u00072\u0006\u0010\u0008\u001a\u00020\t2\u000c\u0010\n\u001a\u0008\u0012\u0004\u0012\u00020\u000c0\u000b2\u0010\u0008\u0002\u0010\r\u001a\n\u0012\u0004\u0012\u00020\u000c\u0018\u00010\u000b2\u0010\u0008\u0002\u0010\u000e\u001a\n\u0012\u0004\u0012\u00020\u000c\u0018\u00010\u000b\u00a8\u0006\u000f"
+    }
+    d2 = {
+        "Lcom/metamoji/lib/utils/binding/impl/ProgressBarBinding$Companion;",
+        "",
+        "<init>",
+        "()V",
+        "create",
+        "Lcom/metamoji/lib/utils/binding/impl/ProgressBarBinding;",
+        "owner",
+        "Landroidx/lifecycle/LifecycleOwner;",
+        "view",
+        "Landroid/widget/ProgressBar;",
+        "data",
+        "Landroidx/lifecycle/LiveData;",
+        "",
+        "min",
+        "max",
+        "utils"
+    }
+    k = 0x1
+    mv = {
+        0x2,
+        0x2,
+        0x0
+    }
+    xi = 0x30
+.end annotation
+
+
+# direct methods
+.method private constructor <init>()V
+    .locals 0
+
+    .line 73
+    invoke-direct {p0}, Ljava/lang/Object;-><init>()V
+
+    return-void
+.end method
+
+.method public synthetic constructor <init>(Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+    .locals 0
+
+    invoke-direct {p0}, Lcom/metamoji/lib/utils/binding/impl/ProgressBarBinding$Companion;-><init>()V
+
+    return-void
+.end method
+
+.method public static synthetic create$default(Lcom/metamoji/lib/utils/binding/impl/ProgressBarBinding$Companion;Landroidx/lifecycle/LifecycleOwner;Landroid/widget/ProgressBar;Landroidx/lifecycle/LiveData;Landroidx/lifecycle/LiveData;Landroidx/lifecycle/LiveData;ILjava/lang/Object;)Lcom/metamoji/lib/utils/binding/impl/ProgressBarBinding;
+    .locals 1
+
+    and-int/lit8 p7, p6, 0x8
+
+    const/4 v0, 0x0
+
+    if-eqz p7, :cond_0
+
+    move-object p4, v0
+
+    :cond_0
+    and-int/lit8 p6, p6, 0x10
+
+    if-eqz p6, :cond_1
+
+    move-object p5, v0
+
+    .line 74
+    :cond_1
+    invoke-virtual/range {p0 .. p5}, Lcom/metamoji/lib/utils/binding/impl/ProgressBarBinding$Companion;->create(Landroidx/lifecycle/LifecycleOwner;Landroid/widget/ProgressBar;Landroidx/lifecycle/LiveData;Landroidx/lifecycle/LiveData;Landroidx/lifecycle/LiveData;)Lcom/metamoji/lib/utils/binding/impl/ProgressBarBinding;
+
+    move-result-object p0
+
+    return-object p0
+.end method
+
+
+# virtual methods
+.method public final create(Landroidx/lifecycle/LifecycleOwner;Landroid/widget/ProgressBar;Landroidx/lifecycle/LiveData;Landroidx/lifecycle/LiveData;Landroidx/lifecycle/LiveData;)Lcom/metamoji/lib/utils/binding/impl/ProgressBarBinding;
+    .locals 1
+    .annotation system Ldalvik/annotation/Signature;
+        value = {
+            "(",
+            "Landroidx/lifecycle/LifecycleOwner;",
+            "Landroid/widget/ProgressBar;",
+            "Landroidx/lifecycle/LiveData<",
+            "Ljava/lang/Integer;",
+            ">;",
+            "Landroidx/lifecycle/LiveData<",
+            "Ljava/lang/Integer;",
+            ">;",
+            "Landroidx/lifecycle/LiveData<",
+            "Ljava/lang/Integer;",
+            ">;)",
+            "Lcom/metamoji/lib/utils/binding/impl/ProgressBarBinding;"
+        }
+    .end annotation
+
+    const-string v0, "owner"
+
+    invoke-static {p1, v0}, Lkotlin/jvm/internal/Intrinsics;->checkNotNullParameter(Ljava/lang/Object;Ljava/lang/String;)V
+
+    const-string/jumbo v0, "view"
+
+    invoke-static {p2, v0}, Lkotlin/jvm/internal/Intrinsics;->checkNotNullParameter(Ljava/lang/Object;Ljava/lang/String;)V
+
+    const-string v0, "data"
+
+    invoke-static {p3, v0}, Lkotlin/jvm/internal/Intrinsics;->checkNotNullParameter(Ljava/lang/Object;Ljava/lang/String;)V
+
+    .line 75
+    new-instance v0, Lcom/metamoji/lib/utils/binding/impl/ProgressBarBinding;
+
+    invoke-direct {v0, p3, p4, p5}, Lcom/metamoji/lib/utils/binding/impl/ProgressBarBinding;-><init>(Landroidx/lifecycle/LiveData;Landroidx/lifecycle/LiveData;Landroidx/lifecycle/LiveData;)V
+
+    invoke-virtual {v0, p1, p2}, Lcom/metamoji/lib/utils/binding/impl/ProgressBarBinding;->connect(Landroidx/lifecycle/LifecycleOwner;Landroid/widget/ProgressBar;)V
+
+    return-object v0
+.end method

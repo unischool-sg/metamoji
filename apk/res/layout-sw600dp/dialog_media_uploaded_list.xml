@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:local="http://schemas.android.com/apk/res-auto">
+    <include layout="@layout/control_dialog_background" />
+    <LinearLayout style="@style/UiDialogStyle">
+        <include layout="@layout/control_dialog_header" />
+        <LinearLayout style="@style/UiDialogBodyStyle">
+            <com.metamoji.ui.common.UiButton android:enabled="false" android:layout_gravity="left" android:id="@id/medialist_delete" android:visibility="gone" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/controlSpaceWide" local:button_type="sub" local:maintitle="@string/Cabinet_Button_Delete" />
+            <ListView android:id="@id/medialist_list" android:background="@drawable/collabo_bar_list_frame" android:layout_width="match_parent" android:layout_height="300.0dp" android:choiceMode="singleChoice" />
+            <Space android:layout_width="match_parent" android:layout_height="@dimen/controlSpaceWide" />
+            <LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content">
+                <com.metamoji.ui.common.UiImageButton android:id="@id/medialist_prev" android:background="@null" android:layout_width="40.0dp" android:layout_height="40.0dp" android:src="@drawable/vc_player_return" android:contentDescription="@null" />
+                <com.metamoji.ui.common.UiImageButton android:id="@id/medialist_play" android:background="@null" android:layout_width="40.0dp" android:layout_height="40.0dp" android:layout_marginLeft="@dimen/controlSpace" android:src="@drawable/vc_player_play" android:contentDescription="@null" />
+                <com.metamoji.ui.common.UiImageButton android:id="@id/medialist_pause" android:background="@null" android:visibility="gone" android:layout_width="40.0dp" android:layout_height="40.0dp" android:layout_marginLeft="@dimen/controlSpace" android:src="@drawable/vc_player_pause" android:contentDescription="@null" />
+                <com.metamoji.ui.common.UiImageButton android:id="@id/medialist_next" android:background="@null" android:layout_width="40.0dp" android:layout_height="40.0dp" android:layout_marginLeft="@dimen/controlSpace" android:src="@drawable/vc_player_send" android:contentDescription="@null" />
+                <SeekBar android:layout_gravity="center_vertical" android:id="@id/medialist_slider" android:layout_width="0.0dp" android:layout_marginLeft="@dimen/controlSpaceWide" android:layout_weight="1.0" style="@style/UiDialogSmallSliderStyle" />
+            </LinearLayout>
+        </LinearLayout>
+    </LinearLayout>
+</RelativeLayout>

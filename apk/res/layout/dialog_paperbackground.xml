@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout android:layout_width="wrap_content" android:layout_height="wrap_content"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:local="http://schemas.android.com/apk/res-auto">
+    <include layout="@layout/control_dialog_background" />
+    <LinearLayout style="@style/UiDialogStyle">
+        <include layout="@layout/control_dialog_header" />
+        <ScrollView style="@style/UiDialogScrollViewStyle">
+            <LinearLayout style="@style/UiDialogBodyWithScrollStyle">
+                <TextView android:text="@string/PaperSetting_Background" style="@style/UiDialogGroupTitleStyle" />
+                <LinearLayout android:orientation="vertical" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/controlSpaceWide" style="@style/UiDialogGroupDownStyle">
+                    <com.metamoji.ui.common.UiRadioGroup android:orientation="vertical" android:id="@id/dlg_paper_bk_gr2" android:layout_width="match_parent" android:layout_height="wrap_content" local:justify_width_withlargestchild="true">
+                        <com.metamoji.ui.common.UiRadioButton android:id="@id/dlg_paper_bk_btn_3" android:layout_width="match_parent" android:layout_height="wrap_content" local:maintitle="@string/SheetBackGround_ImageStyleCenter" local:radiobutton_type="top" />
+                        <com.metamoji.ui.common.UiRadioButton android:id="@id/dlg_paper_bk_btn_6" android:layout_width="match_parent" android:layout_height="wrap_content" local:maintitle="@string/SheetBackGround_ImageStyleFitToPaper_KeepsAspectRatio" local:radiobutton_type="mid" />
+                        <com.metamoji.ui.common.UiRadioButton android:id="@id/dlg_paper_bk_btn_4" android:layout_width="match_parent" android:layout_height="wrap_content" local:maintitle="@string/SheetBackGround_ImageStyleFitToPaper" local:radiobutton_type="mid" />
+                        <com.metamoji.ui.common.UiRadioButton android:id="@id/dlg_paper_bk_btn_5" android:layout_width="match_parent" android:layout_height="wrap_content" local:maintitle="@string/SheetBackGround_ImageStyleTiled" local:radiobutton_type="bottom" />
+                    </com.metamoji.ui.common.UiRadioGroup>
+                </LinearLayout>
+                <TextView android:text="@string/SheetBackGround_Image" style="@style/UiDialogGroupTitleStyle" />
+                <LinearLayout android:orientation="vertical" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/controlSpaceWide" style="@style/UiDialogGroupDownStyle">
+                    <com.metamoji.ui.common.UiRadioGroup android:orientation="horizontal" android:id="@id/dlg_paper_bk_gr_imgtype" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/controlSpace">
+                        <com.metamoji.ui.common.UiRadioButton android:id="@id/dlg_paper_bk_btn_jpg" android:layout_width="0.0dp" android:layout_height="wrap_content" android:layout_weight="1.0" local:maintitle="@string/SheetBackGround_ImageTypeJpeg" local:radiobutton_type="left" />
+                        <com.metamoji.ui.common.UiRadioButton android:id="@id/dlg_paper_bk_btn_png" android:layout_width="0.0dp" android:layout_height="wrap_content" android:layout_weight="1.0" local:maintitle="@string/SheetBackGround_ImageTypePng" local:radiobutton_type="right" />
+                    </com.metamoji.ui.common.UiRadioGroup>
+                    <com.metamoji.ui.common.UiRadioGroup android:orientation="horizontal" android:id="@id/dlg_paper_bk_gr_resolution" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/controlSpace">
+                        <com.metamoji.ui.common.UiRadioButton android:id="@id/dlg_paper_bk_btn_normal" android:layout_width="0.0dp" android:layout_height="wrap_content" android:layout_weight="1.0" local:maintitle="@string/Image_Resolution_Standard" local:radiobutton_type="left" />
+                        <com.metamoji.ui.common.UiRadioButton android:id="@id/dlg_paper_bk_btn_high" android:layout_width="0.0dp" android:layout_height="wrap_content" android:layout_weight="1.0" local:maintitle="@string/Image_Resolution_High" local:radiobutton_type="right" />
+                    </com.metamoji.ui.common.UiRadioGroup>
+                    <TextView android:text="@string/TextUnitStyle_Opacity" style="@style/UiDialogGroupTitleStyle" />
+                    <LinearLayout android:orientation="vertical" android:clipChildren="false" android:clipToPadding="false" android:layout_marginBottom="@dimen/controlSpace" style="@style/UiDialogGroupDownStyle">
+                        <com.metamoji.ui.common.UiPlainSlider android:id="@id/image_opacity" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/controlSpace" />
+                    </LinearLayout>
+                    <LinearLayout android:gravity="right" android:orientation="horizontal" android:id="@id/dlg_paper_bk_img_layout" android:layout_width="match_parent" android:layout_height="wrap_content">
+                        <ImageView android:id="@id/dlg_paper_bk_img_preview" android:layout_width="32.0dp" android:layout_height="32.0dp" android:layout_marginRight="@dimen/controlSpace" />
+                        <com.metamoji.ui.common.UiButton android:id="@id/dlg_paper_bk_btn_inport" android:layout_width="wrap_content" android:layout_height="wrap_content" local:button_type="sub" local:maintitle="@string/SheetBackGround_OpenPhoto" />
+                    </LinearLayout>
+                </LinearLayout>
+            </LinearLayout>
+        </ScrollView>
+    </LinearLayout>
+</RelativeLayout>

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:gravity="bottom" android:layout_gravity="end" android:orientation="vertical" android:layout_width="match_parent" android:layout_height="match_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:local="http://schemas.android.com/apk/res-auto">
+    <LinearLayout android:gravity="center_vertical" android:orientation="horizontal" android:background="@drawable/vc_player_background" android:paddingLeft="2.0dp" android:paddingRight="2.0dp" android:layout_width="match_parent" android:layout_height="44.0dp">
+        <com.metamoji.ui.common.UiImageButton android:id="@id/vc_player_menu" android:background="@drawable/dwindow_flat_button_background" android:visibility="gone" android:layout_width="40.0dp" android:layout_height="40.0dp" android:src="@drawable/bar_btn_menu" android:contentDescription="@null" />
+        <LinearLayout android:gravity="center_vertical" android:orientation="horizontal" android:id="@id/vc_player_editor_layout" android:background="@null" android:layout_width="wrap_content" android:layout_height="match_parent">
+            <com.metamoji.ui.common.UiImageButton android:id="@id/vc_player_playlist" android:background="@drawable/dwindow_flat_button_background" android:layout_width="40.0dp" android:layout_height="40.0dp" android:src="@drawable/vc_player_playlist" android:contentDescription="@null" />
+            <com.metamoji.ui.common.UiImageButton android:id="@id/vc_player_wave_palette" android:background="@drawable/dwindow_flat_button_background" android:layout_width="40.0dp" android:layout_height="40.0dp" android:src="@drawable/vc_player_wave_palette" android:contentDescription="@null" />
+            <Space android:layout_width="5.0dp" android:layout_height="0.0dp" />
+            <View android:background="@color/vc_player_border" android:layout_width="1.0dp" android:layout_height="match_parent" />
+            <Space android:layout_width="5.0dp" android:layout_height="0.0dp" />
+            <LinearLayout android:gravity="center_vertical" android:orientation="horizontal" android:id="@id/vc_player_add_label_layout" android:background="@null" android:layout_width="wrap_content" android:layout_height="match_parent">
+                <com.metamoji.ui.common.UiImageButton android:id="@id/vc_player_add_label" android:background="@drawable/dwindow_flat_button_background" android:layout_width="40.0dp" android:layout_height="40.0dp" android:src="@drawable/vc_player_add_label" android:contentDescription="@null" />
+                <Space android:layout_width="5.0dp" android:layout_height="0.0dp" />
+                <View android:background="@color/vc_player_border" android:layout_width="1.0dp" android:layout_height="match_parent" />
+                <Space android:layout_width="5.0dp" android:layout_height="0.0dp" />
+            </LinearLayout>
+        </LinearLayout>
+        <com.metamoji.ui.common.UiImageButton android:id="@id/vc_player_play" android:background="@drawable/dwindow_flat_button_background" android:layout_width="40.0dp" android:layout_height="40.0dp" android:src="@drawable/vc_player_play" android:contentDescription="@null" />
+        <com.metamoji.ui.common.UiImageButton android:id="@id/vc_player_backward_step" android:background="@drawable/dwindow_flat_button_background" android:layout_width="40.0dp" android:layout_height="40.0dp" android:src="@drawable/vc_player_backward_step" android:contentDescription="@null" />
+        <com.metamoji.ui.common.UiImageButton android:id="@id/vc_player_forward_step" android:background="@drawable/dwindow_flat_button_background" android:layout_width="40.0dp" android:layout_height="40.0dp" android:src="@drawable/vc_player_forward_step" android:contentDescription="@null" />
+        <com.metamoji.ui.common.UiImageButton android:id="@id/vc_player_return" android:background="@drawable/dwindow_flat_button_background" android:layout_width="40.0dp" android:layout_height="40.0dp" android:src="@drawable/vc_player_return" android:contentDescription="@null" />
+        <com.metamoji.ui.common.UiImageButton android:id="@id/vc_player_send" android:background="@drawable/dwindow_flat_button_background" android:layout_width="40.0dp" android:layout_height="40.0dp" android:src="@drawable/vc_player_send" android:contentDescription="@null" />
+        <Space android:layout_width="10.0dp" android:layout_height="0.0dp" />
+        <TextView android:textSize="12.0sp" android:id="@id/vc_player_elapsed" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="00:00:00" />
+        <RelativeLayout android:layout_width="0.0dp" android:layout_height="match_parent" android:layout_weight="1.0">
+            <SeekBar android:id="@id/vc_player_seekbar" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_centerInParent="true" style="@style/UiDialogSmallSliderStyle" />
+            <com.metamoji.ui.common.UiTextView android:textSize="12.0sp" android:gravity="center" android:id="@id/vc_player_title" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="2.0dp" android:singleLine="true" android:layout_alignParentTop="true" />
+        </RelativeLayout>
+        <TextView android:textSize="12.0sp" android:id="@id/vc_player_remaining" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="-00:00:00" />
+        <com.metamoji.ui.common.UiImageButton android:id="@id/vc_player_close" android:background="@drawable/dwindow_flat_button_background" android:layout_width="40.0dp" android:layout_height="40.0dp" android:src="@drawable/vc_player_close" android:contentDescription="@null" />
+    </LinearLayout>
+    <FrameLayout android:id="@id/vc_wave_scroll_view" android:background="@android:color/white" android:layout_width="match_parent" android:layout_height="75.0dp">
+        <com.metamoji.media.voice.ui.VcWaveView android:id="@id/vc_wave_view" android:layout_width="match_parent" android:layout_height="match_parent" />
+    </FrameLayout>
+</LinearLayout>

@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout android:layout_width="wrap_content" android:layout_height="wrap_content"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:local="http://schemas.android.com/apk/res-auto">
+    <include layout="@layout/control_dialog_background" />
+    <LinearLayout style="@style/UiDialogStyle">
+        <include layout="@layout/control_dialog_header" />
+        <ScrollView style="@style/UiDialogScrollViewStyle">
+            <LinearLayout style="@style/UiDialogBodyWithScrollStyle">
+                <com.metamoji.ui.common.UiButton android:id="@id/button_share" android:visibility="gone" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/controlSpaceWide" local:button_type="withsubmenu" local:maintitle="@string/ShareMenu_Share_Settings" />
+                <com.metamoji.ui.common.UiTextView android:id="@id/textview_functionsettings" android:text="@string/SystemOption_FunctionSetting" style="@style/UiDialogGroupTitleStyle" />
+                <LinearLayout android:orientation="horizontal" android:id="@id/SystemOptionGroup_ImageQualityChoice" style="@style/UiDialogGroupUpStyleTop">
+                    <com.metamoji.ui.common.UiTextView android:id="@id/textview_imagequalitychoice" android:layout_marginRight="@dimen/controlSpace" android:text="@string/CHECKLABEL_PICTURE_QUALITY_CHOICE_USED" style="@style/UiDialogLabelStyle" />
+                    <com.metamoji.ui.common.UiSwitch android:id="@id/switch_imagequelitychoice" style="@style/UiDialogSwitchStyle" />
+                </LinearLayout>
+                <LinearLayout android:orientation="horizontal" android:id="@id/SystemOptionGroup_GenerateHDImage" style="@style/UiDialogGroupUpStyleTop">
+                    <com.metamoji.ui.common.UiTextView android:id="@id/textview_generatehdimage" android:layout_marginRight="@dimen/controlSpace" android:text="@string/SystemOption_GenerateHDImage" style="@style/UiDialogLabelStyle" />
+                    <com.metamoji.ui.common.UiSwitch android:id="@id/switch_generatehdimage" style="@style/UiDialogSwitchStyle" />
+                </LinearLayout>
+                <LinearLayout android:orientation="horizontal" android:id="@id/SystemOptionGroup_SaveCameraroll" style="@style/UiDialogGroupUpStyleMid">
+                    <com.metamoji.ui.common.UiTextView android:id="@id/textview_savecameraroll" android:layout_marginRight="@dimen/controlSpace" android:text="@string/SystemOption_SaveCamerarollEx" style="@style/UiDialogLabelStyle" />
+                    <com.metamoji.ui.common.UiSwitch android:id="@id/switch_savecameraroll" style="@style/UiDialogSwitchStyle" />
+                </LinearLayout>
+                <LinearLayout android:orientation="horizontal" android:id="@id/SystemOptionGroup_SchoolPageType" android:visibility="gone" style="@style/UiDialogGroupUpStyleMid">
+                    <com.metamoji.ui.common.UiTextView android:id="@id/textview_schoolPageType" android:layout_marginRight="@dimen/controlSpace" android:text="@string/SCHOOL_DEFAULT_PAGE_TYPE" style="@style/UiDialogLabelStyle" />
+                    <LinearLayout android:background="@drawable/spinner_style" android:layout_width="wrap_content" android:layout_height="wrap_content">
+                        <Spinner android:id="@id/spinner_schoolPageType" style="@style/UiDialogSpinnerStyle" />
+                    </LinearLayout>
+                </LinearLayout>
+                <LinearLayout android:orientation="horizontal" android:layout_marginBottom="@dimen/controlSpaceWide" style="@style/UiDialogGroupUpStyleBottom">
+                    <com.metamoji.ui.common.UiTextView android:id="@id/textview_paintresponse" android:layout_marginRight="@dimen/controlSpace" android:text="@string/SystemOption_PaintResponse" style="@style/UiDialogLabelStyle" />
+                    <com.metamoji.ui.common.UiRadioGroup android:layout_gravity="end" android:orientation="horizontal" android:id="@id/radiogroup_paintresponse" android:layout_width="wrap_content" android:layout_height="wrap_content" local:justify_width_withlargestchild="true">
+                        <com.metamoji.ui.common.UiRadioButton android:id="@id/button_paintresponse_high" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/controlSpace" local:maintitle="@string/SystemOption_PaintResponse_High" local:radiobutton_type="small_left" />
+                        <com.metamoji.ui.common.UiRadioButton android:id="@id/button_paintresponse_middle" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/controlSpace" local:maintitle="@string/SystemOption_PaintResponse_Middle" local:radiobutton_type="small_center" />
+                        <com.metamoji.ui.common.UiRadioButton android:id="@id/button_paintresponse_low" android:layout_width="wrap_content" android:layout_height="wrap_content" local:maintitle="@string/SystemOption_PaintResponse_Low" local:radiobutton_type="small_right" />
+                    </com.metamoji.ui.common.UiRadioGroup>
+                </LinearLayout>
+                <com.metamoji.ui.common.UiTextView android:id="@id/textview_displaysettings" android:text="@string/SystemOption_DisplaySettings" style="@style/UiDialogGroupTitleStyle" />
+                <LinearLayout android:orientation="horizontal" android:id="@id/SystemOptionGroup_ShowHistoryTab" style="@style/UiDialogGroupUpStyleTop">
+                    <com.metamoji.ui.common.UiTextView android:layout_marginRight="@dimen/controlSpace" android:text="@string/SystemOption_ShowHistoryBar" style="@style/UiDialogLabelStyle" />
+                    <com.metamoji.ui.common.UiSwitch android:id="@id/switch_history_tab" style="@style/UiDialogSwitchStyle" />
+                </LinearLayout>
+                <LinearLayout android:orientation="horizontal" android:id="@id/SystemOptionGroup_CopiedShare" style="@style/UiDialogGroupUpStyleMid">
+                    <com.metamoji.ui.common.UiTextView android:layout_marginRight="@dimen/controlSpace" android:text="@string/Cabinet_CopiedShare" style="@style/UiDialogLabelStyle" />
+                    <com.metamoji.ui.common.UiSwitch android:id="@id/switch_copiedshare" style="@style/UiDialogSwitchStyle" />
+                </LinearLayout>
+                <LinearLayout android:orientation="vertical" android:id="@id/SystemOptionGroup_OneTapScroller" style="@style/UiDialogGroupUpStyleMid">
+                    <LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/controlSpace">
+                        <com.metamoji.ui.common.UiTextView android:id="@id/textview_onetapscroller" android:layout_marginRight="@dimen/controlSpace" android:text="@string/SystemOption_OneTapScroller" style="@style/UiDialogLabelStyle" />
+                        <com.metamoji.ui.common.UiSwitch android:id="@id/switch_onetapscroller" style="@style/UiDialogSwitchStyle" />
+                    </LinearLayout>
+                    <LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/controlSpace">
+                        <com.metamoji.ui.common.UiTextView android:gravity="end" android:layout_gravity="end" android:id="@id/textview_onetapscroller_location" android:layout_marginRight="@dimen/controlSpace" android:text="@string/SystemOption_OneTapScroller_Location" style="@style/UiDialogLabelStyle" />
+                        <com.metamoji.ui.common.UiRadioGroup android:layout_gravity="end" android:orientation="horizontal" android:id="@id/group_onetapscroller_location" android:layout_width="wrap_content" android:layout_height="wrap_content" local:justify_width_withlargestchild="true">
+                            <com.metamoji.ui.common.UiRadioButton android:id="@id/button1_onetapscroller_location" android:layout_width="wrap_content" android:layout_height="wrap_content" local:maintitle="@string/SystemOption_OneTapScroller_Location_Left" local:radiobutton_type="small_left" />
+                            <com.metamoji.ui.common.UiRadioButton android:id="@id/button2_onetapscroller_place" android:layout_width="wrap_content" android:layout_height="wrap_content" local:maintitle="@string/SystemOption_OneTapScroller_Location_Right" local:radiobutton_type="small_right" />
+                        </com.metamoji.ui.common.UiRadioGroup>
+                    </LinearLayout>
+                    <LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content">
+                        <com.metamoji.ui.common.UiTextView android:gravity="end" android:layout_gravity="end" android:id="@id/textview_onetapscroller_displaydeelay" android:layout_marginRight="@dimen/controlSpace" android:text="@string/SystemOption_OneTapScroller_DisplayDelay" style="@style/UiDialogLabelStyle" />
+                        <SeekBar android:id="@id/seekbar_onetapscroller_displaydeelay" android:max="5" style="@style/UiDialogSmallSliderStyle" />
+                    </LinearLayout>
+                </LinearLayout>
+                <LinearLayout android:orientation="horizontal" android:id="@id/SystemOptionGroup_ShowHover" style="@style/UiDialogGroupUpStyleMid">
+                    <com.metamoji.ui.common.UiTextView android:id="@id/textview_showhover" android:layout_marginRight="@dimen/controlSpace" android:text="@string/SystemOption_ShowHover" style="@style/UiDialogLabelStyle" />
+                    <com.metamoji.ui.common.UiSwitch android:id="@id/switch_showhover" style="@style/UiDialogSwitchStyle" />
+                </LinearLayout>
+                <LinearLayout android:orientation="vertical" android:id="@id/SystemOptionGroup_CommandButton" style="@style/UiDialogGroupUpStyleMid">
+                    <LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/controlSpace">
+                        <com.metamoji.ui.common.UiTextView android:id="@id/textview_commandbuttons" android:layout_marginRight="@dimen/controlSpace" android:text="@string/SystemOption_CommandButtons" style="@style/UiDialogLabelStyle" />
+                        <com.metamoji.ui.common.UiTextView android:gravity="end" android:layout_gravity="end" android:id="@id/textview_detailwindow_location" android:layout_marginRight="@dimen/controlSpace" android:text="@string/SystemOption_OneTapScroller_Location" style="@style/UiDialogLabelStyle" />
+                        <com.metamoji.ui.common.UiRadioGroup android:layout_gravity="end" android:orientation="horizontal" android:id="@id/group_commandbuttons" android:layout_width="wrap_content" android:layout_height="wrap_content" local:justify_width_withlargestchild="true">
+                            <com.metamoji.ui.common.UiRadioButton android:id="@id/button1_commandbuttons" android:layout_width="wrap_content" android:layout_height="wrap_content" local:maintitle="@string/SystemOption_CommandButtons_Left" local:radiobutton_type="small_left" />
+                            <com.metamoji.ui.common.UiRadioButton android:id="@id/button2_commandbuttons" android:layout_width="wrap_content" android:layout_height="wrap_content" local:maintitle="@string/SystemOption_CommandButtons_Right" local:radiobutton_type="small_right" />
+                        </com.metamoji.ui.common.UiRadioGroup>
+                    </LinearLayout>
+                    <LinearLayout android:orientation="horizontal" android:id="@id/layout_showWristGuardButton" android:visibility="gone" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="@dimen/controlSpace">
+                        <com.metamoji.ui.common.UiTextView android:gravity="end" android:layout_gravity="end" android:id="@id/textview_showWristGuardButton" android:layout_marginRight="@dimen/controlSpace" android:text="@string/WRISTGUARD_DISPSETTING_LABEL" style="@style/UiDialogLabelStyle" />
+                        <com.metamoji.ui.common.UiSwitch android:id="@id/switch_showWristGuardButton" style="@style/UiDialogSwitchStyle" />
+                    </LinearLayout>
+                    <LinearLayout android:orientation="horizontal" android:id="@id/layout_showDetailWindowButton" android:visibility="gone" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="@dimen/controlSpace">
+                        <com.metamoji.ui.common.UiTextView android:gravity="end" android:layout_gravity="end" android:id="@id/textview_showDetailWindowButton" android:layout_marginRight="@dimen/controlSpace" android:text="@string/DETAILWINDOW_DISPSETTING_LABEL" style="@style/UiDialogLabelStyle" />
+                        <com.metamoji.ui.common.UiSwitch android:id="@id/switch_showDetailWindowButton" style="@style/UiDialogSwitchStyle" />
+                    </LinearLayout>
+                </LinearLayout>
+                <LinearLayout android:orientation="vertical" android:id="@id/SystemOptionGroup_PositionMap" style="@style/UiDialogGroupUpStyleMid">
+                    <LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/controlSpace">
+                        <com.metamoji.ui.common.UiTextView android:id="@id/textview_positionmap" android:layout_marginRight="@dimen/controlSpace" android:text="@string/SystemOption_PositionMap" style="@style/UiDialogLabelStyle" />
+                        <com.metamoji.ui.common.UiSwitch android:id="@id/switch_positionmap" style="@style/UiDialogSwitchStyle" />
+                    </LinearLayout>
+                    <LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content">
+                        <com.metamoji.ui.common.UiTextView android:gravity="end" android:layout_gravity="end" android:id="@id/textview_positionmap_place" android:layout_marginRight="@dimen/controlSpace" android:text="@string/SystemOption_PositionMap_Place" style="@style/UiDialogLabelStyle" />
+                        <com.metamoji.ui.common.UiRadioGroup android:layout_gravity="end" android:orientation="horizontal" android:id="@id/group_positionmap" android:layout_width="wrap_content" android:layout_height="wrap_content" local:justify_width_withlargestchild="true">
+                            <com.metamoji.ui.common.UiRadioButton android:id="@id/button1_positionmap" android:layout_width="wrap_content" android:layout_height="wrap_content" local:maintitle="@string/SystemOption_PositionMap_BottomLeft" local:radiobutton_type="small_left" />
+                            <com.metamoji.ui.common.UiRadioButton android:id="@id/button2_positionmap" android:layout_width="wrap_content" android:layout_height="wrap_content" local:maintitle="@string/SystemOption_PositionMap_BottomRight" local:radiobutton_type="small_right" />
+                        </com.metamoji.ui.common.UiRadioGroup>
+                    </LinearLayout>
+                </LinearLayout>
+                <LinearLayout android:orientation="horizontal" android:id="@id/SystemOptionGroup_JumpEnabled" style="@style/UiDialogGroupUpStyleBottom">
+                    <com.metamoji.ui.common.UiTextView android:id="@id/textview_jumpEnabled" android:layout_marginRight="@dimen/controlSpace" android:text="@string/MMJNT_LSTR_LOCATION_JUMP" style="@style/UiDialogLabelStyle" />
+                    <com.metamoji.ui.common.UiSwitch android:id="@id/switch_jumpEnabled" style="@style/UiDialogSwitchStyle" />
+                </LinearLayout>
+                <com.metamoji.ui.common.UiTextView android:id="@id/textview_drawsettings" android:layout_marginTop="@dimen/controlSpaceWide" android:text="@string/SystemOption_DrawSettings" style="@style/UiDialogGroupTitleStyle" />
+                <LinearLayout android:orientation="vertical" android:layout_marginBottom="@dimen/controlSpaceWide" style="@style/UiDialogGroupUpStyle">
+                    <LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content">
+                        <com.metamoji.ui.common.UiTextView android:id="@id/textview_drawlongpress" android:layout_marginRight="@dimen/controlSpace" android:text="@string/SystemOption_DrawLongPress" style="@style/UiDialogLabelStyle" />
+                        <com.metamoji.ui.common.UiSwitch android:id="@id/switch_drawlongpress" style="@style/UiDialogSwitchStyle" />
+                    </LinearLayout>
+                    <LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content">
+                        <com.metamoji.ui.common.UiTextView android:gravity="end" android:layout_gravity="end" android:id="@id/textview_drawtime" android:layout_marginRight="@dimen/controlSpace" android:text="@string/SystemOption_DrawTime" style="@style/UiDialogLabelStyle" />
+                        <SeekBar android:id="@id/seekbar_drawtime" android:max="18" style="@style/UiDialogSmallSliderStyle" />
+                    </LinearLayout>
+                </LinearLayout>
+                <com.metamoji.ui.common.UiButton android:id="@id/SystemOption_TextModeSettings_btn" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/controlSpaceWide" local:button_type="withsubmenu" local:maintitle="@string/SystemOption_TextMode_Settings" />
+                <com.metamoji.ui.common.UiButton android:id="@id/SystemOption_VideoSettings_btn" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/controlSpaceWide" local:button_type="withsubmenu" local:maintitle="@string/MMJNT_LSTR_MEDIAFILES_SETTING_TITLE" />
+                <com.metamoji.ui.common.UiTextView android:id="@id/textview_settings_mazec" android:text="@string/SystemOption_MazecSettings" style="@style/UiDialogGroupTitleStyle" />
+                <FrameLayout android:id="@id/view_update_mazecdic" android:layout_marginBottom="@dimen/controlSpaceWide" style="@style/UiDialogGroupUpStyle">
+                    <com.metamoji.ui.common.UiButton android:layout_gravity="right" android:id="@id/button_update_mazecdic" android:layout_width="wrap_content" android:layout_height="wrap_content" local:button_type="sub" local:maintitle="@string/Systemoption_Mazec_Dic_Update" />
+                </FrameLayout>
+                <FrameLayout android:layout_width="match_parent" android:layout_height="wrap_content">
+                    <com.metamoji.ui.common.UiButton android:layout_gravity="center_horizontal" android:id="@id/button_download_samplenote" android:layout_width="wrap_content" android:layout_height="wrap_content" local:button_type="sub" local:maintitle="@string/Sample_Note_Title_Download" />
+                </FrameLayout>
+            </LinearLayout>
+        </ScrollView>
+    </LinearLayout>
+</RelativeLayout>

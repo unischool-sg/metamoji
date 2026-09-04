@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_pressed="false">
+        <shape android:shape="rectangle">
+            <corners android:topLeftRadius="30.0dp" android:topRightRadius="30.0dp" android:bottomLeftRadius="30.0dp" android:bottomRightRadius="30.0dp" />
+            <solid android:color="@color/transparent" />
+            <stroke android:width="2.0dp" android:color="@color/historytabbar_background_dark" />
+        </shape>
+    </item>
+    <item android:state_pressed="true">
+        <shape android:shape="rectangle">
+            <corners android:topLeftRadius="30.0dp" android:topRightRadius="30.0dp" android:bottomLeftRadius="30.0dp" android:bottomRightRadius="30.0dp" />
+            <solid android:color="@color/school_userlist_section_color_group" />
+            <stroke android:width="2.0dp" android:color="@color/historytabbar_background_dark" />
+        </shape>
+    </item>
+</selector>

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <ImageView android:id="@id/dwindow_selector_back" android:background="@drawable/dwindow_select_background" android:layout_width="match_parent" android:layout_height="40.0dp" android:contentDescription="@null" />
+    <LinearLayout android:orientation="horizontal" android:id="@id/dwindow_bar" android:layout_width="wrap_content" android:layout_height="40.0dp">
+        <ImageButton android:id="@id/dwindow_bar_close" android:layout_width="40.0dp" android:layout_height="40.0dp" android:layout_margin="0.0dp" android:src="@drawable/dwindow_bar_close" android:scaleType="center" android:contentDescription="@null" style="@style/DetailWindow_CommandButton" />
+    </LinearLayout>
+</merge>

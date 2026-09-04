@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout android:layout_width="wrap_content" android:layout_height="wrap_content"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:local="http://schemas.android.com/apk/res-auto">
+    <include layout="@layout/control_dialog_background" />
+    <LinearLayout style="@style/UiDialogStyle">
+        <include layout="@layout/control_dialog_header" />
+        <ScrollView style="@style/UiDialogScrollViewStyle">
+            <LinearLayout style="@style/UiDialogBodyWithScrollStyle">
+                <com.metamoji.ui.common.UiButton android:id="@id/button_textunitstyleinit" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/controlSpaceWide" local:button_type="withsubmenu" local:maintitle="@string/SystemOption_TextStyle_Settings" local:maintitle_weight="1" />
+                <LinearLayout android:orientation="horizontal" android:id="@id/SystemOptionGroup_SpellCheck" style="@style/UiDialogGroupUpStyleTop">
+                    <com.metamoji.ui.common.UiTextView android:id="@id/textview_spellcheck" android:layout_marginRight="@dimen/controlSpace" android:text="@string/SystemOption_SpellCheck" style="@style/UiDialogLabelStyle" />
+                    <com.metamoji.ui.common.UiSwitch android:id="@id/switch_spellcheck" style="@style/UiDialogSwitchStyle" />
+                </LinearLayout>
+                <LinearLayout android:orientation="horizontal" android:id="@id/SystemOptionGroup_TextUnitDropShadow" android:layout_marginBottom="@dimen/controlSpaceWide" style="@style/UiDialogGroupUpStyleBottom">
+                    <com.metamoji.ui.common.UiTextView android:id="@id/textview_textunitdropshadow" android:layout_marginRight="@dimen/controlSpace" android:text="@string/SystemOption_TextUnitDropShadow_Disp" style="@style/UiDialogLabelStyle" />
+                    <com.metamoji.ui.common.UiSwitch android:id="@id/switch_textunitdropshadow" style="@style/UiDialogSwitchStyle" />
+                </LinearLayout>
+                <com.metamoji.ui.common.UiTextView android:id="@id/textview_settings_textlinesettings" android:text="@string/SystemOption_TextLineSettings" style="@style/UiDialogGroupTitleStyle" />
+                <LinearLayout android:orientation="vertical" android:id="@id/SystemOptionGroup_UseTextLineEngine" style="@style/UiDialogGroupUpStyleTop">
+                    <LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/controlSpace">
+                        <com.metamoji.ui.common.UiTextView android:id="@id/textview_UseTextLineEngine" android:layout_marginRight="@dimen/controlSpace" android:text="@string/SystemOption_UseTextLineEngine" style="@style/UiDialogLabelStyle" />
+                        <com.metamoji.ui.common.UiSwitch android:id="@id/switch_UseTextLineEngine" style="@style/UiDialogSwitchStyle" />
+                    </LinearLayout>
+                    <LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content">
+                        <com.metamoji.ui.common.UiTextView android:gravity="end" android:layout_gravity="end" android:id="@id/textview_TextLineExtractLevel" android:layout_marginRight="@dimen/controlSpace" android:text="@string/SystemOption_TextLineExtractLevel" style="@style/UiDialogLabelStyle" />
+                        <com.metamoji.ui.common.UiRadioGroup android:layout_gravity="end" android:orientation="horizontal" android:id="@id/group_TextLineExtractLevel" android:layout_width="wrap_content" android:layout_height="wrap_content" local:justify_width_withlargestchild="true">
+                            <com.metamoji.ui.common.UiRadioButton android:id="@id/button1_TextLineExtractLevel" android:layout_width="wrap_content" android:layout_height="wrap_content" local:maintitle="@string/SystemOption_TextLineExtractLevel_High" local:radiobutton_type="small_left" />
+                            <com.metamoji.ui.common.UiRadioButton android:id="@id/button2_TextLineExtractLevel" android:layout_width="wrap_content" android:layout_height="wrap_content" local:maintitle="@string/SystemOption_TextLineExtractLevel_Normal" local:radiobutton_type="small_center" />
+                            <com.metamoji.ui.common.UiRadioButton android:id="@id/button3_TextLineExtractLevel" android:layout_width="wrap_content" android:layout_height="wrap_content" local:maintitle="@string/SystemOption_TextLineExtractLevel_Low" local:radiobutton_type="small_right" />
+                        </com.metamoji.ui.common.UiRadioGroup>
+                    </LinearLayout>
+                </LinearLayout>
+                <LinearLayout android:orientation="vertical" android:id="@id/SystemOptionGroup_TextLine_AllSingle" android:layout_marginBottom="@dimen/controlSpaceWide" style="@style/UiDialogGroupUpStyleBottom">
+                    <LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content">
+                        <com.metamoji.ui.common.UiTextView android:id="@id/textview_TextLine_AllSingle" android:layout_marginRight="@dimen/controlSpace" android:text="@string/SystemOption_TextLine_AllSingle" style="@style/UiDialogLabelStyle" />
+                        <com.metamoji.ui.common.UiSwitch android:id="@id/switch_TextLine_AllSingle" style="@style/UiDialogSwitchStyle" />
+                    </LinearLayout>
+                </LinearLayout>
+            </LinearLayout>
+        </ScrollView>
+    </LinearLayout>
+</RelativeLayout>

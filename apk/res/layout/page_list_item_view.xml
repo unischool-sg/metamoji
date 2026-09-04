@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:orientation="vertical" android:layout_width="wrap_content" android:layout_height="wrap_content"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <RelativeLayout android:background="@null" android:clipChildren="false" android:clipToPadding="false" android:layout_width="120.0dp" android:layout_height="140.0dp">
+        <RelativeLayout android:id="@id/nt_itemlist_item_thumbnail_container" android:background="@null" android:layout_width="120.0dp" android:layout_height="120.0dp" android:layout_marginLeft="4.0dp" android:layout_marginTop="4.0dp" android:layout_marginRight="4.0dp" android:layout_marginBottom="0.0dp" android:layout_alignParentTop="true" android:layout_centerInParent="true">
+            <ImageView android:id="@id/thumbnailImage" android:layout_width="120.0dp" android:layout_height="120.0dp" android:scaleType="fitCenter" android:layout_centerInParent="true" android:layout_centerHorizontal="true" android:contentDescription="@null" />
+        </RelativeLayout>
+        <ImageView android:id="@id/schoolPageTypeIcon" android:background="@drawable/school_page_type_icon" android:visibility="invisible" android:layout_width="40.0dp" android:layout_height="40.0dp" android:layout_marginRight="-2.0dp" android:scaleType="fitCenter" android:layout_alignRight="@id/nt_itemlist_item_thumbnail_container" android:layout_alignParentTop="true" android:contentDescription="@null" />
+        <TextView android:textSize="12.0sp" android:textColor="@color/pagelist_label" android:gravity="center|bottom" android:id="@id/pageNumberLabel" android:duplicateParentState="true" android:layout_width="wrap_content" android:layout_height="20.0dp" android:layout_marginBottom="7.0dp" android:layout_alignParentBottom="true" android:layout_centerInParent="true" android:textIsSelectable="false" />
+    </RelativeLayout>
+</LinearLayout>

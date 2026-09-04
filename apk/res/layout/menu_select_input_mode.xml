@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.metamoji.mazec.ui.MenuSelectInputMode android:layout_width="wrap_content" android:layout_height="match_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <LinearLayout android:gravity="left" android:orientation="horizontal" android:paddingTop="4.0dp" android:paddingBottom="4.0dp" android:layout_width="wrap_content" android:layout_height="match_parent">
+        <ImageView android:id="@id/input_mode_stroke" android:layout_width="@dimen/menu_input_mode_btn_w" android:layout_height="@dimen/menu_btn_h" android:src="@drawable/im_stroke_n" android:scaleType="centerInside" android:adjustViewBounds="true" />
+        <ImageView android:id="@id/input_mode_text" android:layout_width="@dimen/menu_input_mode_btn_w" android:layout_height="@dimen/menu_btn_h" android:src="@drawable/im_text_n" android:scaleType="centerInside" android:adjustViewBounds="true" />
+        <ImageView android:id="@id/input_mode_keyboard" android:layout_width="@dimen/menu_input_mode_btn_w" android:layout_height="@dimen/menu_btn_h" android:src="@drawable/im_keyboard_n" android:scaleType="centerInside" android:adjustViewBounds="true" />
+    </LinearLayout>
+</com.metamoji.mazec.ui.MenuSelectInputMode>

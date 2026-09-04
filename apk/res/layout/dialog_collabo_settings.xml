@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout android:layout_width="wrap_content" android:layout_height="wrap_content"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:local="http://schemas.android.com/apk/res-auto">
+    <include layout="@layout/control_dialog_background" />
+    <LinearLayout style="@style/UiDialogStyle">
+        <include layout="@layout/control_dialog_header" />
+        <ScrollView style="@style/UiDialogScrollViewStyle">
+            <LinearLayout android:orientation="vertical" style="@style/UiDialogBodyWithScrollStyle">
+                <TextView android:id="@id/startupGuidance" android:visibility="gone" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/controlSpaceWide" android:singleLine="false" style="@style/UiDialogLabelStyle" />
+                <TextView android:id="@id/nicknameLabel" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/ShareSettingsDlg_NickName" style="@style/UiDialogLabelStyle" />
+                <com.metamoji.ui.common.UiEditText android:id="@id/nickname" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/controlSpaceWide" android:inputType="text" android:privateImeOptions="com.metamoji.mazecapi?stroke_input=false" />
+                <LinearLayout android:orientation="vertical" android:id="@id/startupLayout" android:visibility="gone" android:layout_width="match_parent" android:layout_height="wrap_content">
+                    <LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content">
+                        <com.metamoji.ui.common.UiButton android:id="@id/startupEulaBtn" android:layout_width="0.0dp" android:layout_height="wrap_content" android:layout_weight="1.0" local:button_type="normal" local:maintitle="@string/Share_EULA" local:maintitle_gravity="center_horizontal" />
+                        <com.metamoji.ui.common.UiButton android:id="@id/startupPrivacyBtn" android:layout_width="0.0dp" android:layout_height="wrap_content" android:layout_marginLeft="10.0dp" android:layout_weight="1.0" local:button_type="normal" local:maintitle="@string/Cabinet_User_Privacy" local:maintitle_gravity="center_horizontal" />
+                    </LinearLayout>
+                    <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="@dimen/controlSpaceWide" android:text="@string/Share_EULA_Confirm" style="@style/UiDialogLabelStyle" />
+                    <Button android:textSize="14.0sp" android:textStyle="bold" android:textColor="@drawable/control_button_textcolor_blue" android:layout_gravity="center" android:id="@id/entryBtn" android:background="@drawable/control_button_normal_blue" android:paddingLeft="12.0dp" android:paddingRight="12.0dp" android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="14.0dp" />
+                </LinearLayout>
+                <LinearLayout android:orientation="vertical" android:id="@id/systemOptionLayout" android:layout_width="match_parent" android:layout_height="wrap_content">
+                    <com.metamoji.ui.common.UiTextView android:text="@string/ShareSettingsDlg_DisplaySettings" style="@style/UiDialogGroupTitleStyle" />
+                    <LinearLayout android:orientation="horizontal" android:id="@id/dispMemberInOut" style="@style/UiDialogGroupUpStyleTop">
+                        <com.metamoji.ui.common.UiTextView android:gravity="left|center" android:layout_width="wrap_content" android:layout_height="match_parent" android:text="@string/ShareSettingsDlg_Disp_Member_InOut" style="@style/UiDialogLabelStyle" />
+                        <com.metamoji.ui.common.UiSwitch android:id="@id/dispMemberInOutSwitch" android:layout_marginLeft="@dimen/controlSpace" style="@style/UiDialogSwitchStyle" />
+                    </LinearLayout>
+                    <LinearLayout android:orientation="horizontal" style="@style/UiDialogGroupUpStyleMid">
+                        <com.metamoji.ui.common.UiTextView android:gravity="left|center" android:layout_width="wrap_content" android:layout_height="match_parent" android:text="@string/ShareSettingsDlg_Disp_Login_Message" style="@style/UiDialogLabelStyle" />
+                        <com.metamoji.ui.common.UiSwitch android:id="@id/dispLoginMessageSwitch" android:layout_marginLeft="@dimen/controlSpace" style="@style/UiDialogSwitchStyle" />
+                    </LinearLayout>
+                    <LinearLayout android:orientation="horizontal" android:id="@id/dispPrivateModeType" style="@style/UiDialogGroupUpStyleBottom">
+                        <com.metamoji.ui.common.UiTextView android:gravity="left|center" android:layout_width="wrap_content" android:layout_height="match_parent" android:text="@string/ShareSettingsDlg_Disp_PrivateMode_Type" style="@style/UiDialogLabelStyle" />
+                        <com.metamoji.ui.common.UiSwitch android:id="@id/dispPrivateModeTypeSwitch" android:layout_marginLeft="@dimen/controlSpace" style="@style/UiDialogSwitchStyle" />
+                    </LinearLayout>
+                    <LinearLayout android:orientation="horizontal" android:layout_marginTop="@dimen/controlSpaceWide" style="@style/UiDialogGroupUpStyleBottom">
+                        <com.metamoji.ui.common.UiTextView android:gravity="left|center" android:layout_width="wrap_content" android:layout_height="match_parent" android:text="@string/ShareSettingsDlg_SleepMode" style="@style/UiDialogLabelStyle" />
+                        <com.metamoji.ui.common.UiSwitch android:id="@id/sleepSwitch" android:layout_marginLeft="@dimen/controlSpace" style="@style/UiDialogSwitchStyle" />
+                    </LinearLayout>
+                    <LinearLayout android:orientation="horizontal" android:id="@id/openInPrivateModeLayout" android:layout_marginTop="@dimen/controlSpaceWide" style="@style/UiDialogGroupUpStyleBottom">
+                        <com.metamoji.ui.common.UiTextView android:gravity="left|center" android:layout_width="wrap_content" android:layout_height="match_parent" android:text="@string/ShareSettingsDlg_Open_In_PrivateMode" style="@style/UiDialogLabelStyle" />
+                        <com.metamoji.ui.common.UiSwitch android:id="@id/openInPrivateModeSwitch" android:layout_marginLeft="@dimen/controlSpace" style="@style/UiDialogSwitchStyle" />
+                    </LinearLayout>
+                    <com.metamoji.ui.common.UiButton android:id="@id/proxyBtn" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="@dimen/controlSpaceWide" local:button_type="withsubmenu" local:maintitle="@string/CollaboProxyDlg_Title" />
+                    <com.metamoji.ui.common.UiButton android:id="@id/eulaBtn" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="@dimen/controlSpaceWide" local:button_type="withsub_top" local:maintitle="@string/Share_EULA" />
+                    <com.metamoji.ui.common.UiButton android:id="@id/privacyBtn" android:layout_width="match_parent" android:layout_height="wrap_content" local:button_type="withsub_bottom" local:maintitle="@string/Cabinet_User_Privacy" />
+                </LinearLayout>
+            </LinearLayout>
+        </ScrollView>
+    </LinearLayout>
+</RelativeLayout>

@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:orientation="horizontal" android:id="@id/cabinetItemLinearLayout" android:background="@drawable/item_cabinet_detail_background" android:layout_width="match_parent" android:layout_height="wrap_content"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <RelativeLayout android:layout_width="@dimen/cabinetDetailThumbnailWidth" android:layout_height="@dimen/cabinetDetailThumbnailHeight" android:layout_marginLeft="@dimen/cabinetDetailThumbnailHPadding" android:layout_marginTop="@dimen/cabinetDetailThumbnailVPadding" android:layout_marginRight="@dimen/cabinetDetailThumbnailHPadding" android:layout_marginBottom="@dimen/cabinetDetailThumbnailVPadding">
+        <RelativeLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_centerInParent="true">
+            <ImageView android:id="@id/thumbnail" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_centerInParent="true" />
+            <ImageView android:id="@id/cabinetSync_Waiting" android:visibility="gone" android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/cabinet_sync_wait" android:layout_centerInParent="true" />
+            <ImageView android:id="@id/cabinetSync_Syncing" android:visibility="gone" android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/cabinet_sync" android:layout_centerInParent="true" />
+            <ImageView android:id="@id/cabinetSyncWait" android:visibility="gone" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="@dimen/cabinetSyncWaitMarginTop" android:layout_marginRight="@dimen/cabinetSyncWaitMarginRight" android:src="@drawable/cabinet_note_icon_syncwait" android:layout_alignTop="@id/thumbnail" android:layout_alignRight="@id/thumbnail" />
+            <ImageView android:id="@id/cabinetMultiSelectCheck" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="@dimen/cabinetMultiSelectMarginLeft" android:layout_marginTop="@dimen/cabinetMultiSelectMarginTop" android:src="@drawable/selector_cabinet_multiselect" android:layout_alignLeft="@id/thumbnail" android:layout_alignTop="@id/thumbnail" />
+            <ImageView android:id="@id/cabinetnotetemplateicon" android:visibility="gone" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginRight="@dimen/cabinetTemplateIconMarginRight" android:layout_marginBottom="@dimen/cabinetTemplateIconMarginBottom" android:src="@drawable/cabinet_icon_notetemplate" android:layout_alignRight="@id/thumbnail" android:layout_alignBottom="@id/thumbnail" />
+            <ImageView android:id="@id/cabinetshareicon" android:visibility="gone" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginRight="@dimen/cabinetShareIconMarginRight" android:layout_marginBottom="@dimen/cabinetShareIconMarginBottom" android:src="@drawable/cabinet_icon_collabo" android:layout_alignRight="@id/thumbnail" android:layout_alignBottom="@id/thumbnail" />
+        </RelativeLayout>
+    </RelativeLayout>
+    <LinearLayout android:orientation="vertical" android:layout_width="wrap_content" android:layout_height="wrap_content">
+        <GridLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:columnCount="2">
+            <com.metamoji.ui.cabinet.OutlineCharacterOnActivatedTextView android:paddingTop="@dimen/cabinetDetailDateTextTopPadding" android:text="@string/Cabinet_Title" style="@style/CabinetDetailText.Header" />
+            <com.metamoji.ui.cabinet.OutlineCharacterOnActivatedTextView android:ellipsize="end" android:id="@id/title" android:maxLines="2" style="@style/CabinetDetailText.Value" />
+            <com.metamoji.ui.cabinet.OutlineCharacterOnActivatedTextView android:text="@string/Cabinet_CreateDate" style="@style/CabinetDetailText.Header" />
+            <com.metamoji.ui.cabinet.OutlineCharacterOnActivatedTextView android:id="@id/createDate" style="@style/CabinetDetailText.Value" />
+            <com.metamoji.ui.cabinet.OutlineCharacterOnActivatedTextView android:text="@string/Cabinet_RenewDate" style="@style/CabinetDetailText.Header" />
+            <com.metamoji.ui.cabinet.OutlineCharacterOnActivatedTextView android:id="@id/updateDate" style="@style/CabinetDetailText.Value" />
+            <com.metamoji.ui.cabinet.OutlineCharacterOnActivatedTextView android:id="@id/createUserLabel" android:visibility="gone" android:text="@string/Cabinet_CreateUser" style="@style/CabinetDetailText.Header" />
+            <com.metamoji.ui.cabinet.OutlineCharacterOnActivatedTextView android:id="@id/createUser" android:visibility="gone" style="@style/CabinetDetailText.Value" />
+            <com.metamoji.ui.cabinet.OutlineCharacterOnActivatedTextView android:id="@id/updateUserLabel" android:visibility="gone" android:text="@string/Cabinet_RenewUser" style="@style/CabinetDetailText.Header" />
+            <com.metamoji.ui.cabinet.OutlineCharacterOnActivatedTextView android:id="@id/updateUser" android:visibility="gone" style="@style/CabinetDetailText.Value" />
+        </GridLayout>
+        <LinearLayout android:orientation="horizontal" android:layout_width="wrap_content" android:layout_height="wrap_content">
+            <GridLayout android:id="@id/smallTagViews" android:visibility="gone" android:layout_width="wrap_content" android:layout_height="wrap_content" android:rowCount="2" android:columnCount="6">
+                <ImageView android:id="@id/smallTag1" style="@style/CabinetDetailSmallTag" />
+                <ImageView android:id="@id/smallTag2" style="@style/CabinetDetailSmallTag" />
+                <ImageView android:id="@id/smallTag3" style="@style/CabinetDetailSmallTag" />
+                <ImageView android:id="@id/smallTag4" style="@style/CabinetDetailSmallTag" />
+                <ImageView android:id="@id/smallTag5" style="@style/CabinetDetailSmallTag" />
+                <ImageView android:id="@id/smallTag6" android:paddingRight="0.0dp" style="@style/CabinetDetailSmallTag" />
+                <ImageView android:id="@id/smallTag7" style="@style/CabinetDetailSmallTag" />
+                <ImageView android:id="@id/smallTag8" style="@style/CabinetDetailSmallTag" />
+                <ImageView android:id="@id/smallTag9" style="@style/CabinetDetailSmallTag" />
+                <ImageView android:id="@id/smallTag10" style="@style/CabinetDetailSmallTag" />
+                <ImageView android:id="@id/smallTag11" style="@style/CabinetDetailSmallTag" />
+                <ImageView android:id="@id/smallTag12" android:paddingRight="0.0dp" style="@style/CabinetDetailSmallTag" />
+            </GridLayout>
+            <ImageView android:layout_gravity="bottom" android:id="@id/detailSmallTagOverflow" android:visibility="gone" android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/cabinet_detail_tag_overflow" />
+        </LinearLayout>
+    </LinearLayout>
+    <LinearLayout android:orientation="vertical" android:id="@id/normalTagViews" android:paddingTop="@dimen/cabinetDetailDateTextTopPadding" android:visibility="gone" android:layout_width="wrap_content" android:layout_height="wrap_content">
+        <com.metamoji.ui.cabinet.DetailNormalTagView android:id="@id/tag1" style="@style/CabinetDetailNormalTag" />
+        <com.metamoji.ui.cabinet.DetailNormalTagView android:id="@id/tag2" style="@style/CabinetDetailNormalTag" />
+        <com.metamoji.ui.cabinet.DetailNormalTagView android:id="@id/tag3" style="@style/CabinetDetailNormalTag" />
+        <com.metamoji.ui.cabinet.DetailNormalTagView android:id="@id/tag4" style="@style/CabinetDetailNormalTag" />
+        <com.metamoji.ui.cabinet.DetailNormalTagView android:id="@id/tag5" android:paddingBottom="0.0dp" style="@style/CabinetDetailNormalTag" />
+        <ImageView android:id="@id/detailNormalTagOverflow" android:visibility="gone" android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/cabinet_detail_tag_overflow" />
+    </LinearLayout>
+</LinearLayout>

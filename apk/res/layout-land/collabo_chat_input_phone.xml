@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:orientation="vertical" android:layout_width="match_parent" android:layout_height="match_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:local="http://schemas.android.com/apk/res-auto">
+    <View android:background="#80808080" android:clickable="true" android:layout_width="match_parent" android:layout_height="0.0dp" android:layout_weight="1.0" />
+    <LinearLayout android:orientation="horizontal" android:background="#ececec" android:paddingLeft="12.0dp" android:paddingRight="12.0dp" android:layout_width="match_parent" android:layout_height="wrap_content">
+        <ScrollView android:background="@drawable/collabo_bar_list_frame" android:layout_width="0.0dp" android:layout_height="50.0dp" android:layout_marginTop="4.0dp" android:layout_marginBottom="12.0dp" android:layout_weight="1.0">
+            <com.metamoji.ui.TextUnitEdit android:id="@id/chatInputField" android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="50.0dp" local:fontSize="14.0dp" local:placeHolder="@string/ShareBar_Chat_PlaceHolder" />
+        </ScrollView>
+        <View android:layout_width="12.0dp" android:layout_height="50.0dp" />
+        <com.metamoji.ui.common.UiButtonHeader android:id="@id/chat_cancel_button" android:layout_width="wrap_content" android:layout_height="match_parent" local:imageresource="@drawable/control_button_header_blue" local:title="@string/Button_Cancel_J" />
+        <View android:layout_width="12.0dp" android:layout_height="50.0dp" />
+        <com.metamoji.ui.common.UiButtonHeader android:id="@id/chat_done_button" android:layout_width="wrap_content" android:layout_height="match_parent" local:imageresource="@drawable/control_button_header_purple" local:title="@string/ShareBar_Chat_Send" />
+    </LinearLayout>
+</LinearLayout>

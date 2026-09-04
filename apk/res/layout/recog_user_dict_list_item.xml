@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="@dimen/recog_user_char_list_stroke_list_item_h"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <CheckBox android:layout_gravity="left|center" android:id="@id/check_box" android:focusable="false" android:clickable="false" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="@dimen/recog_user_char_list_checkbox_margin_x" />
+    <com.metamoji.mazec.ui.StrokeView android:layout_gravity="right|center" android:id="@id/stroke_view" android:background="#ffffffff" android:layout_width="@dimen/recog_user_char_list_stroke_view_size" android:layout_height="@dimen/recog_user_char_list_stroke_view_size" android:layout_marginTop="@dimen/recog_user_char_list_stroke_view_margin_y" android:layout_marginRight="@dimen/recog_user_char_list_stroke_view_margin_x" android:layout_marginBottom="@dimen/recog_user_char_list_stroke_view_margin_y" />
+</LinearLayout>

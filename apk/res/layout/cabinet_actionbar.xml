@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:orientation="vertical" android:background="@drawable/actionbar_back_normal" android:layout_width="match_parent" android:layout_height="wrap_content"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <FrameLayout android:orientation="vertical" android:background="@null" android:layout_width="match_parent" android:layout_height="wrap_content">
+        <LinearLayout android:layout_gravity="left" android:orientation="horizontal" android:layout_width="wrap_content" android:layout_height="match_parent">
+            <Space android:layout_width="8.0dp" android:layout_height="match_parent" />
+            <ImageButton android:id="@id/cabinet_shareview_button" android:visibility="gone" android:src="@drawable/cabinet_shareview" android:contentDescription="@null" style="@style/ActionBarButton" />
+            <ImageButton android:id="@id/cabinet_normalview_button" android:visibility="gone" android:src="@drawable/cabinet_normalview" android:contentDescription="@null" style="@style/ActionBarButton" />
+            <Space android:layout_width="8.0dp" android:layout_height="match_parent" />
+            <Button android:id="@id/cabinet_list_button" android:src="@drawable/cabinet_icon_list_n" android:contentDescription="@null" style="@style/ActionBarButton" />
+            <Space android:layout_width="8.0dp" android:layout_height="match_parent" />
+        </LinearLayout>
+        <LinearLayout android:layout_gravity="right" android:orientation="horizontal" android:layout_width="wrap_content" android:layout_height="match_parent">
+            <com.metamoji.noteanytime.ActionBarButton android:id="@id/cabinet_synccancel_button" android:visibility="gone" android:layout_width="69.0dp" android:src="@drawable/cabinet_icon_cancel" android:contentDescription="@null" style="@style/ActionBarButton" />
+            <com.metamoji.noteanytime.ActionBarButton android:id="@id/cabinet_refresh_button" android:contentDescription="@null" style="@style/ActionBarButton" />
+            <Space android:layout_width="8.0dp" android:layout_height="match_parent" />
+            <ImageButton android:id="@id/shareview_update_button" android:visibility="gone" android:layout_marginRight="8.0dp" android:src="@drawable/shareview_update_drawable" android:contentDescription="@null" style="@style/ActionBarButton" />
+            <com.metamoji.noteanytime.ActionBarButton android:id="@id/cabinet_commandbar_btn_addmenu" android:src="@drawable/bar_btn_addmenu" android:contentDescription="@null" style="@style/ActionBarButton" />
+            <com.metamoji.nt.notify.NtAnytimeNotifyButton android:id="@id/cabinet_anytime_button" android:layout_width="44.0dp" android:src="@drawable/bar_btn_menu" android:contentDescription="@null" style="@style/ActionBarButton" />
+            <com.metamoji.noteanytime.ActionBarButton android:id="@id/cabinet_commandbar_btn_help" android:src="@drawable/bar_btn_help" android:contentDescription="@null" style="@style/ActionBarButton" />
+            <com.metamoji.noteanytime.ActionBarButton android:id="@id/cabinet_commandbar_btn_about" android:visibility="gone" android:src="@drawable/mnu_icon_about" android:contentDescription="@null" style="@style/ActionBarButton" />
+        </LinearLayout>
+        <FrameLayout android:id="@id/actionbar_button_layer" android:layout_width="match_parent" android:layout_height="match_parent" />
+    </FrameLayout>
+    <include layout="@layout/editor_attention_area" />
+</LinearLayout>

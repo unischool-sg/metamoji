@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout android:layout_width="wrap_content" android:layout_height="wrap_content"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:local="http://schemas.android.com/apk/res-auto">
+    <include layout="@layout/control_dialog_background" />
+    <LinearLayout style="@style/UiDialogStyle">
+        <include layout="@layout/control_dialog_header" />
+        <ScrollView android:id="@id/basePanel" style="@style/UiDialogScrollViewStyle">
+            <LinearLayout style="@style/UiDialogBodyWithScrollStyle">
+                <EditText android:id="@id/urlTextRO" android:layout_width="match_parent" android:layout_height="wrap_content" android:singleLine="true" android:inputType="none" />
+                <com.metamoji.ui.common.UiEditText android:id="@id/urlText" android:visibility="gone" android:nextFocusLeft="@id/urlText" android:nextFocusRight="@id/urlText" android:nextFocusUp="@id/urlText" android:nextFocusDown="@id/urlText" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="@string/MMJNT_LSTR_SCHOOL_OPENURLDLG_PLACEHOLDER" android:inputType="text" android:privateImeOptions="com.metamoji.mazecapi?stroke_input=false" android:imeOptions="actionDone" android:nextFocusForward="@id/urlText" />
+                <com.metamoji.ui.common.UiButton android:layout_gravity="right" android:id="@id/clipbordBtn" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/controlSpaceWide" local:button_type="normal" />
+                <ImageView android:layout_gravity="center" android:id="@id/image_view" android:visibility="gone" android:layout_width="wrap_content" android:layout_height="wrap_content" android:scaleType="fitCenter" />
+                <com.metamoji.ui.common.UiButton android:layout_gravity="right" android:id="@id/saveQRCodeBtn" android:visibility="gone" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="@dimen/controlSpace" local:button_type="normal" local:maintitle="@string/GuestUserSettingDlg_SaveQRCode" />
+            </LinearLayout>
+        </ScrollView>
+    </LinearLayout>
+</RelativeLayout>

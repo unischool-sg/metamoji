@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:orientation="vertical" android:focusable="true" android:clickable="true" android:layout_width="match_parent" android:layout_height="match_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <com.journeyapps.barcodescanner.DecoratedBarcodeView android:id="@id/barcode_scanner" android:layout_width="match_parent" android:layout_height="match_parent" app:zxing_preview_scaling_strategy="centerCrop">
+        <ImageView android:layout_gravity="end|top" android:id="@id/camera_switching_btn" android:focusable="true" android:clickable="true" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4.0dp" android:src="@drawable/school_camera_switching" android:alpha="0.7" android:layout_marginEnd="4.0dp" />
+        <ProgressBar android:layout_gravity="center" android:id="@id/qr_progress_ring" android:visibility="gone" android:layout_width="40.0dp" android:layout_height="40.0dp" android:indeterminateTint="@color/primary_color" />
+    </com.journeyapps.barcodescanner.DecoratedBarcodeView>
+</LinearLayout>

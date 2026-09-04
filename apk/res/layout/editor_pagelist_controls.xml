@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:orientation="horizontal" android:id="@id/editor_bottombar_pagelist_controls" android:background="@drawable/itemlist_tab_back" android:paddingLeft="10.0dp" android:clipChildren="false" android:layout_width="wrap_content" android:layout_height="wrap_content"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <ImageButton android:id="@id/editor_bottombar_pagelist_prev" android:background="@null" android:layout_width="33.0dp" android:layout_height="28.0dp" android:layout_marginTop="15.0dp" android:src="@drawable/editor_bottombar_prev" android:scaleType="center" android:contentDescription="@null" />
+    <ImageButton android:id="@id/editor_bottombar_pagelist_add" android:background="@null" android:layout_width="33.0dp" android:layout_height="28.0dp" android:layout_marginTop="15.0dp" android:src="@drawable/editor_bottombar_pagelist_add" android:scaleType="center" android:contentDescription="@null" />
+    <FrameLayout android:layout_width="113.0dp" android:layout_height="43.0dp" android:layout_marginLeft="-5.0dp">
+        <ImageButton android:id="@id/editor_bottombar_pagelist_tab" android:background="@null" android:layout_width="match_parent" android:layout_height="match_parent" android:layout_marginLeft="5.0dp" android:layout_marginTop="10.0dp" android:src="@drawable/editor_bottombar_pagelist_tab" android:scaleType="fitXY" android:contentDescription="@null" />
+        <LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="match_parent" android:layout_marginLeft="13.0dp" android:layout_marginTop="10.0dp" android:layout_marginRight="8.0dp">
+            <TextView android:textSize="14.0sp" android:textColor="#323a45" android:gravity="center" android:id="@id/editor_bottombar_pagelist_tab_label" android:layout_width="0.0dp" android:layout_height="match_parent" android:text="@null" android:layout_weight="1.0" />
+        </LinearLayout>
+        <ImageView android:id="@id/editor_bottombar_pagelist_infoIcon" android:background="@null" android:visibility="invisible" android:layout_width="21.0dp" android:layout_height="21.0dp" android:layout_marginLeft="0.0dp" android:src="@drawable/collabo_chat_alert" />
+    </FrameLayout>
+    <FrameLayout android:id="@id/editor_bottombar_jumplist_change_tab_layout" android:visibility="visible" android:layout_width="46.0dp" android:layout_height="33.0dp">
+        <ImageButton android:id="@id/editor_bottombar_jumplist_change_tab" android:background="@null" android:layout_width="46.0dp" android:layout_height="33.0dp" android:layout_marginTop="10.0dp" android:src="@drawable/editor_bottombar_jumplist_change_tab" android:scaleType="fitXY" android:contentDescription="@null" />
+        <TextView android:textSize="9.0sp" android:textColor="#323a45" android:gravity="center" android:layout_width="46.0dp" android:layout_height="33.0dp" android:layout_marginTop="10.0dp" android:text="@string/SENDDIALOG_LABEL_PAGE" />
+    </FrameLayout>
+    <ImageButton android:id="@id/editor_bottombar_pagelist_next" android:background="@null" android:layout_width="33.0dp" android:layout_height="28.0dp" android:layout_marginTop="15.0dp" android:src="@drawable/editor_bottombar_next" android:scaleType="center" android:contentDescription="@null" />
+</LinearLayout>

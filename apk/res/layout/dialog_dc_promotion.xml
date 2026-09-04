@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:local="http://schemas.android.com/apk/res-auto">
+    <include layout="@layout/control_dialog_background" />
+    <LinearLayout style="@style/UiDialogStyle">
+        <include layout="@layout/control_dialog_header" />
+        <ScrollView style="@style/UiDialogScrollViewStyle">
+            <LinearLayout android:gravity="center_horizontal" android:paddingLeft="28.0dp" android:paddingTop="30.0dp" android:paddingRight="28.0dp" style="@style/UiDialogBodyWithScrollStyle">
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/MMJID_PROMOTION_DIGITAL_CABINET_FREE_TITLE" style="@style/UiDialogGroupTitleStyle" />
+                <Space android:layout_width="match_parent" android:layout_height="30.0dp" />
+                <com.metamoji.ui.common.UiButton android:layout_gravity="center_horizontal" android:id="@id/dlg_promo_dc_regist_btn" android:layout_width="match_parent" android:layout_height="wrap_content" local:button_type="normal_blue" local:maintitle="@string/MMJID_PROMOTION_DIGITAL_CABINET_FREE_BUTTON" local:maintitle_gravity="center_horizontal" />
+                <Space android:layout_width="match_parent" android:layout_height="10.0dp" />
+                <com.metamoji.ui.common.UiButton android:gravity="center_horizontal" android:id="@id/dlg_promo_dc_later_btn" android:layout_width="match_parent" android:layout_height="wrap_content" local:button_type="normal" local:maintitle="@string/Promotion_DC_Later_Button" local:maintitle_gravity="center_horizontal" />
+                <Space android:layout_width="match_parent" android:layout_height="30.0dp" />
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/MMJID_PROMOTION_DIGITAL_CABINET_FREE_MESSAGE1" />
+                <Space android:layout_width="match_parent" android:layout_height="15.0dp" />
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/MMJID_PROMOTION_DIGITAL_CABINET_FREE_MESSAGE2" />
+            </LinearLayout>
+        </ScrollView>
+    </LinearLayout>
+</RelativeLayout>

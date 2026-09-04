@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout android:layout_width="match_parent" android:layout_height="match_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <com.metamoji.video.AmvTrimmingPlayerView android:id="@id/videoTrimmingPlayer" android:layout_width="match_parent" android:layout_height="match_parent" />
+    <LinearLayout android:gravity="center" android:orientation="horizontal" android:id="@id/waiting_guard_view" android:background="@color/white" android:layout_width="match_parent" android:layout_height="match_parent">
+        <com.metamoji.media.video.dialog.CircularProgressBar android:id="@id/repair_progress" android:layout_width="45.0dp" android:layout_height="45.0dp" app:insideRingColor="@color/white" app:progressColor="@color/mf_dialog_progress_color" app:ringBaseColor="@color/mf_dialog_ring_base_color" app:textColor="@color/text_disabled" />
+        <TextView android:textSize="20.0sp" android:textColor="@color/text_disabled" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/MMJNT_LSTR_PLEASE_WAIT" android:layout_marginStart="15.0dp" />
+    </LinearLayout>
+</FrameLayout>

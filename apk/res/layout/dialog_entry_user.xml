@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:local="http://schemas.android.com/apk/res-auto">
+    <include layout="@layout/control_dialog_background" />
+    <LinearLayout style="@style/UiDialogStyle">
+        <include layout="@layout/control_dialog_header" />
+        <ScrollView style="@style/UiDialogScrollViewStyle">
+            <LinearLayout style="@style/UiDialogBodyStyle">
+                <TextView android:textSize="15.0dp" android:textStyle="bold" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="10.0dp" android:text="@string/MMJID_MAKE_DLG_NICKNAME_LABEL" android:layout_centerHorizontal="true" android:layout_centerVertical="true" />
+                <com.metamoji.ui.common.UiEditText android:id="@id/EditText_Nickname" android:layout_width="match_parent" android:layout_height="wrap_content" android:inputType="text" android:privateImeOptions="com.metamoji.mazecapi?stroke_input=false" android:imeOptions="actionNext" />
+                <TextView android:textSize="15.0dp" android:textStyle="bold" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="10.0dp" android:layout_marginTop="15.0dp" android:text="@string/MMJID_MAKE_DLG_ID_LABEL" android:layout_centerHorizontal="true" android:layout_centerVertical="true" />
+                <com.metamoji.ui.common.UiEditText android:id="@id/EditText_Mainaddress" android:layout_width="match_parent" android:layout_height="wrap_content" android:inputType="text" android:imeOptions="actionNext" />
+                <TextView android:textSize="15.0dp" android:textStyle="bold" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="10.0dp" android:layout_marginTop="15.0dp" android:text="@string/MMJID_MAKE_DLG_PW_LABEL" android:layout_centerHorizontal="true" android:layout_centerVertical="true" />
+                <com.metamoji.ui.common.UiEditText android:id="@id/EditText_Password" android:layout_width="match_parent" android:layout_height="wrap_content" android:inputType="text" android:imeOptions="actionNext" />
+                <TextView android:textSize="15.0dp" android:textStyle="bold" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="10.0dp" android:layout_marginTop="15.0dp" android:text="@string/MMJID_MAKE_DLG_CONFIRM_LABEL" android:layout_centerHorizontal="true" android:layout_centerVertical="true" />
+                <com.metamoji.ui.common.UiEditText android:id="@id/EditText_ConfirmPassword" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/controlSpaceWide" android:inputType="text" />
+                <com.metamoji.ui.common.UiButton android:id="@id/button_termofuse" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/controlSpace" local:button_type="normal" local:maintitle="@string/MMJID_MAKE_DLG_USED_POLICY_BTN" local:maintitle_gravity="center_horizontal" />
+                <com.metamoji.ui.common.UiButton android:id="@id/button_privacy" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/controlSpaceWide" local:button_type="normal" local:maintitle="@string/MMJID_MAKE_DLG_PLIVACY_POLICY_BTN" local:maintitle_gravity="center_horizontal" />
+                <TextView android:textSize="15.0dp" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginLeft="10.0dp" android:text="@string/MMJID_MAKE_DLG_POLICY_LABEL" />
+                <LinearLayout android:gravity="center_horizontal" android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="10.0dp">
+                    <com.metamoji.ui.common.UiButton android:id="@id/button_go_entry" android:layout_width="0.0dp" android:layout_height="wrap_content" android:layout_weight="1.0" local:button_type="normal" local:maintitle="@string/MMJID_MAKE_DLG_CONFIRM_BTN" local:maintitle_gravity="center_horizontal" />
+                    <com.metamoji.ui.common.UiButton android:id="@id/button_cancel" android:layout_width="0.0dp" android:layout_height="wrap_content" android:layout_marginLeft="10.0dp" android:layout_weight="1.0" local:button_type="normal" local:maintitle="@string/MMJID_MAKE_DLG_CANCEL_BTN" local:maintitle_gravity="center_horizontal" />
+                </LinearLayout>
+            </LinearLayout>
+        </ScrollView>
+    </LinearLayout>
+</RelativeLayout>

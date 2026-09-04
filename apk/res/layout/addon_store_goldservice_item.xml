@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:orientation="vertical" android:layout_width="match_parent" android:layout_height="wrap_content"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:local="http://schemas.android.com/apk/res-auto">
+    <TextView android:textSize="@dimen/AddOnStoreItemLabelSize" android:textStyle="bold" android:layout_gravity="left|center" android:id="@id/goldservice_purchase_label" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginRight="@dimen/AddOnStoreLabelTextRightMargin" />
+    <LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="30.0dp">
+        <FrameLayout android:layout_width="0.0dp" android:layout_height="wrap_content" android:layout_weight="1.0" />
+        <ImageView android:layout_gravity="center_vertical" android:id="@id/goldservice_cart_image" android:visibility="gone" android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/library_gallery_cart" android:scaleType="centerInside" />
+        <TextView android:textStyle="bold" android:layout_gravity="center_vertical" android:id="@id/goldservice_price" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="@dimen/AddOnStorePriceTextMargin" android:layout_marginRight="@dimen/AddOnStorePriceTextMargin" />
+        <com.metamoji.ui.common.UiButton android:enabled="false" android:textStyle="bold" android:layout_gravity="center_vertical" android:id="@id/goldservice_button_purchase" android:layout_width="wrap_content" android:layout_height="20.0dp" local:button_type="inapppurchase" local:maintitle="@string/Library_Store_PurchaseBtn" />
+    </LinearLayout>
+</LinearLayout>

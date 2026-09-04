@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:local="http://schemas.android.com/apk/res-auto">
+    <include layout="@layout/control_dialog_background" />
+    <LinearLayout style="@style/UiDialogStyle">
+        <include layout="@layout/control_dialog_header" />
+        <ScrollView style="@style/UiDialogScrollViewStyle">
+            <LinearLayout android:layout_width="@dimen/PaperSettingsDialogWidth" style="@style/UiDialogBodyWithScrollStyle">
+                <com.metamoji.ui.common.UiButton android:id="@id/button_papersize" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/controlSpaceWide" local:button_type="withsubmenu" local:maintitle="@string/SheetSettings_SheetSize" local:maintitle_weight="1" local:subtitle="" local:subtitle_weight="1" />
+                <RelativeLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/controlSpace">
+                    <com.metamoji.ui.common.UiButton android:id="@id/button_paperbackground" android:layout_width="match_parent" android:layout_height="wrap_content" local:button_type="withsubmenu" local:maintitle="@string/SheetSettings_SheetBackGround" />
+                    <ImageView android:id="@id/dlg_paper_bk_set_btn_img" android:layout_width="26.0dp" android:layout_height="26.0dp" android:layout_marginTop="2.0dp" android:layout_marginRight="30.0dp" android:layout_alignRight="@id/button_paperbackground" />
+                </RelativeLayout>
+            </LinearLayout>
+        </ScrollView>
+    </LinearLayout>
+</RelativeLayout>

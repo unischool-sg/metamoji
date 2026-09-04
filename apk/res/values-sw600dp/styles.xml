@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="ShareViewSimpleText">
+        <item name="android:paddingRight">@dimen/cabinetDetailDateTextRightPadding</item>
+    </style>
+    <style name="ShareViewSimpleText.Doc" parent="@style/ShareViewSimpleText">
+        <item name="android:textColor">@android:color/black</item>
+        <item name="android:maxLines">2</item>
+    </style>
+    <style name="ShareViewSimpleText.Header" parent="@style/ShareViewSimpleText">
+        <item name="android:textSize">16.0dp</item>
+        <item name="android:textColor">@color/cabinet_detail_leabel</item>
+    </style>
+    <style name="UiDialogBackgroundStyle">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_alignLeft">@id/control_dialog</item>
+        <item name="android:layout_alignTop">@id/control_dialog</item>
+        <item name="android:layout_alignRight">@id/control_dialog</item>
+        <item name="android:layout_alignBottom">@id/control_dialog</item>
+    </style>
+    <style name="UiDialogBodyStyle">
+        <item name="android:orientation">vertical</item>
+        <item name="android:id">@id/control_dialog_body</item>
+        <item name="android:paddingLeft">@dimen/bodyPaddingLeft</item>
+        <item name="android:paddingTop">@dimen/bodyPaddingTop</item>
+        <item name="android:paddingRight">@dimen/bodyPaddingRight</item>
+        <item name="android:paddingBottom">@dimen/bodyPaddingBottom</item>
+        <item name="android:layout_width">@dimen/dialogWidth</item>
+        <item name="android:layout_height">wrap_content</item>
+    </style>
+    <style name="UiDialogBodyWithScrollStyle">
+        <item name="android:orientation">vertical</item>
+        <item name="android:id">@id/control_dialog_body</item>
+        <item name="android:paddingLeft">@dimen/bodyPaddingLeft</item>
+        <item name="android:paddingTop">0.0dp</item>
+        <item name="android:paddingRight">@dimen/bodyPaddingRight</item>
+        <item name="android:paddingBottom">0.0dp</item>
+        <item name="android:layout_width">@dimen/dialogWidth</item>
+        <item name="android:layout_height">0.0dp</item>
+    </style>
+    <style name="UiDialogCenterStyle">
+        <item name="android:orientation">vertical</item>
+        <item name="android:id">@id/control_dialog</item>
+        <item name="android:paddingLeft">@dimen/dialogCenterPaddingLeft</item>
+        <item name="android:paddingBottom">@dimen/dialogCenterPaddingBottom</item>
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_centerInParent">true</item>
+    </style>
+    <style name="UiDialogHeaderStyle">
+        <item name="android:orientation">horizontal</item>
+        <item name="android:id">@id/control_dialog_header</item>
+        <item name="android:paddingLeft">@dimen/headerPaddingLeft</item>
+        <item name="android:paddingTop">@dimen/headerPaddingTop</item>
+        <item name="android:paddingRight">@dimen/headerPaddingRight</item>
+        <item name="android:paddingBottom">@dimen/headerPaddingBottom</item>
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">@dimen/headerHeight</item>
+        <item name="android:layout_marginBottom">@dimen/headerBodySpace</item>
+    </style>
+    <style name="UiDialogScrollViewStyle">
+        <item name="android:background">@null</item>
+        <item name="android:paddingLeft">0.0dp</item>
+        <item name="android:paddingTop">@dimen/bodyPaddingRight</item>
+        <item name="android:paddingRight">0.0dp</item>
+        <item name="android:paddingBottom">@dimen/bodyPaddingBottom</item>
+        <item name="android:scrollbars">vertical</item>
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">0.0dp</item>
+        <item name="android:layout_weight">1.0</item>
+    </style>
+    <style name="UiDialogStyle">
+        <item name="android:orientation">vertical</item>
+        <item name="android:id">@id/control_dialog</item>
+        <item name="android:paddingLeft">@dimen/dialogPaddingLeft</item>
+        <item name="android:paddingTop">@dimen/dialogPaddingTop</item>
+        <item name="android:paddingRight">@dimen/dialogPaddingRight</item>
+        <item name="android:paddingBottom">@dimen/dialogPaddingBottom</item>
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_alignParentRight">true</item>
+    </style>
+    <style name="UiDialogTheme">
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowContentOverlay">@null</item>
+        <item name="android:background">@null</item>
+        <item name="android:padding">0.0dp</item>
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_margin">0.0dp</item>
+        <item name="android:colorBackgroundCacheHint">@null</item>
+        <item name="android:translationY">0.0dp</item>
+        <item name="android:windowCloseOnTouchOutside">true</item>
+    </style>
+    <style name="Widget.Design.TabLayout" parent="@style/Base.Widget.Design.TabLayout">
+        <item name="tabGravity">center</item>
+        <item name="tabMode">fixed</item>
+    </style>
+</resources>

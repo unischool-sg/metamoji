@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="10.0dp" android:layout_marginBottom="10.0dp"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <FrameLayout android:background="#cbcdd0" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="5.0dp" android:layout_marginBottom="5.0dp">
+        <com.metamoji.ui.cabinet.OutlineCharacterOnActivatedTextView android:textColor="#808080" android:ellipsize="end" android:layout_gravity="center_vertical" android:id="@id/dateLabel" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="7.0dp" android:layout_marginTop="5.0dp" android:layout_marginBottom="5.0dp" android:maxLines="2" style="@style/CabinetDetailText.Value" />
+    </FrameLayout>
+</LinearLayout>

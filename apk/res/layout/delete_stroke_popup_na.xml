@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:orientation="vertical" android:layout_width="wrap_content" android:layout_height="wrap_content"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <ImageView android:id="@id/popup_menu_image" android:layout_width="@dimen/delete_stroke_image_na_w" android:layout_height="@dimen/delete_stroke_image_na_h" android:src="@drawable/delete_stroke_image_na" />
+</LinearLayout>

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout android:orientation="vertical" android:id="@id/SyncStatusView" android:background="@null" android:visibility="invisible" android:layout_width="match_parent" android:layout_height="match_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <FrameLayout android:layout_gravity="bottom" android:orientation="horizontal" android:background="#ffe1e1e1" android:layout_width="match_parent" android:layout_height="35.0dp">
+        <View android:layout_gravity="bottom" android:id="@id/SyncChildview" android:background="#fff5f5f5" android:layout_width="match_parent" android:layout_height="match_parent" android:layout_marginLeft="1.0dp" android:layout_marginTop="1.0dp" android:layout_marginRight="1.0dp" android:layout_marginBottom="1.0dp" />
+        <LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content">
+            <ProgressBar android:layout_gravity="left" android:id="@id/progressIndicator" android:layout_width="wrap_content" android:layout_height="35.0dp" android:layout_marginLeft="-20.0dp" style="@android:style/Widget.Holo.Light.ProgressBar.Large" />
+            <TextView android:textSize="14.0dp" android:textStyle="bold" android:textColor="#454b54" android:layout_gravity="left|center" android:id="@id/cabinet_syncstatus_text" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="-15.0dp" android:text=" " />
+        </LinearLayout>
+    </FrameLayout>
+</FrameLayout>

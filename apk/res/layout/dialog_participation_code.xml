@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout android:layout_width="match_parent" android:layout_height="match_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:local="http://schemas.android.com/apk/res-auto">
+    <FrameLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_alignLeft="@id/control_dialog" android:layout_alignTop="@id/control_dialog" android:layout_alignRight="@id/control_dialog" android:layout_alignBottom="@id/control_dialog">
+        <ImageView android:background="@null" android:layout_width="match_parent" android:layout_height="match_parent" android:src="@drawable/school_monitoring_base" android:scaleType="fitXY" android:contentDescription="@null" />
+    </FrameLayout>
+    <LinearLayout android:orientation="vertical" android:id="@id/control_dialog" android:paddingLeft="@dimen/dialogPaddingLeft" android:paddingTop="@dimen/dialogPaddingTop" android:paddingRight="@dimen/dialogPaddingRight" android:paddingBottom="@dimen/dialogPaddingBottom" android:layout_width="match_parent" android:layout_height="match_parent" android:layout_alignParentRight="true">
+        <include layout="@layout/control_dialog_header" />
+        <LinearLayout android:orientation="vertical" android:id="@id/control_dialog_body" android:paddingLeft="0.0dp" android:paddingTop="0.0dp" android:paddingRight="0.0dp" android:paddingBottom="0.0dp" android:layout_width="match_parent" android:layout_height="0.0dp" android:layout_weight="1.0">
+            <LinearLayout android:orientation="horizontal" android:id="@id/upperLayout" android:padding="10.0dp" android:layout_width="match_parent" android:layout_height="0.0dp" android:layout_weight="0.5">
+                <TextView android:textSize="300.0dp" android:gravity="center_vertical" android:id="@id/inviteToMessage" android:visibility="invisible" android:layout_width="match_parent" android:layout_height="match_parent" android:text="@string/MMJNT_LSTR_CLASSROOM_INVITE_TO_BOX_MESSAGE" />
+            </LinearLayout>
+            <LinearLayout android:orientation="vertical" android:layout_width="match_parent" android:layout_height="0.0dp" android:layout_weight="0.5">
+                <GridLayout android:layout_gravity="center|top" android:id="@id/lowerLayout" android:layout_width="match_parent" android:layout_height="wrap_content" android:columnCount="6">
+                    <TextView android:textSize="200.0dp" android:gravity="center|bottom" android:id="@id/box1" android:background="@drawable/simple_frame" android:visibility="invisible" android:layout_column="0" android:text="9" />
+                    <TextView android:textSize="200.0dp" android:gravity="center|bottom" android:id="@id/box2" android:background="@drawable/simple_frame" android:visibility="invisible" android:layout_column="1" android:text="9" />
+                    <TextView android:textSize="200.0dp" android:gravity="center|bottom" android:id="@id/box3" android:background="@drawable/simple_frame" android:visibility="invisible" android:layout_column="2" android:text="9" />
+                    <TextView android:textSize="200.0dp" android:gravity="center|bottom" android:id="@id/box4" android:background="@drawable/simple_frame" android:visibility="invisible" android:layout_column="3" android:text="9" />
+                    <TextView android:textSize="200.0dp" android:gravity="center|bottom" android:id="@id/box5" android:background="@drawable/simple_frame" android:visibility="invisible" android:layout_column="4" android:text="9" />
+                    <TextView android:textSize="200.0dp" android:gravity="center|bottom" android:id="@id/box6" android:background="@drawable/simple_frame" android:visibility="invisible" android:layout_column="5" android:text="9" />
+                </GridLayout>
+                <LinearLayout android:gravity="right|center" android:layout_gravity="right|center" android:orientation="vertical" android:padding="10.0dp" android:layout_width="match_parent" android:layout_height="match_parent">
+                    <com.metamoji.ui.common.UiButton android:id="@id/updateButton" android:layout_width="wrap_content" android:layout_height="wrap_content" local:maintitle="@string/MMJNT_LSTR_CLASSROOM_UPDATE_PARTICIPATION_CODE" />
+                </LinearLayout>
+            </LinearLayout>
+        </LinearLayout>
+    </LinearLayout>
+</RelativeLayout>

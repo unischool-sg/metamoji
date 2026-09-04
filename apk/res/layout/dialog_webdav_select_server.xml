@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout android:layout_width="match_parent" android:layout_height="match_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:local="http://schemas.android.com/apk/res-auto">
+    <include layout="@layout/control_dialog_background" />
+    <LinearLayout style="@style/UiDialogStyle">
+        <include layout="@layout/control_dialog_header" />
+        <LinearLayout android:layout_height="match_parent" android:minHeight="400.0dp" style="@style/UiDialogBodyStyle">
+            <RelativeLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/controlSpace">
+                <com.metamoji.ui.common.UiButton android:id="@id/webdav_addServerBtn" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_alignParentLeft="true" local:button_type="sub" local:maintitle="@string/WebDAV_Add_Server" />
+                <com.metamoji.ui.common.UiButton android:enabled="false" android:id="@id/webdav_deleteServerBtn" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_alignParentRight="true" local:button_type="sub" local:maintitle="@string/Cabinet_Button_Delete" />
+            </RelativeLayout>
+            <ListView android:id="@id/webdav_serverList" android:background="@drawable/group_background_down" android:layout_width="match_parent" android:layout_height="0.0dp" android:layout_marginTop="@dimen/controlSpace" android:listSelector="@drawable/selector_listitem" android:layout_weight="1.0" />
+        </LinearLayout>
+    </LinearLayout>
+</RelativeLayout>

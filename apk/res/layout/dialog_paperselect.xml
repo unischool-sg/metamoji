@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout android:layout_width="wrap_content" android:layout_height="wrap_content"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:local="http://schemas.android.com/apk/res-auto">
+    <include layout="@layout/control_dialog_background" />
+    <LinearLayout style="@style/UiDialogStyle">
+        <include layout="@layout/control_dialog_header" />
+        <LinearLayout style="@style/UiDialogBodyStyle">
+            <TextView android:text="@string/PaperSetting_Size" style="@style/UiDialogGroupTitleStyle" />
+            <ListView android:id="@id/papersize_view" android:background="@drawable/group_background_down" android:layout_width="match_parent" android:layout_height="0.0dp" android:layout_marginBottom="@dimen/controlSpaceWide" android:layout_weight="1.0" />
+            <LinearLayout android:orientation="horizontal" android:id="@id/papersize_orientation" style="@style/UiDialogGroupUpStyle">
+                <com.metamoji.ui.common.UiTextView android:id="@id/textview_papaersize_orientation" android:layout_marginRight="@dimen/controlSpace" android:text="@string/PaperSize_Orientation" style="@style/UiDialogLabelStyle" />
+                <com.metamoji.ui.common.UiRadioGroup android:layout_gravity="end" android:orientation="horizontal" android:id="@id/group_papaersize_orientation" android:layout_width="wrap_content" android:layout_height="wrap_content" local:justify_width_withlargestchild="true">
+                    <com.metamoji.ui.common.UiRadioButton android:id="@id/btn_papersize_portrait" android:layout_width="wrap_content" android:layout_height="wrap_content" local:maintitle="@string/PaperSize_Portrait" local:radiobutton_type="small_left" />
+                    <com.metamoji.ui.common.UiRadioButton android:id="@id/btn_papersize_landscape" android:layout_width="wrap_content" android:layout_height="wrap_content" local:maintitle="@string/PaperSize_Landscape" local:radiobutton_type="small_right" />
+                </com.metamoji.ui.common.UiRadioGroup>
+            </LinearLayout>
+        </LinearLayout>
+    </LinearLayout>
+</RelativeLayout>

@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout android:layout_width="match_parent" android:layout_height="match_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <include layout="@layout/control_dialog_background_fullscreen" />
+    <LinearLayout style="@style/UiDialogFullScreenStyle">
+        <include layout="@layout/control_dialog_header_fullscreen" />
+        <LinearLayout android:orientation="vertical" android:layout_width="match_parent" android:layout_height="match_parent">
+            <androidx.constraintlayout.widget.ConstraintLayout android:layout_width="match_parent" android:layout_height="match_parent">
+                <com.metamoji.ui.common.UiTextView android:id="@id/fileListTitle" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="8.0dp" app:layout_constraintBottom_toBottomOf="@id/buttonContainer" app:layout_constraintStart_toStartOf="parent" app:layout_constraintTop_toTopOf="@id/buttonContainer" style="@style/UiDialogGroupTitleStyle" />
+                <LinearLayout android:gravity="center_vertical" android:id="@id/buttonContainer" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginEnd="8.0dp" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintTop_toTopOf="parent">
+                    <LinearLayout android:id="@id/textButtonContainer" android:layout_width="wrap_content" android:layout_height="wrap_content">
+                        <com.metamoji.ui.common.UiButton android:id="@id/buttonDoUpload" android:layout_width="wrap_content" android:layout_height="wrap_content" app:button_type="mini" app:maintitle="@string/MMJNT_LSTR_VIDEO_UPLOAD_STATE_INIT" app:maintitle_gravity="center_horizontal" />
+                        <com.metamoji.ui.common.UiButton android:id="@id/buttonDoDelete" android:layout_width="wrap_content" android:layout_height="wrap_content" app:button_type="mini" app:maintitle="@string/Cabinet_Button_Delete" app:maintitle_gravity="center_horizontal" />
+                        <com.metamoji.ui.common.UiButton android:id="@id/buttonEndEdit" android:layout_width="wrap_content" android:layout_height="wrap_content" app:button_type="mini" app:maintitle="@string/Cabinet_Multiselect_Finish_Button" app:maintitle_gravity="center_horizontal" />
+                    </LinearLayout>
+                    <LinearLayout android:id="@id/iconButtonContainer" android:layout_width="wrap_content" android:layout_height="wrap_content">
+                        <ImageButton android:id="@id/uploadButton" android:background="?android:selectableItemBackground" android:padding="4.0dp" android:layout_width="@dimen/mf_dialog_icon_button_size" android:layout_height="@dimen/mf_dialog_icon_button_size" android:scaleType="fitXY" android:tint="@color/dialog_media_icon_button" android:contentDescription="@string/MMJ_LSTR_MF_UPLOAD" app:srcCompat="@drawable/mf_icon_upload" />
+                        <ImageButton android:id="@id/deleteButton" android:background="?android:selectableItemBackground" android:padding="4.0dp" android:layout_width="@dimen/mf_dialog_icon_button_size" android:layout_height="@dimen/mf_dialog_icon_button_size" android:scaleType="fitXY" android:tint="@color/dialog_media_icon_button" android:contentDescription="@string/DELETE_TRACK" app:srcCompat="@drawable/mf_icon_delete" />
+                        <ImageButton android:id="@id/settingButton" android:background="?android:selectableItemBackground" android:padding="4.0dp" android:layout_width="@dimen/mf_dialog_icon_button_size" android:layout_height="@dimen/mf_dialog_icon_button_size" android:scaleType="fitXY" android:tint="@color/dialog_media_icon_button" android:contentDescription="@string/MMJNT_MF_SETTINGS_OPTION" app:srcCompat="@drawable/mf_icon_setting" />
+                    </LinearLayout>
+                </LinearLayout>
+                <com.metamoji.media.video.dialog.MfFileListView android:id="@id/fileListView" android:background="@color/white" android:layout_width="match_parent" android:layout_height="0.0dp" android:layout_marginBottom="8.0dp" android:layout_marginStart="8.0dp" android:layout_marginEnd="8.0dp" app:layout_constraintBottom_toTopOf="@id/consumptionSummaryLabel" app:layout_constraintTop_toBottomOf="@id/buttonContainer" />
+                <com.metamoji.ui.common.UiTextView android:id="@id/consumptionSummaryLabel" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/MMJNT_LSTR_MF_STORAGE_CONSUMED" android:layout_marginStart="8.0dp" app:layout_constraintBottom_toTopOf="@id/consumptionGrid" app:layout_constraintStart_toStartOf="parent" style="@style/UiDialogGroupTitleStyle" />
+                <GridLayout android:id="@id/consumptionGrid" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginBottom="8.0dp" android:columnCount="3" android:layout_marginEnd="8.0dp" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintEnd_toEndOf="parent">
+                    <com.metamoji.ui.common.UiTextView android:layout_gravity="end|center" android:id="@id/consumptionLabelA" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginEnd="30.0dp" style="@style/UiDialogNarrowLabelStyle" />
+                    <com.metamoji.ui.common.UiTextView android:layout_gravity="end|center" android:id="@id/consumptionValueA" android:layout_width="wrap_content" android:layout_height="wrap_content" style="@style/UiDialogNarrowLabelStyle" />
+                    <com.metamoji.ui.common.UiTextView android:layout_gravity="end|center" android:id="@id/consumptionLabelB" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_column="0" android:layout_marginEnd="30.0dp" style="@style/UiDialogNarrowLabelStyle" />
+                    <com.metamoji.ui.common.UiTextView android:layout_gravity="end|center" android:id="@id/consumptionValueB" android:layout_width="wrap_content" android:layout_height="wrap_content" style="@style/UiDialogNarrowLabelStyle" />
+                    <com.metamoji.ui.common.UiButton android:id="@id/buttonClear" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="8.0dp" app:button_type="mini" app:maintitle="@string/MMJNT_LSTR_MF_CLEAR_CACHE" app:maintitle_gravity="center_horizontal" />
+                </GridLayout>
+            </androidx.constraintlayout.widget.ConstraintLayout>
+        </LinearLayout>
+    </LinearLayout>
+</RelativeLayout>

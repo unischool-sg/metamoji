@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:local="http://schemas.android.com/apk/res-auto">
+    <include layout="@layout/control_dialog_background" />
+    <LinearLayout style="@style/UiDialogStyle">
+        <include layout="@layout/control_dialog_header" />
+        <ScrollView style="@style/UiDialogScrollViewStyle">
+            <LinearLayout style="@style/UiDialogBodyWithScrollStyle">
+                <RelativeLayout android:id="@id/dlg_doc_thumb_group" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/controlSpaceWide">
+                    <com.metamoji.ui.common.UiButton android:id="@id/dlg_doc_set_btn_thumb" android:layout_width="match_parent" android:layout_height="wrap_content" local:button_type="withsubmenu" local:maintitle="@string/Documentsetting_Thumbnail" local:maintitle_weight="1" local:subtitle="" local:subtitle_weight="1" />
+                    <ImageView android:id="@id/dlg_doc_set_btn_img_thumb" android:layout_width="26.0dp" android:layout_height="26.0dp" android:layout_marginTop="2.0dp" android:layout_marginRight="30.0dp" android:layout_alignRight="@id/dlg_doc_set_btn_thumb" android:contentDescription="@null" />
+                </RelativeLayout>
+                <LinearLayout android:orientation="horizontal" style="@style/UiDialogGroupUpStyle">
+                    <com.metamoji.ui.common.UiTextView android:id="@id/dlg_doc_set_txt_firstpage" android:text="@string/Documentinfo_Cover" style="@style/UiDialogLabelStyle" />
+                    <com.metamoji.ui.common.UiSwitch android:id="@id/dlg_doc_set_chk_firstpage" style="@style/UiDialogSwitchStyle" />
+                </LinearLayout>
+                <LinearLayout android:orientation="horizontal" android:id="@id/dlg_doc_set_cover_prt" android:visibility="gone" android:layout_marginTop="@dimen/controlSpace" style="@style/UiDialogGroupUpStyle">
+                    <com.metamoji.ui.common.UiTextView android:id="@id/dlg_doc_set_txt_cover_prt" android:text="@string/Documentinfo_Printcover" style="@style/UiDialogLabelStyle" />
+                    <com.metamoji.ui.common.UiSwitch android:id="@id/dlg_doc_set_chk_cover_prt" style="@style/UiDialogSwitchStyle" />
+                </LinearLayout>
+                <Space android:layout_width="match_parent" android:layout_height="@dimen/controlSpaceWide" />
+                <com.metamoji.ui.common.UiButton android:id="@id/dlg_doc_set_btn_header" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/controlSpace" local:button_type="withsubmenu" local:maintitle="@string/DocumentSetting_Header" local:maintitle_weight="1" local:subtitle="" local:subtitle_weight="1" />
+                <com.metamoji.ui.common.UiButton android:id="@id/dlg_doc_set_btn_footer" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/controlSpaceWide" local:button_type="withsubmenu" local:maintitle="@string/DocumentSetting_Footer" local:maintitle_weight="1" local:subtitle="" local:subtitle_weight="1" />
+                <com.metamoji.ui.common.UiButton android:id="@id/dlg_doc_set_btn_textunit_def" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/controlSpaceWide" local:button_type="withsubmenu" local:maintitle="@string/DocumentSetting_Textunit" local:maintitle_weight="1" />
+            </LinearLayout>
+        </ScrollView>
+    </LinearLayout>
+</RelativeLayout>

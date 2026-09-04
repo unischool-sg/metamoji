@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout android:layout_width="match_parent" android:layout_height="match_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <include layout="@layout/control_dialog_background" />
+    <LinearLayout style="@style/UiDialogStyle">
+        <include layout="@layout/control_dialog_header" />
+        <ScrollView style="@style/UiDialogScrollViewStyle">
+            <LinearLayout style="@style/UiDialogBodyWithScrollStyle">
+                <com.metamoji.ui.common.UiTextView android:id="@id/text_uploadTiming" android:text="@string/MMJNT_LSTR_MEDIAFILES_CLIPLIST_ORDER" style="@style/UiDialogGroupTitleStyle" />
+                <RadioGroup android:orientation="vertical" android:id="@id/groupSortKey" android:background="@drawable/media_file_simple_border" android:layout_width="match_parent" android:layout_height="wrap_content">
+                    <RadioButton android:id="@id/radioKeyCreated" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/MMJNT_LSTR_MEDIAFILES_CLIPLIST_ORDER_CREATE" />
+                    <RadioButton android:id="@id/radioKeyRegist" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/MMJNT_LSTR_MEDIAFILES_CLIPLIST_ORDER_REGIST" />
+                    <RadioButton android:id="@id/radioKeyDuration" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/MMJNT_LSTR_MEDIAFILES_CLIPLIST_ORDER_DURATION" />
+                    <RadioButton android:id="@id/radioKeySize" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/MMJNT_LSTR_MEDIAFILES_CLIPLIST_ORDER_SIZE" />
+                </RadioGroup>
+                <RadioGroup android:orientation="horizontal" android:id="@id/groupSortOrder" android:background="@drawable/media_file_simple_border" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8.0dp">
+                    <RadioButton android:id="@id/radioOrderDesc" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_weight="1.0" />
+                    <RadioButton android:id="@id/radioOrderAsc" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_weight="1.0" />
+                </RadioGroup>
+            </LinearLayout>
+        </ScrollView>
+    </LinearLayout>
+</RelativeLayout>

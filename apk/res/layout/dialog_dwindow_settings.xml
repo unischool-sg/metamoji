@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout android:layout_width="wrap_content" android:layout_height="wrap_content"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:local="http://schemas.android.com/apk/res-auto">
+    <include layout="@layout/control_dialog_background" />
+    <LinearLayout style="@style/UiDialogStyle">
+        <include layout="@layout/control_dialog_header" />
+        <ScrollView style="@style/UiDialogScrollViewStyle">
+            <LinearLayout style="@style/UiDialogBodyWithScrollStyle">
+                <LinearLayout android:orientation="horizontal" android:layout_marginBottom="@dimen/controlSpaceWide" style="@style/UiDialogGroupUpStyle">
+                    <com.metamoji.ui.common.UiTextView android:layout_marginRight="@dimen/controlSpace" android:text="@string/DetailWindow_MarginLine" style="@style/UiDialogLabelStyle" />
+                    <com.metamoji.ui.common.UiSwitch android:id="@id/switch_dwindow_show_margin" style="@style/UiDialogSwitchStyle" />
+                </LinearLayout>
+                <com.metamoji.ui.common.UiTextView android:text="@string/DetailWindow_FrameScroll" style="@style/UiDialogGroupTitleStyle" />
+                <LinearLayout android:orientation="vertical" android:layout_marginBottom="@dimen/controlSpaceWide" style="@style/UiDialogGroupUpStyle">
+                    <LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/controlSpace">
+                        <com.metamoji.ui.common.UiTextView android:layout_marginRight="@dimen/controlSpace" android:text="@string/DetailWindow_AutoScroll" style="@style/UiDialogLabelStyle" />
+                        <com.metamoji.ui.common.UiSwitch android:id="@id/switch_dwindow_auto_scroll" style="@style/UiDialogSwitchStyle" />
+                    </LinearLayout>
+                    <LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/controlSpace">
+                        <com.metamoji.ui.common.UiTextView android:gravity="end" android:layout_gravity="end" android:id="@id/textview_dwindow_auto_scroll_interval" android:layout_marginRight="@dimen/controlSpace" style="@style/UiDialogLabelStyle" />
+                        <SeekBar android:id="@id/seekbar_dwindow_auto_scroll_interval" style="@style/UiDialogSmallSliderStyle" />
+                    </LinearLayout>
+                    <LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content">
+                        <com.metamoji.ui.common.UiTextView android:gravity="end" android:layout_gravity="end" android:id="@id/label_dwindow_auto_scroll_area_width" android:layout_marginRight="@dimen/controlSpace" android:text="@string/DetailWindow_AutoScroll_AreaWidth" style="@style/UiDialogLabelStyle" />
+                        <com.metamoji.ui.common.UiRadioGroup android:layout_gravity="end" android:orientation="horizontal" android:id="@id/group_dwindow_auto_scroll_area_width" android:layout_width="wrap_content" android:layout_height="wrap_content" local:justify_width_withlargestchild="true">
+                            <com.metamoji.ui.common.UiRadioButton android:id="@id/button_dwindow_auto_scroll_area_width_wide" android:layout_width="wrap_content" android:layout_height="wrap_content" local:maintitle="@string/DetailWindow_AutoScroll_AreaWidth_Wide" local:radiobutton_type="small_left" />
+                            <com.metamoji.ui.common.UiRadioButton android:id="@id/button_dwindow_auto_scroll_area_width_normal" android:layout_width="wrap_content" android:layout_height="wrap_content" local:maintitle="@string/DetailWindow_AutoScroll_AreaWidth_Normal" local:radiobutton_type="small_center" />
+                            <com.metamoji.ui.common.UiRadioButton android:id="@id/button_dwindow_auto_scroll_area_width_small" android:layout_width="wrap_content" android:layout_height="wrap_content" local:maintitle="@string/DetailWindow_AutoScroll_AreaWidth_Small" local:radiobutton_type="small_right" />
+                        </com.metamoji.ui.common.UiRadioGroup>
+                    </LinearLayout>
+                </LinearLayout>
+                <com.metamoji.ui.common.UiTextView android:id="@id/textview_dwindow_line_feed_width_title" android:text="@string/DetailWindow_FeedType" style="@style/UiDialogGroupTitleStyle" />
+                <LinearLayout android:orientation="vertical" android:layout_marginBottom="@dimen/controlSpace" style="@style/UiDialogGroupUpStyle">
+                    <com.metamoji.ui.common.UiRadioGroup android:layout_gravity="end" android:orientation="horizontal" android:id="@id/group_dwindow_feed_type" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/controlSpace" local:justify_width_withlargestchild="true">
+                        <com.metamoji.ui.common.UiRadioButton android:id="@id/button_dwindow_feed_type_stepper" android:layout_width="0.0dp" android:layout_height="wrap_content" android:layout_weight="1.0" local:maintitle="@string/DetailWindow_FeedTypeLine" local:radiobutton_type="small_left" />
+                        <com.metamoji.ui.common.UiRadioButton android:id="@id/button_dwindow_feed_type_slider" android:layout_width="0.0dp" android:layout_height="wrap_content" android:layout_weight="1.0" local:maintitle="@string/DetailWindow_FeedTypeFrame" local:radiobutton_type="small_right" />
+                    </com.metamoji.ui.common.UiRadioGroup>
+                    <LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content">
+                        <com.metamoji.ui.common.UiTextView android:id="@id/textview_dwindow_line_feed_width" android:layout_marginRight="@dimen/controlSpace" style="@style/UiDialogLabelStyle" />
+                        <com.metamoji.ui.common.UiTextView android:id="@id/textview_dwindow_line_feed_width_min" style="@style/UiDialogNarrowLabelStyle" />
+                        <SeekBar android:id="@id/seekbar_dwindow_line_feed_width" style="@style/UiDialogSmallSliderStyle" />
+                        <com.metamoji.ui.common.UiTextView android:id="@id/textview_dwindow_line_feed_width_max" style="@style/UiDialogNarrowLabelStyle" />
+                    </LinearLayout>
+                    <LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content">
+                        <com.metamoji.ui.common.UiTextView android:id="@id/textview_dwindow_feed_step_width" android:layout_marginRight="@dimen/controlSpace" style="@style/UiDialogLabelStyle" />
+                        <com.metamoji.ui.common.UiButton android:layout_gravity="right" android:id="@id/button_feedStepMinus" android:layout_width="wrap_content" android:layout_height="wrap_content" local:button_type="sub" local:maintitle="－" />
+                        <com.metamoji.ui.common.UiButton android:layout_gravity="right" android:id="@id/button_feedStepPlus" android:layout_width="wrap_content" android:layout_height="wrap_content" local:button_type="sub" local:maintitle="＋" />
+                    </LinearLayout>
+                </LinearLayout>
+            </LinearLayout>
+        </ScrollView>
+    </LinearLayout>
+</RelativeLayout>

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:orientation="vertical" android:layout_width="match_parent" android:layout_height="wrap_content"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:local="http://schemas.android.com/apk/res-auto">
+    <TextView android:text="@string/ForBiz_Add_Organization_Id" style="@style/UiDialogGroupTitleStyle" />
+    <com.metamoji.ui.common.UiEditText android:id="@id/add_organization_txt_id" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/controlSpaceWide" android:inputType="textUri" android:privateImeOptions="com.metamoji.mazecapi?stroke_input=false" android:imeOptions="actionDone" />
+    <android.widget.Button android:id="@id/add_organization_btn_url" android:layout_width="match_parent" android:text="@string/ForBiz_Add_Organization_Url" style="@style/RightChevronButton" />
+    <com.metamoji.ui.common.UiTextView android:id="@id/add_organization_lbl_url" android:layout_width="match_parent" android:layout_height="wrap_content" style="@style/UiDialogGroupTitleStyle" />
+</LinearLayout>

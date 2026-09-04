@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <bool name="isTabletSize">true</bool>
+    <bool name="under600dp">false</bool>
+</resources>

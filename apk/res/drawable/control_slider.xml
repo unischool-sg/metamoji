@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:id="@android:id/background">
+        <shape android:shape="line">
+            <stroke android:width="1.0dp" android:color="#c1c1c1" />
+        </shape>
+    </item>
+    <item android:id="@android:id/progress">
+        <clip>
+            <bitmap android:gravity="fill_horizontal|center|clip_horizontal" android:src="@drawable/slider_progress" />
+        </clip>
+    </item>
+</layer-list>

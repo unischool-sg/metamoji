@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:local="http://schemas.android.com/apk/res-auto">
+    <include layout="@layout/control_dialog_background" />
+    <LinearLayout style="@style/UiDialogStyle">
+        <include layout="@layout/control_dialog_header" />
+        <ScrollView style="@style/UiDialogScrollViewStyle">
+            <LinearLayout style="@style/UiDialogBodyWithScrollStyle">
+                <com.metamoji.ui.common.UiRadioGroup android:orientation="vertical" android:id="@id/radiogroup_roomType" android:layout_width="match_parent" android:layout_height="wrap_content">
+                    <com.metamoji.ui.common.UiRadioButton android:id="@id/roomType_casual" android:layout_width="match_parent" android:layout_height="wrap_content" local:maintitle="@string/ManageParticipantsDlg_RoomType_Casual" local:radiobutton_type="withcheckboxTop" />
+                    <com.metamoji.ui.common.UiRadioButton android:id="@id/roomType_formal" android:layout_width="match_parent" android:layout_height="wrap_content" local:maintitle="@string/ManageParticipantsDlg_RoomType_Formal" local:radiobutton_type="withcheckboxMid" />
+                    <com.metamoji.ui.common.UiRadioButton android:id="@id/roomType_limited" android:layout_width="match_parent" android:layout_height="wrap_content" local:maintitle="@string/ManageParticipantsDlg_RoomType_Limited" local:radiobutton_type="withcheckboxBottom" />
+                </com.metamoji.ui.common.UiRadioGroup>
+            </LinearLayout>
+        </ScrollView>
+    </LinearLayout>
+</RelativeLayout>

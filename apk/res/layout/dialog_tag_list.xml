@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:local="http://schemas.android.com/apk/res-auto">
+    <include layout="@layout/control_dialog_background" />
+    <LinearLayout style="@style/UiDialogStyle">
+        <include layout="@layout/control_dialog_header" />
+        <LinearLayout android:layout_height="match_parent" android:minHeight="400.0dp" style="@style/UiDialogBodyStyle">
+            <LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content">
+                <com.metamoji.ui.common.UiButton android:layout_gravity="left" android:id="@id/cabinet_newtag_btn" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/controlSpace" local:button_type="sub" local:maintitle="@string/Cabinet_NewTag_Title" />
+                <ImageView android:layout_width="0.0dp" android:layout_height="wrap_content" android:layout_weight="1.0" android:contentDescription="@null" />
+                <com.metamoji.ui.common.UiButton android:layout_gravity="right" android:id="@id/cabinet_delete_tag_btn" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/controlSpace" local:button_type="sub" local:maintitle="@string/Cabinet_Button_Delete" />
+            </LinearLayout>
+            <com.metamoji.ui.common.UiEditText android:id="@id/Tag_SearchText" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="@string/Cabinet_Tag_Search_Hint_Text" android:inputType="text" android:privateImeOptions="com.metamoji.mazecapi?stroke_input=false" />
+            <com.metamoji.ui.cabinet.TagListView android:id="@id/cabinet_tag_list_view" android:background="@drawable/group_background_down" android:layout_width="match_parent" android:layout_height="0.0dp" android:layout_weight="1.0" />
+        </LinearLayout>
+    </LinearLayout>
+</RelativeLayout>

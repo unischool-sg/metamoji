@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:local="http://schemas.android.com/apk/res-auto">
+    <include layout="@layout/control_dialog_background" />
+    <LinearLayout style="@style/UiDialogStyle">
+        <include layout="@layout/control_dialog_header" />
+        <ScrollView style="@style/UiDialogScrollViewStyle">
+            <LinearLayout style="@style/UiDialogBodyWithScrollStyle">
+                <TextView android:textSize="15.0dp" android:textStyle="bold" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="10.0dp" android:text="@string/MMJID_INFO_DLG_NICKNAME_LABEL" android:layout_centerHorizontal="true" android:layout_centerVertical="true" />
+                <TextView android:textSize="16.0dp" android:textStyle="bold" android:id="@id/TextView_Nickname" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginLeft="25.0dp" android:layout_centerHorizontal="true" android:layout_centerVertical="true" />
+                <TextView android:textSize="15.0dp" android:textStyle="bold" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginLeft="10.0dp" android:text="@string/MMJID_SIGNIN_DLG_ID_LABEL" android:layout_centerHorizontal="true" android:layout_centerVertical="true" />
+                <TextView android:textSize="16.0dp" android:textStyle="bold" android:id="@id/TextView_mailaddress" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginLeft="25.0dp" android:layout_centerHorizontal="true" android:layout_centerVertical="true" />
+                <com.metamoji.ui.common.UiButton android:id="@id/button_cabinetuser_editaccount" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="@dimen/controlSpaceWide" android:layout_marginBottom="@dimen/controlSpace" local:button_type="withsubmenu" local:maintitle="@string/MMJID_CABINET_USER_SYSOP_EDIT_ACCOUNT" />
+                <com.metamoji.ui.common.UiButton android:id="@id/button_cabinetuser_changepassword" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/controlSpace" local:button_type="withsubmenu" local:maintitle="@string/SystemOption_CabinetUser_ChangePassword" />
+                <com.metamoji.ui.common.UiButton android:id="@id/button_cabinetuser_withdrawal" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/controlSpace" local:button_type="withsubmenu" local:maintitle="@string/MMJID_DEL_ID_DLG_TITLE" />
+                <LinearLayout android:orientation="horizontal" android:layout_marginTop="@dimen/controlSpaceWide" style="@style/UiDialogGroupUpStyle">
+                    <TextView android:id="@id/textview_cabinetuser_accountkind" android:text="@string/SystemOption_CabinetUser_AccountKind" style="@style/UiDialogLabelStyle" />
+                    <com.metamoji.ui.common.UiTextView android:textStyle="normal" android:gravity="right|center" android:layout_gravity="right|center" android:id="@id/textview_accountkind_label" style="@style/UiDialogLabelStyle" />
+                </LinearLayout>
+                <LinearLayout android:orientation="horizontal" android:id="@id/textview_accountexpires_group" style="@style/UiDialogGroupUpStyle">
+                    <TextView android:id="@id/textview_cabinetuser_accountexpires" android:text="@string/SystemOption_CabinetUser_Account_Expires" style="@style/UiDialogLabelStyle" />
+                    <com.metamoji.ui.common.UiTextView android:textStyle="normal" android:gravity="right|center" android:layout_gravity="right|center" android:id="@id/textview_accountexpires_label" style="@style/UiDialogLabelStyle" />
+                </LinearLayout>
+                <com.metamoji.ui.common.UiButton android:id="@id/button_cabinetuser_about" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="@dimen/controlSpaceWide" local:button_type="withsubmenu" local:maintitle="@string/MMJID_INFO_DLG_ABOUT_BTN" />
+            </LinearLayout>
+        </ScrollView>
+    </LinearLayout>
+</RelativeLayout>

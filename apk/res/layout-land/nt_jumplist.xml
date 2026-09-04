@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:orientation="vertical" android:background="@drawable/itemlist_land_back" android:focusable="false" android:layout_width="match_parent" android:layout_height="wrap_content"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <view android:id="@id/nt_itemlist_vertical_scrollview" android:background="@color/pagelist_background" android:layout_width="128.0dp" android:layout_height="0.0dp" android:layout_marginTop="0.0dp" android:layout_weight="1.0" class="com.metamoji.nt.itemlist.NtItemListScrollView$NtItemListVerticalScrollView">
+        <LinearLayout android:orientation="vertical" android:id="@id/nt_itemlist_listview" android:layout_width="wrap_content" android:layout_height="match_parent" />
+    </view>
+    <LinearLayout android:orientation="horizontal" android:id="@id/nt_itemlist_commandpanel" android:background="@color/pagelist_background" android:layout_width="128.0dp" android:layout_height="wrap_content" android:layout_marginBottom="33.0dp">
+        <ImageButton android:id="@id/nt_jumplist_add" android:background="@null" android:layout_width="42.0dp" android:layout_height="42.0dp" android:src="@drawable/editor_bottombar_jumplist_add" android:scaleType="center" android:contentDescription="@null" />
+        <ImageButton android:id="@id/nt_jumplist_back" android:background="@null" android:layout_width="42.0dp" android:layout_height="42.0dp" android:src="@drawable/editor_bottombar_jumplist_back" android:scaleType="center" android:contentDescription="@null" />
+    </LinearLayout>
+</LinearLayout>

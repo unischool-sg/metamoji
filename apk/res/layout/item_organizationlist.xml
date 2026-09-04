@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:orientation="horizontal" android:background="@drawable/item_medialist" android:descendantFocusability="blocksDescendants" android:layout_width="match_parent" android:layout_height="wrap_content"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <Space android:id="@id/organizationlist_item_margin" android:focusable="false" android:focusableInTouchMode="false" android:layout_width="10.0dp" android:layout_height="match_parent" />
+    <ToggleButton android:id="@id/organizationlist_item_check" android:background="@drawable/item_medialist_check" android:focusable="false" android:focusableInTouchMode="false" android:visibility="gone" android:duplicateParentState="false" android:layout_width="40.0dp" android:layout_height="match_parent" android:textOn="" android:textOff="" />
+    <Space android:id="@id/organizationlist_item_margin2" android:focusable="false" android:focusableInTouchMode="false" android:visibility="gone" android:layout_width="40.0dp" android:layout_height="match_parent" />
+    <LinearLayout android:orientation="vertical" android:paddingTop="4.0dp" android:paddingBottom="4.0dp" android:layout_width="0.0dp" android:layout_height="wrap_content" android:layout_weight="1.0">
+        <TextView android:textSize="20.0sp" android:textColor="@android:color/black" android:ellipsize="end" android:id="@id/organizationlist_item_id" android:focusable="false" android:focusableInTouchMode="false" android:layout_width="match_parent" android:layout_height="wrap_content" android:singleLine="true" />
+        <TextView android:textSize="12.0sp" android:textColor="@android:color/black" android:ellipsize="end" android:id="@id/organizationlist_item_url" android:focusable="false" android:focusableInTouchMode="false" android:layout_width="match_parent" android:layout_height="wrap_content" android:singleLine="true" />
+    </LinearLayout>
+</LinearLayout>

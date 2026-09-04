@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <ImageView android:id="@id/dwindow_frame_border" android:background="@drawable/dwindow_frame_border" android:layout_width="match_parent" android:layout_height="match_parent" android:layout_marginRight="13.0dp" android:layout_marginBottom="13.0dp" android:contentDescription="@null" />
+    <ImageButton android:layout_gravity="right|bottom" android:id="@id/dwindow_size_handle" android:background="@null" android:layout_width="40.0dp" android:layout_height="40.0dp" android:layout_marginLeft="25.0dp" android:src="@drawable/dwindow_size_handle" android:scaleType="center" android:contentDescription="@null" />
+</merge>

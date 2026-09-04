@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.metamoji.mazec.ui.CnvCandidatesBar android:layout_gravity="center_vertical" android:orientation="horizontal" android:id="@id/cnv_candidates_bar" android:layout_width="match_parent" android:layout_height="@dimen/cnv_candates_bar_h"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <com.metamoji.mazec.ui.ExtHorizontalScrollView android:id="@id/cnv_candidates_bar_scroller" android:background="@color/cnv_candidates_bar_back_shadow" android:fadingEdge="horizontal" android:fadingEdgeLength="@dimen/cnv_candates_bar_fading_edge_w" android:layout_width="0.0dp" android:layout_height="match_parent" android:fillViewport="true" android:layout_weight="1.0" android:scrollbarFadeDuration="1" android:scrollbarDefaultDelayBeforeFade="1" android:requiresFadingEdge="horizontal">
+        <com.metamoji.mazec.ui.CnvCandidatesBarPanel android:id="@id/cnv_candidates_bar_panel" android:layout_width="wrap_content" android:layout_height="wrap_content" />
+    </com.metamoji.mazec.ui.ExtHorizontalScrollView>
+    <ImageView android:id="@id/cnv_candiates_more_button" android:layout_width="@dimen/cnv_candates_bar_more_img_w" android:layout_height="@dimen/cnv_candates_bar_more_img_h" android:src="@drawable/more_button" android:scaleType="fitXY" />
+</com.metamoji.mazec.ui.CnvCandidatesBar>

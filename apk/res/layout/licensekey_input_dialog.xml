@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout android:paddingLeft="10.0dp" android:paddingTop="10.0dp" android:paddingRight="10.0dp" android:paddingBottom="10.0dp"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:local="http://schemas.android.com/apk/res-auto">
+    <include layout="@layout/control_dialog_background_center" />
+    <LinearLayout style="@style/UiDialogCenterStyle">
+        <include layout="@layout/control_dialog_header" />
+        <TextView android:textSize="18.0dp" android:id="@id/licenseinput_message" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_margin="20.0dp" android:text="@string/license_msg_input_licensekey" />
+        <TableLayout android:layout_width="match_parent" android:layout_height="wrap_content">
+            <TableRow>
+                <TextView android:gravity="center_vertical" android:id="@id/licenseinput_textView1" android:layout_width="wrap_content" android:layout_height="match_parent" android:layout_marginLeft="20.0dp" android:layout_marginRight="10.0dp" android:text="@string/lisence_label_userid" android:layout_weight="0.0" />
+                <EditText android:id="@id/editUserId" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginRight="10.0dp" android:layout_weight="1.0" android:inputType="textVisiblePassword|textCapCharacters" />
+            </TableRow>
+            <TableRow>
+                <TextView android:gravity="center_vertical" android:id="@id/licenseinput_textView2" android:layout_width="wrap_content" android:layout_height="match_parent" android:layout_marginLeft="20.0dp" android:layout_marginRight="10.0dp" android:text="@string/lisence_label_password" android:layout_weight="0.0" />
+                <EditText android:id="@id/editPassword" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginRight="10.0dp" android:layout_marginBottom="10.0dp" android:layout_weight="1.0" android:inputType="textVisiblePassword|textCapCharacters" />
+            </TableRow>
+        </TableLayout>
+        <com.metamoji.ui.common.UiButton android:gravity="center" android:id="@id/license_login_button" android:paddingLeft="40.0dp" android:paddingTop="10.0dp" android:paddingRight="40.0dp" android:paddingBottom="10.0dp" android:layout_width="match_parent" android:layout_height="wrap_content" local:button_type="sub" local:maintitle="@string/lisence_label_login" />
+    </LinearLayout>
+</RelativeLayout>

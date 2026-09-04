@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge android:orientation="vertical" android:layout_width="match_parent" android:layout_height="wrap_content"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:local="http://schemas.android.com/apk/res-auto">
+    <RelativeLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/controlSpace">
+        <com.metamoji.ui.common.UiButton android:id="@id/toDefault" android:layout_width="wrap_content" android:layout_height="wrap_content" local:button_padding_right="50.0dp" local:button_type="withcheckbox" local:maintitle="@string/CharDecoration_ToDefault" />
+        <View android:id="@id/label_color" android:layout_width="40.0dp" android:layout_height="20.0dp" android:layout_marginRight="10.0dp" android:layout_alignRight="@id/toDefault" android:layout_centerVertical="true" />
+    </RelativeLayout>
+    <LinearLayout android:gravity="center" android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content">
+        <FrameLayout android:id="@id/colorPaletteFrame" android:background="@drawable/group_background_down_white" android:layout_width="wrap_content" android:layout_height="wrap_content">
+            <com.metamoji.ui.common.UiColorSelectionView2 android:id="@id/colorPalette" android:layout_width="match_parent" android:layout_height="250.0dp" local:cell_height="30.0dp" local:cell_horz_margin="35.0dp" local:cell_horz_spacing="25.0dp" local:cell_per_line="5" local:cell_vert_margin="8.0dp" local:cell_vert_spacing="10.0dp" local:cell_width="30.0dp" local:color_type="text" local:transpose="true" />
+        </FrameLayout>
+    </LinearLayout>
+    <LinearLayout android:gravity="center" android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content">
+        <com.metamoji.ui.common.UiImageButton android:id="@id/paletteLeftButton" android:background="@null" android:layout_width="25.0dp" android:layout_height="30.0dp" android:src="@drawable/control_ink_page_prev" android:scaleType="fitCenter" />
+        <RelativeLayout android:gravity="center" android:layout_gravity="center" android:layout_width="wrap_content" android:layout_height="30.0dp">
+            <LinearLayout android:gravity="center" android:layout_gravity="center" android:orientation="horizontal" android:id="@id/bottlesContainer" android:layout_width="wrap_content" android:layout_height="match_parent">
+                <com.metamoji.ui.common.UiImageRadioButton android:id="@id/bottle0" android:background="@color/transparent" android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/dlg_ink_mark" android:scaleType="fitCenter" />
+                <com.metamoji.ui.common.UiImageRadioButton android:id="@id/bottle1" android:background="@color/transparent" android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/dlg_ink_mark" android:scaleType="fitCenter" />
+            </LinearLayout>
+            <LinearLayout android:background="@null" android:clickable="true" android:layout_width="wrap_content" android:layout_height="match_parent" android:layout_alignLeft="@id/bottlesContainer" android:layout_alignRight="@id/bottlesContainer" android:alpha="0.0" />
+        </RelativeLayout>
+        <com.metamoji.ui.common.UiImageButton android:id="@id/paletteRightButton" android:background="@null" android:layout_width="25.0dp" android:layout_height="30.0dp" android:src="@drawable/control_ink_page_next" android:scaleType="fitCenter" />
+    </LinearLayout>
+</merge>

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:gravity="center" android:layout_gravity="center" android:orientation="vertical" android:id="@id/root" android:background="#ffffff" android:paddingLeft="20.0dp" android:paddingRight="20.0dp" android:layout_width="match_parent" android:layout_height="match_parent" android:layout_marginLeft="10.0dp" android:layout_marginRight="10.0dp" android:weightSum="1.0"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:local="http://schemas.android.com/apk/res-auto">
+    <LinearLayout android:gravity="center" android:layout_gravity="center" android:orientation="vertical" android:layout_width="match_parent" android:layout_height="0.0dp" android:layout_weight="0.86">
+        <ImageView android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/ic_launcher" android:contentDescription="@null" />
+        <TextView android:layout_gravity="left" android:id="@id/each_text" android:layout_width="wrap_content" android:layout_height="wrap_content" android:freezesText="true" />
+        <ProgressBar android:id="@id/progress_bar_each" android:layout_width="match_parent" android:layout_height="wrap_content" android:indeterminate="false" style="?android:progressBarStyleHorizontal" />
+        <TextView android:layout_gravity="left" android:id="@id/total_text" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4.0dp" />
+        <ProgressBar android:id="@id/progress_bar_total" android:layout_width="match_parent" android:layout_height="wrap_content" android:indeterminate="false" style="?android:progressBarStyleHorizontal" />
+        <ScrollView android:id="@id/report_scroller" android:scrollbars="vertical" android:layout_width="match_parent" android:layout_height="0.0dp" android:layout_marginTop="4.0dp" android:layout_weight="1.0">
+            <TextView android:id="@id/report_view" android:layout_width="match_parent" android:layout_height="match_parent" android:freezesText="true" />
+        </ScrollView>
+        <com.metamoji.ui.common.UiButton android:gravity="center" android:layout_gravity="center|bottom" android:id="@id/button_return" android:visibility="invisible" android:layout_width="wrap_content" android:layout_height="wrap_content" local:button_type="blue" local:maintitle="@string/Cabinet_User_Main_BackButton" />
+    </LinearLayout>
+</LinearLayout>

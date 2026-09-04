@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:orientation="vertical" android:id="@id/root" android:background="@color/new_logo_background" android:layout_width="match_parent" android:layout_height="match_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <View android:layout_width="0.0dp" android:layout_height="0.0dp" android:layout_weight="1.0" />
+    <ImageView android:layout_gravity="center" android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/startup_screen" android:contentDescription="@null" />
+    <LinearLayout android:gravity="center_vertical" android:orientation="vertical" android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="110.0dp">
+        <ProgressBar android:layout_gravity="center" android:id="@id/progressRing" android:background="@color/new_logo_background" android:visibility="gone" android:layout_width="50.0dp" android:layout_height="50.0dp" />
+        <LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content">
+            <View android:layout_width="0.0dp" android:layout_height="0.0dp" android:layout_weight="1.0" />
+            <ProgressBar android:layout_gravity="center" android:id="@id/progressBar" android:background="@color/new_logo_background" android:visibility="gone" android:layout_width="0.0dp" android:layout_height="wrap_content" android:layout_weight="2.0" style="?android:progressBarStyleHorizontal" />
+            <View android:layout_width="0.0dp" android:layout_height="0.0dp" android:layout_weight="1.0" />
+        </LinearLayout>
+        <TextView android:layout_gravity="center" android:id="@id/progressText" android:visibility="visible" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_margin="10.0dp" android:text="@string/Msg_First_Time_Initializing" />
+        <LinearLayout android:layout_gravity="center_horizontal" android:orientation="vertical" android:id="@id/downloadPanel" android:visibility="gone" android:layout_width="wrap_content" android:layout_height="wrap_content">
+            <ProgressBar android:layout_gravity="center" android:id="@id/downloadProgress" android:visibility="visible" android:layout_width="300.0dp" android:layout_height="wrap_content" android:layout_margin="10.0dp" android:max="100" android:indeterminate="false" style="?android:progressBarStyleHorizontal" />
+            <com.metamoji.ui.common.UiButtonHeader android:layout_gravity="center" android:id="@id/progressCancelButton" android:visibility="visible" android:layout_width="wrap_content" android:layout_height="50.0dp" android:max="100" />
+        </LinearLayout>
+    </LinearLayout>
+    <View android:layout_width="0.0dp" android:layout_height="0.0dp" android:layout_weight="1.0" />
+</LinearLayout>

@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout android:layout_width="wrap_content" android:layout_height="wrap_content"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:local="http://schemas.android.com/apk/res-auto">
+    <include layout="@layout/control_dialog_background" />
+    <LinearLayout style="@style/UiDialogStyle">
+        <include layout="@layout/control_dialog_header" />
+        <ScrollView android:id="@id/dlg_doc_set2_scrollview" style="@style/UiDialogScrollViewStyle">
+            <LinearLayout style="@style/UiDialogBodyWithScrollStyle">
+                <LinearLayout android:orientation="vertical" android:id="@id/titleGroup" android:layout_width="match_parent" android:layout_height="wrap_content">
+                    <com.metamoji.ui.common.UiTextView android:text="@string/Editor_NoteInfo_Doc_Title" style="@style/UiDialogGroupTitleStyle" />
+                    <com.metamoji.ui.common.UiEditText android:id="@id/dlg_doc_set2_txt_title" android:nextFocusLeft="@id/dlg_doc_set2_txt_title" android:nextFocusRight="@id/dlg_doc_set2_txt_title" android:nextFocusUp="@id/dlg_doc_set2_txt_title" android:nextFocusDown="@id/dlg_doc_set2_txt_title" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/controlSpaceWide" android:inputType="text" android:privateImeOptions="com.metamoji.mazecapi?stroke_input=false" android:imeOptions="actionDone" android:nextFocusForward="@id/dlg_doc_set2_txt_title" />
+                </LinearLayout>
+                <com.metamoji.ui.common.UiButton android:id="@id/titleRuleBtn" android:visibility="gone" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/controlSpace" local:button_type="withsubmenu" local:maintitle="@string/Editor_NoteTemplate_Setting_TitleRule" local:maintitle_weight="1" local:subtitle="" local:subtitle_weight="1" />
+                <com.metamoji.ui.common.UiButton android:id="@id/dlg_doc_set2_btn_password" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/controlSpaceWide" local:button_type="withsubmenu" local:maintitle="@string/Password_Title" local:maintitle_weight="1" local:subtitle="" local:subtitle_weight="1" />
+                <com.metamoji.ui.common.UiTextView android:text="@string/DocumentSetting_Title" style="@style/UiDialogGroupTitleStyle" />
+                <com.metamoji.ui.common.UiButton android:id="@id/dlg_doc_set2_btn_header" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/controlSpace" local:button_type="withsubmenu" local:maintitle="@string/DocumentSetting_Header" local:maintitle_weight="1" local:subtitle="" local:subtitle_weight="1" />
+                <com.metamoji.ui.common.UiButton android:id="@id/dlg_doc_set2_btn_footer" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/controlSpaceWide" local:button_type="withsubmenu" local:maintitle="@string/DocumentSetting_Footer" local:maintitle_weight="1" local:subtitle="" local:subtitle_weight="1" />
+                <RelativeLayout android:id="@id/dlg_doc_set2_group_thumb" android:visibility="gone" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/controlSpaceWide">
+                    <com.metamoji.ui.common.UiButton android:id="@id/dlg_doc_set2_btn_thumb" android:layout_width="match_parent" android:layout_height="wrap_content" local:button_type="withsubmenu" local:maintitle="@string/Documentsetting_Thumbnail" local:maintitle_weight="1" local:subtitle="" local:subtitle_weight="1" />
+                    <ImageView android:id="@id/dlg_doc_set2_img_thumb" android:layout_width="26.0dp" android:layout_height="26.0dp" android:layout_marginTop="2.0dp" android:layout_marginRight="30.0dp" android:layout_alignRight="@id/dlg_doc_set2_btn_thumb" android:contentDescription="@null" />
+                </RelativeLayout>
+                <LinearLayout android:orientation="horizontal" style="@style/UiDialogGroupUpStyle">
+                    <com.metamoji.ui.common.UiTextView android:layout_gravity="center_vertical" android:id="@id/dlg_doc_set2_lbl_firstpage" android:text="@string/Documentinfo_Cover" style="@style/UiDialogLabelStyle" />
+                    <com.metamoji.ui.common.UiSwitch android:id="@id/dlg_doc_set2_chk_firstpage" style="@style/UiDialogSwitchStyle" />
+                </LinearLayout>
+                <LinearLayout android:orientation="horizontal" android:id="@id/dlg_doc_set2_cover_prt" android:visibility="gone" android:layout_marginTop="@dimen/controlSpace" style="@style/UiDialogGroupUpStyle">
+                    <com.metamoji.ui.common.UiTextView android:layout_gravity="center_vertical" android:id="@id/dlg_doc_set2_lbl_cover_prt" android:text="@string/Documentinfo_Printcover" style="@style/UiDialogLabelStyle" />
+                    <com.metamoji.ui.common.UiSwitch android:id="@id/dlg_doc_set2_chk_cover_prt" style="@style/UiDialogSwitchStyle" />
+                </LinearLayout>
+                <Space android:layout_width="match_parent" android:layout_height="@dimen/controlSpaceWide" />
+                <com.metamoji.ui.common.UiTextView android:text="@string/DocumentSetting_Textunit_Group" style="@style/UiDialogGroupTitleStyle" />
+                <LinearLayout android:orientation="horizontal" style="@style/UiDialogGroupUpStyleTop">
+                    <com.metamoji.ui.common.UiTextView android:layout_gravity="center_vertical" android:id="@id/dlg_doc_set2_lbl_use_system" android:text="@string/DocumentSetting_Textunit_Use_SystemSettings" style="@style/UiDialogLabelStyle" />
+                    <com.metamoji.ui.common.UiSwitch android:id="@id/dlg_doc_set2_chk_use_system" style="@style/UiDialogSwitchStyle" />
+                </LinearLayout>
+                <com.metamoji.ui.common.UiButton android:id="@id/dlg_doc_set2_btn_textunit_def" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/controlSpaceWide" local:button_type="withsubmenu" local:maintitle="@string/DocumentSetting_Textunit_NoteSettings" local:maintitle_weight="1" />
+                <LinearLayout android:orientation="vertical" android:id="@id/noteInfoGroup" android:layout_width="match_parent" android:layout_height="wrap_content">
+                    <com.metamoji.ui.common.UiTextView android:text="@string/Editor_NoteInfo_DocInfo_Title" style="@style/UiDialogGroupTitleStyle" />
+                    <LinearLayout android:orientation="horizontal" style="@style/UiDialogGroupUpStyleTop">
+                        <com.metamoji.ui.common.UiTextView android:layout_marginRight="@dimen/controlSpace" android:text="@string/Cabinet_Sort_Created" style="@style/UiDialogLabelStyle" />
+                        <com.metamoji.ui.common.UiTextView android:textStyle="normal" android:gravity="right|center" android:layout_gravity="right|center" android:id="@id/dlg_doc_set2_lbl_create" style="@style/UiDialogLabelStyle" />
+                    </LinearLayout>
+                    <LinearLayout android:orientation="horizontal" android:layout_marginBottom="@dimen/controlSpaceWide" style="@style/UiDialogGroupUpStyleBottom">
+                        <com.metamoji.ui.common.UiTextView android:layout_marginRight="@dimen/controlSpace" android:text="@string/Editor_NoteInfo_Lastupdated_Title" style="@style/UiDialogLabelStyle" />
+                        <com.metamoji.ui.common.UiTextView android:textStyle="normal" android:gravity="right|center" android:layout_gravity="right|center" android:id="@id/dlg_doc_set2_lbl_update" style="@style/UiDialogLabelStyle" />
+                    </LinearLayout>
+                </LinearLayout>
+                <LinearLayout android:orientation="vertical" android:id="@id/voiceGroup" android:visibility="gone" android:layout_width="match_parent" android:layout_height="wrap_content">
+                    <com.metamoji.ui.common.UiTextView android:text="@string/SHEETINFOVIEW_HAS_RECORDINGS" style="@style/UiDialogGroupTitleStyle" />
+                    <LinearLayout android:orientation="horizontal" android:layout_marginTop="@dimen/controlSpace" style="@style/UiDialogGroupUpStyle">
+                        <com.metamoji.ui.common.UiTextView android:layout_gravity="center_vertical" android:text="@string/SHEETINFOVIEW_HAS_RECORDINGS_SWITCH" style="@style/UiDialogLabelStyle" />
+                        <com.metamoji.ui.common.UiSwitch android:id="@id/isIncludeVoiceFileSwitch" style="@style/UiDialogSwitchStyle" />
+                    </LinearLayout>
+                </LinearLayout>
+                <LinearLayout android:orientation="vertical" android:id="@id/shareTemplateGroup" android:visibility="gone" android:layout_width="match_parent" android:layout_height="wrap_content">
+                    <com.metamoji.ui.common.UiTextView android:text="@string/Template_Setting_Share_Label" style="@style/UiDialogGroupTitleStyle" />
+                    <LinearLayout android:orientation="horizontal" android:layout_marginTop="@dimen/controlSpace" style="@style/UiDialogGroupUpStyleTop">
+                        <com.metamoji.ui.common.UiTextView android:layout_gravity="center_vertical" android:text="@string/Template_Setting_Share_Switch" style="@style/UiDialogLabelStyle" />
+                        <com.metamoji.ui.common.UiSwitch android:id="@id/isShareTemplateSwitch" style="@style/UiDialogSwitchStyle" />
+                    </LinearLayout>
+                    <com.metamoji.ui.common.UiButton android:id="@id/shareTemplateSettingButton" android:layout_width="match_parent" android:layout_height="wrap_content" local:button_type="withsubmenu" local:maintitle="@string/ManageParticipantsDlg_Role_Title" local:maintitle_weight="1" />
+                </LinearLayout>
+            </LinearLayout>
+        </ScrollView>
+    </LinearLayout>
+</RelativeLayout>

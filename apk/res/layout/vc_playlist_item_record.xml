@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:orientation="horizontal" android:background="@drawable/item_medialist" android:paddingTop="5.0dp" android:paddingBottom="5.0dp" android:descendantFocusability="blocksDescendants" android:layout_width="match_parent" android:layout_height="wrap_content"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <Space android:id="@id/vc_playlist_item_left_margin" android:layout_width="10.0dp" android:layout_height="match_parent" />
+    <ToggleButton android:id="@id/vc_playlist_item_check" android:background="@drawable/item_medialist_check" android:visibility="gone" android:duplicateParentState="false" android:layout_width="40.0dp" android:layout_height="match_parent" android:textOn="" android:textOff="" />
+    <LinearLayout android:orientation="vertical" android:layout_width="0.0dp" android:layout_height="wrap_content" android:layout_weight="1.0">
+        <LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content">
+            <com.metamoji.ui.common.UiTextView android:textSize="16.0sp" android:textColor="@android:color/black" android:ellipsize="end" android:gravity="center_vertical" android:id="@id/vc_playlist_item_title" android:layout_width="0.0dp" android:layout_height="wrap_content" android:singleLine="true" android:layout_weight="1.0" />
+            <ImageView android:layout_gravity="right" android:id="@id/vc_item_uploading_icon" android:layout_width="20.0dp" android:layout_height="match_parent" android:src="@drawable/design1_mnu_icon_cloud" />
+        </LinearLayout>
+        <LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content">
+            <com.metamoji.ui.common.UiTextView android:textSize="12.0sp" android:textColor="@android:color/black" android:gravity="center_vertical" android:id="@id/vc_playlist_item_date_and_author" android:layout_width="0.0dp" android:layout_height="wrap_content" android:singleLine="true" android:layout_weight="1.0" />
+            <Space android:layout_width="5.0dp" android:layout_height="0.0dp" />
+            <TextView android:textSize="12.0sp" android:textColor="@android:color/black" android:id="@id/vc_playlist_item_duration" android:layout_width="wrap_content" android:layout_height="wrap_content" android:singleLine="true" />
+        </LinearLayout>
+    </LinearLayout>
+    <Space android:layout_width="10.0dp" android:layout_height="match_parent" />
+</LinearLayout>

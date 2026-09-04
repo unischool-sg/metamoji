@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout android:id="@id/root" android:background="@color/white" android:layout_width="match_parent" android:layout_height="match_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <Button android:textAppearance="?android:textAppearanceSmall" android:textColor="@color/login_text" android:id="@id/login_page_button_change_root_server" android:layout_width="wrap_content" android:layout_height="40.0dp" android:text="接続先ルートサーバー選択" app:layout_constraintStart_toStartOf="parent" app:layout_constraintTop_toTopOf="parent" style="@style/Widget.MaterialComponents.Button.TextButton" />
+    <TextView android:textAppearance="?android:textAppearanceSmall" android:textColor="#808080" android:id="@id/login_view_version" android:layout_width="wrap_content" android:layout_height="wrap_content" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintTop_toTopOf="parent" />
+    <ScrollView android:id="@id/scroller" android:layout_width="match_parent" android:layout_height="0.0dp" android:layout_marginTop="10.0dp" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintStart_toStartOf="parent" app:layout_constraintTop_toBottomOf="@id/login_view_version">
+        <com.metamoji.li.view.MaxWidthLinearLayout android:layout_gravity="center_horizontal" android:orientation="vertical" android:paddingTop="20.0dp" android:layout_width="match_parent" android:layout_height="wrap_content" android:paddingStart="10.0dp" android:paddingEnd="10.0dp" app:maxWidth="@dimen/login_field_max_width">
+            <ImageView android:layout_gravity="center_horizontal" android:id="@id/login_logo" android:layout_width="match_parent" android:layout_height="35.0dp" android:layout_marginTop="30.0dp" android:layout_marginBottom="30.0dp" android:src="@drawable/ic_login_logo" android:scaleType="fitCenter" android:contentDescription="@null" />
+            <ImageView android:layout_gravity="center_horizontal" android:id="@id/login_logo_app_icon" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginBottom="10.0dp" android:src="@drawable/appicon_login_s" android:contentDescription="@null" />
+            <FrameLayout android:id="@id/panel_container" android:layout_width="match_parent" android:layout_height="wrap_content" />
+            <Button android:textColor="@color/primary_color" android:id="@id/button_back" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/Button_Back_J" android:textAllCaps="false" app:icon="@drawable/icon_back" style="@style/Widget.MaterialComponents.Button.TextButton.Icon" />
+        </com.metamoji.li.view.MaxWidthLinearLayout>
+    </ScrollView>
+    <FrameLayout android:id="@id/guard_view" android:background="#80ffffff" android:visibility="gone" android:layout_width="match_parent" android:layout_height="match_parent" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintStart_toStartOf="parent" app:layout_constraintTop_toTopOf="parent">
+        <LinearLayout android:layout_gravity="center|bottom" android:orientation="horizontal" android:paddingBottom="15.0dp" android:layout_width="wrap_content" android:layout_height="wrap_content">
+            <ProgressBar android:layout_gravity="center" android:id="@id/progressRing" android:layout_width="40.0dp" android:layout_height="40.0dp" android:indeterminateTint="@color/primary_color" />
+            <TextView android:textSize="@dimen/login_text_size" android:layout_gravity="center_vertical" android:id="@id/progress_message" android:layout_width="wrap_content" android:layout_height="wrap_content" />
+        </LinearLayout>
+    </FrameLayout>
+    <FrameLayout android:id="@id/full_screen_container" android:background="#000000" android:visibility="gone" android:layout_width="match_parent" android:layout_height="match_parent" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintStart_toStartOf="parent" app:layout_constraintTop_toTopOf="parent" />
+</androidx.constraintlayout.widget.ConstraintLayout>

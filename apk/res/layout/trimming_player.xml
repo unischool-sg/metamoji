@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout android:layout_width="match_parent" android:layout_height="match_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <LinearLayout android:gravity="center" android:orientation="vertical" android:layout_width="match_parent" android:layout_height="match_parent">
+        <com.metamoji.video.AmvExoVideoPlayer android:layout_gravity="center" android:id="@id/trp_videoPlayer" android:saveEnabled="false" android:layout_width="wrap_content" android:layout_height="wrap_content" app:playOnTouch="false" />
+        <com.metamoji.video.AmvTrimmingController android:layout_gravity="center" android:id="@id/trp_trimmingController" android:layout_width="match_parent" android:layout_height="wrap_content" />
+    </LinearLayout>
+    <androidx.constraintlayout.widget.ConstraintLayout android:id="@id/trp_progressLayer" android:background="#a0000000" android:visibility="gone" android:layout_width="match_parent" android:layout_height="match_parent">
+        <ProgressBar android:id="@id/trp_progressBar" android:layout_width="match_parent" android:layout_height="wrap_content" android:max="100" android:indeterminate="false" android:layout_marginStart="30.0dp" android:layout_marginEnd="30.0dp" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintStart_toStartOf="parent" app:layout_constraintTop_toTopOf="parent" style="?android:progressBarStyleHorizontal" />
+        <TextView android:textColor="@color/white" android:id="@id/trp_message" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4.0dp" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintStart_toStartOf="parent" app:layout_constraintTop_toBottomOf="@id/trp_progressBar" />
+        <Button android:id="@id/trp_cancelButton" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4.0dp" android:text="@string/cancel" android:textAllCaps="false" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintStart_toStartOf="parent" app:layout_constraintTop_toBottomOf="@id/trp_message" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</FrameLayout>

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:background="@drawable/user_dictionary_word_list_item_bk_selector" android:layout_width="match_parent" android:layout_height="match_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <TextView android:textSize="16.0sp" android:id="@id/user_dictionary_word" android:paddingLeft="8.0dp" android:paddingTop="4.0dp" android:paddingBottom="4.0dp" android:layout_width="wrap_content" android:layout_height="wrap_content" android:width="0.0dp" android:layout_weight="0.5" />
+    <TextView android:textSize="16.0sp" android:id="@id/user_dictionary_reading" android:paddingLeft="8.0dp" android:paddingTop="4.0dp" android:paddingBottom="4.0dp" android:layout_width="wrap_content" android:layout_height="wrap_content" android:width="0.0dp" android:layout_weight="0.5" />
+</LinearLayout>

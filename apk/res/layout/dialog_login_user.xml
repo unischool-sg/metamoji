@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:local="http://schemas.android.com/apk/res-auto">
+    <include layout="@layout/control_dialog_background" />
+    <LinearLayout style="@style/UiDialogStyle">
+        <include layout="@layout/control_dialog_header" />
+        <ScrollView style="@style/UiDialogScrollViewStyle">
+            <LinearLayout style="@style/UiDialogBodyWithScrollStyle">
+                <LinearLayout android:gravity="center_horizontal" android:orientation="vertical" android:id="@id/LinearLayout_normalMessage" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="15.0dp">
+                    <TextView android:textSize="15.0dp" android:textStyle="bold" android:id="@id/TextView_normalMessage" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="10.0dp" android:layout_marginRight="10.0dp" android:text="@string/MMJID_SIGNIN_DLG_MSG1" android:layout_centerHorizontal="true" android:layout_centerVertical="true" />
+                </LinearLayout>
+                <TextView android:textSize="15.0dp" android:textStyle="bold" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginLeft="10.0dp" android:text="@string/MMJID_SIGNIN_DLG_ID_LABEL" android:layout_centerHorizontal="true" android:layout_centerVertical="true" />
+                <LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content">
+                    <com.metamoji.ui.common.UiEditText android:id="@id/EditText_Mainaddress" android:layout_width="match_parent" android:layout_height="wrap_content" android:inputType="text" android:privateImeOptions="com.metamoji.mazecapi?stroke_input=false" android:imeOptions="actionNext" />
+                </LinearLayout>
+                <TextView android:textSize="15.0dp" android:textStyle="bold" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginLeft="10.0dp" android:text="@string/Cabinet_User_Password" android:layout_centerHorizontal="true" android:layout_centerVertical="true" />
+                <LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content">
+                    <com.metamoji.ui.common.UiEditText android:id="@id/EditText_Password" android:layout_width="match_parent" android:layout_height="wrap_content" android:inputType="text" />
+                </LinearLayout>
+                <TextView android:textColor="#158aa2" android:layout_gravity="right" android:id="@id/button_forgotpass" android:clickable="true" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginRight="8.0dp" android:layout_marginBottom="@dimen/controlSpaceWide" android:text="@string/Cabinet_User_ForgotPass" />
+                <LinearLayout android:gravity="center_horizontal" android:orientation="vertical" android:id="@id/LinearLayout_message3" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="5.0dp" android:layout_marginBottom="5.0dp">
+                    <TextView android:textSize="15.0dp" android:textStyle="bold" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="10.0dp" android:layout_marginRight="10.0dp" android:text="@string/MMJID_SIGNIN_DLG_MSG3" android:layout_centerHorizontal="true" android:layout_centerVertical="true" />
+                </LinearLayout>
+                <LinearLayout android:gravity="center_horizontal" android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="@dimen/controlSpace">
+                    <com.metamoji.ui.common.UiButton android:id="@id/button_login" android:layout_width="0.0dp" android:layout_height="wrap_content" android:layout_weight="1.0" local:button_type="normal" local:maintitle="@string/MMJID_SIGNIN_LABEL" local:maintitle_gravity="center_horizontal" />
+                    <com.metamoji.ui.common.UiButton android:id="@id/button_cancel" android:layout_width="0.0dp" android:layout_height="wrap_content" android:layout_marginLeft="10.0dp" android:layout_weight="1.0" local:button_type="normal" local:maintitle="@string/Cabinet_User_Cancel" local:maintitle_gravity="center_horizontal" />
+                </LinearLayout>
+                <View android:layout_width="1.0dp" android:layout_height="@dimen/controlSpaceWide" />
+                <com.metamoji.ui.common.UiButton android:id="@id/button_createMetaMoJiID" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/controlSpaceWide" local:button_type="normal" local:maintitle="@string/MMJID_SIGNIN_DLG_MAKE_BTN" local:maintitle_gravity="center_horizontal" />
+                <LinearLayout android:orientation="horizontal" android:id="@id/LinearLayout_guideHide" android:layout_marginTop="@dimen/controlSpace" android:layout_marginBottom="@dimen/controlSpace" style="@style/UiDialogGroupUpStyle">
+                    <com.metamoji.ui.common.UiTextView android:layout_marginRight="@dimen/controlSpace" android:text="@string/MMJID_SIGNIN_DLG_UNNECESSARY_LABEL" style="@style/UiDialogLabelStyle" />
+                    <com.metamoji.ui.common.UiSwitch android:id="@id/switch_guideHide" style="@style/UiDialogSwitchStyle" />
+                </LinearLayout>
+            </LinearLayout>
+        </ScrollView>
+    </LinearLayout>
+</RelativeLayout>

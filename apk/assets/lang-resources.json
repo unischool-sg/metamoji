@@ -1,0 +1,15 @@
+{
+    "de_DE" : {"version" : "8", "version-min" : "8", "version-max" : "8"},
+    "en_US" : {"version" : "8", "version-min" : "8", "version-max" : "8"},
+    "es_ES" : {"version" : "8", "version-min" : "8", "version-max" : "8"},
+    "fr_FR" : {"version" : "8", "version-min" : "8", "version-max" : "8"},
+    "it_IT" : {"version" : "8", "version-min" : "8", "version-max" : "8"},
+    "ja_JP" : {"version" : "15", "version-min" : "11", "version-max" : "15"},
+    "ko_KR" : {"version" : "8", "version-min" : "8", "version-max" : "8"},
+    "nl_NL" : {"version" : "8", "version-min" : "8", "version-max" : "8"},
+    "pl_PL" : {"version" : "8", "version-min" : "8", "version-max" : "8"},
+    "pt_BR" : {"version" : "8", "version-min" : "8", "version-max" : "8"},
+    "ru_RU" : {"version" : "8", "version-min" : "8", "version-max" : "8"},
+    "zh_CN" : {"version" : "8", "version-min" : "8", "version-max" : "8"},
+    "zh_TW" : {"version" : "8", "version-min" : "8", "version-max" : "8"}
+}

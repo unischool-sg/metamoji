@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:local="http://schemas.android.com/apk/res-auto">
+    <include layout="@layout/control_dialog_background" />
+    <LinearLayout style="@style/UiDialogStyle">
+        <include layout="@layout/control_dialog_header" />
+        <com.metamoji.ui.common.UiOuterScrollView style="@style/UiDialogScrollViewStyle">
+            <LinearLayout style="@style/UiDialogBodyWithScrollStyle">
+                <TextView android:id="@id/InstructionText" style="@style/UiDialogGroupTitleStyle" />
+                <com.metamoji.ui.common.UiMailAddressEditText android:id="@id/MailaddressText" android:layout_width="match_parent" android:layout_height="wrap_content" android:lines="3" android:inputType="textMultiLine" android:privateImeOptions="com.metamoji.mazecapi?stroke_input=false" />
+                <com.metamoji.ui.common.UiButton android:layout_gravity="right" android:id="@id/selectButton" android:layout_width="wrap_content" android:layout_height="wrap_content" local:button_type="sub" local:maintitle="@string/UserManagement_Select_AddressBook" />
+                <com.metamoji.ui.common.UiRadioGroup android:orientation="horizontal" android:id="@id/history_type_radiogroup" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="@dimen/controlSpaceWide" local:justify_width_withlargestchild="true">
+                    <com.metamoji.ui.common.UiRadioButton android:id="@id/history_address_btn" android:layout_width="0.0dp" android:layout_height="wrap_content" android:layout_weight="1.0" local:maintitle="@string/UsetManagement_HistoryMode_Address" local:radiobutton_type="left" />
+                    <com.metamoji.ui.common.UiRadioButton android:id="@id/history_meeting_btn" android:layout_width="0.0dp" android:layout_height="wrap_content" android:layout_weight="1.0" local:maintitle="@string/UsetManagement_HistoryMode_Sahre" local:radiobutton_type="right" />
+                </com.metamoji.ui.common.UiRadioGroup>
+                <ListView android:id="@id/listview" android:background="@drawable/group_background_down" android:layout_width="match_parent" android:layout_height="300.0dp" android:layout_marginTop="@dimen/controlSpaceWide" />
+                <com.metamoji.ui.common.UiTextView android:id="@id/label_invite" android:layout_marginTop="@dimen/controlSpaceWide" android:text="@string/Cabinet_SdAddMemberDlgAdditionalMessageLabel" style="@style/UiDialogGroupTitleStyle" />
+                <EditText android:id="@id/edittext_invite_msg" android:layout_width="match_parent" android:layout_height="wrap_content" android:lines="3" android:inputType="textMultiLine" />
+            </LinearLayout>
+        </com.metamoji.ui.common.UiOuterScrollView>
+    </LinearLayout>
+</RelativeLayout>

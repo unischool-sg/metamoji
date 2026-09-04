@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout android:layout_width="wrap_content" android:layout_height="wrap_content"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <include layout="@layout/control_dialog_background" />
+    <LinearLayout style="@style/UiDialogStyle">
+        <include layout="@layout/control_dialog_header" />
+        <LinearLayout android:minHeight="400.0dp" style="@style/UiDialogBodyStyle">
+            <com.metamoji.ui.common.UiEditText android:id="@id/EntryTag_EditText" android:layout_width="match_parent" android:layout_height="wrap_content" android:inputType="text" android:privateImeOptions="com.metamoji.mazecapi?stroke_input=false" />
+            <ListView android:id="@id/cabinet_entry_tag_view" android:background="@drawable/group_background_down" android:layout_width="match_parent" android:layout_height="match_parent" />
+        </LinearLayout>
+    </LinearLayout>
+</RelativeLayout>

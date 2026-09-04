@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:orientation="vertical" android:layout_width="match_parent" android:layout_height="match_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:local="http://schemas.android.com/apk/res-auto">
+    <FrameLayout android:orientation="vertical" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="14.0dp" android:layout_marginRight="10.0dp">
+        <HorizontalScrollView android:id="@id/cabinet_folder_path_view" android:scrollbars="none" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="50.0dp" android:fillViewport="true" />
+    </FrameLayout>
+    <LinearLayout android:orientation="vertical" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginLeft="10.0dp" android:layout_marginTop="0.0dp" android:layout_marginRight="10.0dp">
+        <FrameLayout android:orientation="vertical" android:id="@id/cabinet_normal_layout" android:layout_width="match_parent" android:layout_height="wrap_content">
+            <ImageView android:layout_gravity="top" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="12.0dp" android:src="@drawable/cabinet_tag_separator" android:scaleType="fitXY" android:contentDescription="@null" />
+            <com.metamoji.ui.common.UiButton android:layout_gravity="right" android:id="@id/cabinet_drive_member_button" android:layout_width="wrap_content" android:layout_height="wrap_content" local:button_type="normal" />
+        </FrameLayout>
+        <TextView android:textColor="@color/cabinet_invited_drive_message_text" android:id="@id/cabinet_drive_invitation_guidance" android:background="@drawable/cabinet_invited_drive_message_back" android:padding="4.0dp" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="20.0dp" />
+        <TextView android:textColor="@color/cabinet_invited_drive_message_text" android:id="@id/cabinet_drive_wait_sync_message" android:background="@drawable/cabinet_invited_drive_message_back" android:padding="4.0dp" android:visibility="gone" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="20.0dp" />
+        <LinearLayout android:gravity="right" android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="20.0dp">
+            <com.metamoji.ui.common.UiButton android:id="@id/cabinet_shared_drive_participate_button" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginRight="10.0dp" local:button_type="normal" />
+            <com.metamoji.ui.common.UiButton android:id="@id/cabinet_shared_drive_reject_button" android:layout_width="wrap_content" android:layout_height="wrap_content" local:button_type="normal" />
+        </LinearLayout>
+    </LinearLayout>
+</LinearLayout>

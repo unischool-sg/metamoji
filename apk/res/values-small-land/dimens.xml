@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="mazec_height_high">144.0dp</dimen>
+    <dimen name="mazec_height_low">96.0dp</dimen>
+    <dimen name="mazec_height_middle">120.0dp</dimen>
+    <dimen name="menu_btn_h">32.0dp</dimen>
+    <dimen name="menu_gear_btn_w">42.0dp</dimen>
+    <dimen name="menu_input_mode_btn_w">45.0dp</dimen>
+    <dimen name="menu_mushroom_btn_w">42.0dp</dimen>
+    <dimen name="menu_select_height">40.0dp</dimen>
+</resources>

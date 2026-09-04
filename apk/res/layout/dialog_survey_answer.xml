@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout android:layout_width="match_parent" android:layout_height="match_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:local="http://schemas.android.com/apk/res-auto">
+    <include layout="@layout/control_dialog_background" />
+    <LinearLayout style="@style/UiDialogStyle">
+        <include layout="@layout/control_dialog_header" />
+        <ScrollView style="@style/UiDialogScrollViewStyle">
+            <LinearLayout style="@style/UiDialogBodyWithScrollStyle">
+                <LinearLayout android:orientation="horizontal" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/controlSpaceWide" style="@style/UiDialogGroupUpStyle">
+                    <TextView android:textSize="15.0dp" android:ellipsize="none" android:id="@id/question_text" android:singleLine="false" android:breakStrategy="high_quality" style="@style/UiDialogLabelStyle" />
+                </LinearLayout>
+                <LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="match_parent" android:layout_marginBottom="@dimen/controlSpaceWide">
+                    <com.metamoji.forSchool.ui.ScListView android:id="@id/listView" android:background="@drawable/collabo_bar_list_frame" android:layout_width="match_parent" android:layout_height="200.0dp" android:divider="@null" android:layout_weight="1.0" />
+                </LinearLayout>
+                <com.metamoji.ui.common.UiButton android:enabled="true" android:layout_gravity="center" android:id="@id/answer_btn" android:layout_width="wrap_content" android:layout_height="wrap_content" android:minWidth="100.0dp" local:button_type="normal" local:maintitle="@string/MMJNT_LSTR_SURVEY_UNIT_ANSWER" local:maintitle_gravity="center_horizontal" />
+            </LinearLayout>
+        </ScrollView>
+    </LinearLayout>
+</RelativeLayout>

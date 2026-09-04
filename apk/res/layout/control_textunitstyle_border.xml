@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge android:orientation="vertical" android:clipChildren="false" android:layout_width="wrap_content" android:layout_height="wrap_content"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:local="http://schemas.android.com/apk/res-auto">
+    <TextView android:id="@id/label_lineheight" android:layout_marginBottom="@dimen/controlSpace" style="@style/UiDialogGroupTitleStyle" />
+    <LinearLayout android:orientation="vertical" android:clipChildren="false" android:clipToPadding="false" android:layout_marginBottom="@dimen/controlSpace" style="@style/UiDialogGroupDownStyle">
+        <com.metamoji.ui.common.UiPlainSlider android:id="@id/lineheight" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/controlSpace" />
+        <LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content">
+            <com.metamoji.ui.common.UiButton android:id="@id/preSize1" android:layout_width="@dimen/buttonPresetWidth" android:layout_height="wrap_content" local:button_type="normal" local:maintitle_gravity="center_horizontal" />
+            <View android:layout_width="0.0dp" android:layout_height="0.0dp" android:layout_weight="1.0" />
+            <com.metamoji.ui.common.UiButton android:id="@id/preSize2" android:layout_width="@dimen/buttonPresetWidth" android:layout_height="wrap_content" local:button_type="normal" local:maintitle_gravity="center_horizontal" />
+            <View android:layout_width="0.0dp" android:layout_height="0.0dp" android:layout_weight="1.0" />
+            <com.metamoji.ui.common.UiButton android:id="@id/preSize3" android:layout_width="@dimen/buttonPresetWidth" android:layout_height="wrap_content" local:button_type="normal" local:maintitle_gravity="center_horizontal" />
+            <View android:layout_width="0.0dp" android:layout_height="0.0dp" android:layout_weight="1.0" />
+            <com.metamoji.ui.common.UiButton android:id="@id/preSize4" android:layout_width="@dimen/buttonPresetWidth" android:layout_height="wrap_content" local:button_type="normal" local:maintitle_gravity="center_horizontal" />
+            <View android:layout_width="0.0dp" android:layout_height="0.0dp" android:layout_weight="1.0" />
+            <com.metamoji.ui.common.UiButton android:id="@id/preSize5" android:layout_width="@dimen/buttonPresetWidth" android:layout_height="wrap_content" local:button_type="normal" local:maintitle_gravity="center_horizontal" />
+        </LinearLayout>
+    </LinearLayout>
+    <RelativeLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/controlSpace">
+        <com.metamoji.ui.common.UiButton android:id="@id/ruled_line_style" android:layout_width="match_parent" android:layout_height="wrap_content" local:button_type="withsubmenu" local:maintitle="@string/TextUnitStyle_RuledLine" />
+        <com.metamoji.ui.dialog.TextUnitRuledLineStyleSampleView android:id="@id/ruledlinestyle_sample" android:layout_width="80.0dp" android:layout_height="20.0dp" android:layout_marginTop="@dimen/buttonSubVCenterOffset" android:layout_marginRight="@dimen/subTitleMarginRightWithSubMenu" android:layout_alignRight="@id/ruled_line_style" android:translationY="-10.0dp" />
+    </RelativeLayout>
+    <RelativeLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/controlSpace">
+        <com.metamoji.ui.common.UiButton android:id="@id/unit_border_style" android:layout_width="match_parent" android:layout_height="wrap_content" local:button_type="withsubmenu" local:maintitle="@string/TextUnitStyle_BorderLine" />
+        <com.metamoji.ui.dialog.TextUnitBorderStyleSampleView android:id="@id/unitborderstyle_sample" android:layout_width="80.0dp" android:layout_height="20.0dp" android:layout_marginTop="@dimen/buttonSubVCenterOffset" android:layout_marginRight="@dimen/subTitleMarginRightWithSubMenu" android:layout_alignRight="@id/unit_border_style" android:translationY="-10.0dp" />
+    </RelativeLayout>
+    <RelativeLayout android:layout_width="match_parent" android:layout_height="wrap_content">
+        <com.metamoji.ui.common.UiButton android:id="@id/background_color" android:layout_width="match_parent" android:layout_height="wrap_content" local:button_type="withsubmenu" local:maintitle="@string/TextUnitStyle_BGColor" />
+        <View android:id="@id/label_bgcolor" android:layout_width="80.0dp" android:layout_height="20.0dp" android:layout_marginTop="@dimen/buttonSubVCenterOffset" android:layout_marginRight="@dimen/subTitleMarginRightWithSubMenu" android:layout_alignRight="@id/background_color" android:translationY="-10.0dp" />
+    </RelativeLayout>
+    <RelativeLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4.0dp">
+        <com.metamoji.ui.common.UiButton android:id="@id/vertical_writing" android:layout_width="match_parent" android:layout_height="wrap_content" local:button_type="withcheckbox" local:maintitle="@string/TextUnitStyle_VerticalWriting" />
+    </RelativeLayout>
+</merge>

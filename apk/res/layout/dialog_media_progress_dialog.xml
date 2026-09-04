@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout android:background="@color/dialog_media_progress_background" android:layout_width="wrap_content" android:layout_height="wrap_content"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <LinearLayout android:gravity="center_horizontal" android:orientation="vertical" android:id="@id/dfp_mainPanel" android:background="@color/white" android:padding="20.0dp" android:layout_width="wrap_content" android:layout_height="wrap_content" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintLeft_toLeftOf="parent" app:layout_constraintRight_toRightOf="parent" app:layout_constraintTop_toTopOf="parent">
+        <TextView android:textColor="@color/white" android:gravity="center_horizontal" android:background="@color/school_userlist_section_font_color_offline" android:paddingTop="5.0dp" android:paddingBottom="5.0dp" android:layout_width="300.0dp" android:layout_height="wrap_content" android:layout_marginBottom="20.0dp" android:text="@string/MMJNT_LSTR_VIDEO_TITLE_UPLOAD_PROGRESS_DIALOG" android:textFontWeight="700" />
+        <ProgressBar android:id="@id/dfp_bytesProgress" android:layout_width="300.0dp" android:layout_height="wrap_content" android:max="100" android:indeterminate="false" android:layout_marginStart="30.0dp" android:layout_marginEnd="30.0dp" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintStart_toStartOf="parent" app:layout_constraintTop_toTopOf="parent" style="?android:progressBarStyleHorizontal" />
+        <TextView android:id="@id/dfp_bytesProgressText" android:layout_width="wrap_content" android:layout_height="wrap_content" />
+        <LinearLayout android:gravity="center_horizontal" android:orientation="vertical" android:id="@id/dfp_filesProgressPane" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="10.0dp">
+            <ProgressBar android:id="@id/dfp_filesProgress" android:layout_width="300.0dp" android:layout_height="wrap_content" android:max="100" android:indeterminate="false" android:layout_marginStart="30.0dp" android:layout_marginEnd="30.0dp" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintStart_toStartOf="parent" app:layout_constraintTop_toTopOf="parent" style="?android:progressBarStyleHorizontal" />
+            <TextView android:id="@id/dfp_filesProgressText" android:layout_width="wrap_content" android:layout_height="wrap_content" />
+        </LinearLayout>
+        <LinearLayout android:layout_gravity="center_horizontal" android:orientation="horizontal" android:id="@id/dfp_checkBackgroundPane" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="10.0dp">
+            <CheckBox android:id="@id/dfp_checkBackground" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/MMJNT_LSTR_VIDEO_CHK_EXEC_BACKGROUND" />
+        </LinearLayout>
+        <LinearLayout android:layout_gravity="center_horizontal" android:orientation="horizontal" android:id="@id/dfp_cancelUploadTaskPane" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="10.0dp">
+            <Button android:id="@id/dfp_cancelUploadTaskButton" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/MMJNT_LSTR_VIDEO_BTN_CANCEL_UPLOADING" />
+        </LinearLayout>
+    </LinearLayout>
+    <LinearLayout android:gravity="center_horizontal" android:orientation="vertical" android:id="@id/dfp_messagePanel" android:background="@color/white" android:padding="20.0dp" android:layout_width="wrap_content" android:layout_height="wrap_content" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintLeft_toLeftOf="parent" app:layout_constraintRight_toRightOf="parent" app:layout_constraintTop_toTopOf="parent">
+        <TextView android:id="@id/dfp_messageText" android:layout_width="wrap_content" android:layout_height="wrap_content" android:singleLine="false" />
+        <LinearLayout android:orientation="horizontal" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="10.0dp">
+            <Button android:id="@id/dfp_confirmButton" android:layout_width="wrap_content" android:layout_height="wrap_content" android:minWidth="80.0dp" android:text="@string/MMJNT_LSTR_VIDEO_BTN_CONFIRM" />
+            <Button android:id="@id/dfp_cancelButton" android:layout_width="wrap_content" android:layout_height="wrap_content" android:minWidth="80.0dp" android:text="@string/MMJNT_LSTR_VIDEO_BTN_ABORT" />
+            <Button android:id="@id/dfp_retryButton" android:layout_width="wrap_content" android:layout_height="wrap_content" android:minWidth="80.0dp" android:text="@string/MMJNT_LSTR_VIDEO_BTN_RETRY" />
+            <Button android:id="@id/dfp_ignoreButton" android:layout_width="wrap_content" android:layout_height="wrap_content" android:minWidth="80.0dp" android:text="@string/MMJNT_LSTR_VIDEO_BTN_IGNORE" />
+        </LinearLayout>
+    </LinearLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>

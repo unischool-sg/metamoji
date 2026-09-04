@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:local="http://schemas.android.com/apk/res-auto">
+    <include layout="@layout/control_dialog_background" />
+    <LinearLayout style="@style/UiDialogStyle">
+        <include layout="@layout/control_dialog_header" />
+        <LinearLayout android:id="@id/containerLayout" android:layout_height="match_parent" style="@style/UiDialogBodyStyle">
+            <LinearLayout android:orientation="vertical" android:id="@id/schoolClassNamePanel" android:visibility="gone" android:layout_width="match_parent" android:layout_height="wrap_content">
+                <TextView android:textSize="15.0dp" android:textStyle="bold" android:focusable="true" android:focusableInTouchMode="true" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="6.0dp" android:text="@string/School_ManageParticipantsDlg_ClassName" android:singleLine="true">
+                    <requestFocus />
+                </TextView>
+                <com.metamoji.ui.common.UiEditText android:id="@id/classNameText" android:nextFocusLeft="@id/classNameText" android:nextFocusRight="@id/classNameText" android:nextFocusUp="@id/classNameText" android:nextFocusDown="@id/classNameText" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="@string/School_ManageParticipantsDlg_ClassName_PlaceHolder" android:inputType="text" android:imeOptions="actionDone" android:nextFocusForward="@id/classNameText" />
+            </LinearLayout>
+            <LinearLayout android:orientation="horizontal" android:id="@id/schoolHeaderButtonPanel" android:layout_width="match_parent" android:layout_height="wrap_content">
+                <com.metamoji.ui.common.UiButton android:id="@id/addMemberBtnForSchool" android:layout_width="wrap_content" android:layout_height="wrap_content" local:button_type="mini" local:maintitle="@string/ManageParticipantsDlg_Add_Participants" />
+                <com.metamoji.ui.common.UiButton android:enabled="false" android:id="@id/deleteBtnForSchool" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="6.0dp" local:button_type="mini" local:maintitle="@string/Cabinet_Button_Delete" />
+                <View android:layout_width="0.0dp" android:layout_height="0.0dp" android:layout_weight="1.0" />
+                <TextView android:textSize="15.0dp" android:textStyle="bold" android:layout_gravity="bottom" android:id="@id/memberCountLabel" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_alignParentRight="true" />
+            </LinearLayout>
+            <ListView android:id="@id/memberList" android:background="@drawable/group_background_down" android:layout_width="match_parent" android:layout_height="0.0dp" android:layout_marginTop="@dimen/controlSpace" android:layout_weight="1.0" />
+            <RelativeLayout android:id="@id/groupEditPanel" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="@dimen/controlSpace">
+                <com.metamoji.ui.common.UiButton android:id="@id/groupingBtn" android:layout_width="170.0dp" android:layout_height="wrap_content" android:layout_alignParentLeft="true" local:button_type="mini" local:maintitle="@string/MMJNT_LSTR_AUTO_GROUPING" />
+                <com.metamoji.ui.common.UiButton android:enabled="true" android:id="@id/manageGroupBtn" android:layout_width="170.0dp" android:layout_height="wrap_content" android:layout_alignParentRight="true" local:button_type="mini" local:maintitle="@string/School_ManageParticipantsDlg_Manage_Group_Btn" />
+            </RelativeLayout>
+            <RelativeLayout android:id="@id/schoolFooterButtonPanel" android:visibility="gone" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="12.0dp">
+                <com.metamoji.ui.common.UiButton android:id="@id/changeClassBtn" android:layout_width="170.0dp" android:layout_height="wrap_content" android:layout_alignParentLeft="true" local:button_type="mini" local:maintitle="@string/School_ManageParticipantsDlg_Change_Class_Btn" />
+                <com.metamoji.ui.common.UiButton android:id="@id/importClassBtn" android:layout_width="170.0dp" android:layout_height="wrap_content" android:layout_alignParentRight="true" local:button_type="mini" local:maintitle="@string/School_ManageParticipantsDlg_Import_Class_Btn" />
+            </RelativeLayout>
+        </LinearLayout>
+    </LinearLayout>
+</RelativeLayout>

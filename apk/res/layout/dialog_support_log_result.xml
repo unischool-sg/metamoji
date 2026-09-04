@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout android:orientation="vertical" android:layout_width="match_parent" android:layout_height="wrap_content"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <TextView android:id="@id/message" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/APP_SUPPORT_LOG_REPORT_DONE_STATIC" app:layout_constraintStart_toStartOf="parent" app:layout_constraintTop_toTopOf="parent" />
+    <TextView android:id="@id/date_label" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/APP_SUPPORT_LOG_DATE_LABEL" app:layout_constraintBaseline_toBaselineOf="@id/date" app:layout_constraintStart_toStartOf="parent" />
+    <TextView android:id="@id/date" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="@dimen/controlSpaceWide" android:textIsSelectable="true" app:layout_constraintStart_toEndOf="@id/date_label" app:layout_constraintTop_toBottomOf="@id/message" />
+    <TextView android:id="@id/logid_label" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/APP_SUPPORT_LOG_KEY_LABEL" app:layout_constraintBaseline_toBaselineOf="@id/logid" app:layout_constraintStart_toStartOf="parent" />
+    <TextView android:id="@id/logid" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textIsSelectable="true" app:layout_constraintStart_toEndOf="@id/logid_label" app:layout_constraintTop_toBottomOf="@id/date" />
+    <com.metamoji.ui.common.UiButton android:id="@id/copy" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="@dimen/controlSpaceWide" app:button_type="normal" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintTop_toBottomOf="@id/logid" app:maintitle="@string/APP_SUPPORT_LOG_COPY_TO_CLIPBOARD" app:maintitle_gravity="center_horizontal" />
+</androidx.constraintlayout.widget.ConstraintLayout>

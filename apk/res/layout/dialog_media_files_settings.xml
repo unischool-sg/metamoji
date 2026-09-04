@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout android:layout_width="match_parent" android:layout_height="match_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <include layout="@layout/control_dialog_background" />
+    <LinearLayout style="@style/UiDialogStyle">
+        <include layout="@layout/control_dialog_header" />
+        <ScrollView style="@style/UiDialogScrollViewStyle">
+            <LinearLayout style="@style/UiDialogBodyWithScrollStyle">
+                <com.metamoji.ui.common.UiTextView android:id="@id/text_uploadTiming" android:text="@string/MMJNT_MF_SETTINGS_AUTO_UPLOAD" style="@style/UiDialogGroupTitleStyle" />
+                <LinearLayout android:orientation="horizontal" android:id="@id/SystemOptionGroup_autoUploadMode" android:layout_marginBottom="@dimen/controlSpaceWide" style="@style/UiDialogGroupUpStyleBottom">
+                    <RadioGroup android:id="@id/SystemOption_autoUploadGroup" android:layout_width="wrap_content" android:layout_height="wrap_content">
+                        <RadioButton android:id="@id/autoUpload_all" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/MMJNT_MF_SETTINGS_UPLOAD_ALL" />
+                        <RadioButton android:id="@id/autoUpload_shareOnly" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/MMJNT_MF_SETTINGS_UPLOAD_SHARE_ONLY" />
+                        <RadioButton android:id="@id/autoUpload_none" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/MMJNT_MF_SETTINGS_UPLOAD_NONE" />
+                    </RadioGroup>
+                </LinearLayout>
+                <com.metamoji.ui.common.UiTextView android:id="@id/text_option" android:text="@string/MMJNT_LSTR_MEDIAFILES_SETTING_OPTION" style="@style/UiDialogGroupTitleStyle" />
+                <LinearLayout android:orientation="horizontal" android:id="@id/SystemOptionGroup_uploadSynchronizeApp" android:layout_marginBottom="@dimen/controlSpaceWide" style="@style/UiDialogGroupUpStyleTop">
+                    <com.metamoji.ui.common.UiTextView android:id="@id/text_uploadSynchronizeApp" android:text="@string/MMJNT_LSTR_MEDIAFILES_SETTING_SYNC_MANUAL" android:layout_marginEnd="@dimen/controlSpace" style="@style/UiDialogLabelStyle" />
+                    <com.metamoji.ui.common.UiSwitch android:id="@id/switch_uploadSynchronizeApp" style="@style/UiDialogSwitchStyle" />
+                </LinearLayout>
+                <LinearLayout android:orientation="horizontal" android:id="@id/SystemOptionGroup_allowCellularAccess" android:layout_marginBottom="@dimen/controlSpaceWide" style="@style/UiDialogGroupUpStyleBottom">
+                    <com.metamoji.ui.common.UiTextView android:id="@id/text_allowCellularAccess" android:text="@string/MMJNT_LSTR_MEDIAFILES_SETTING_ARROW_CELLULAR" android:layout_marginEnd="@dimen/controlSpace" style="@style/UiDialogLabelStyle" />
+                    <com.metamoji.ui.common.UiSwitch android:id="@id/switch_allowCellularAccess" style="@style/UiDialogSwitchStyle" />
+                </LinearLayout>
+                <com.metamoji.ui.common.UiTextView android:id="@id/text_manageVideoFile" android:text="@string/MMJNT_LSTR_MEDIAFILES_SETTING_SHOWMANAGER" style="@style/UiDialogGroupTitleStyle" />
+                <com.metamoji.ui.common.UiButton android:id="@id/button_manageVideoFile" android:layout_width="match_parent" android:layout_height="wrap_content" app:button_type="withsubmenu" app:maintitle="@string/MMJNT_LSTR_MEDIAFILES_TITLE" />
+                <com.metamoji.ui.common.UiButton android:id="@id/button_manageLocalFile" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/controlSpaceWide" app:button_type="withsubmenu" app:maintitle="@string/MMJNT_LSTR_MF_OFFLINE_STORAGE" />
+            </LinearLayout>
+        </ScrollView>
+    </LinearLayout>
+</RelativeLayout>

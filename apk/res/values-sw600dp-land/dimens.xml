@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="PenSettingsCal1MinWidth">789.0dp</dimen>
+    <dimen name="PenSettingsCal2MinWidth">812.0dp</dimen>
+    <dimen name="PenSettingsDummyWidth">55.5dp</dimen>
+    <dimen name="PenSettingsStd1MinWidth">860.0dp</dimen>
+    <dimen name="PenSettingsStd2MinWidth">860.0dp</dimen>
+    <dimen name="SimpleModeColumnWidth_FolderTitle">450.0dp</dimen>
+    <dimen name="SimpleModeColumnWidth_RenewDate">200.0dp</dimen>
+    <dimen name="SimpleModeColumnWidth_Title">200.0dp</dimen>
+    <dimen name="cabinetFolderTreeWidth">300.0dp</dimen>
+    <dimen name="cabinetUserViewMessagePaddingLeft">160.0dp</dimen>
+    <dimen name="cabinetUserViewMessagePaddingRight">160.0dp</dimen>
+    <dimen name="cabinetUserViewPaddingBottom">20.0dp</dimen>
+    <dimen name="cabinetUserViewPaddingLeft">70.0dp</dimen>
+    <dimen name="cabinetUserViewPaddingRight">70.0dp</dimen>
+    <dimen name="cabinetUserViewPaddingTop">20.0dp</dimen>
+</resources>

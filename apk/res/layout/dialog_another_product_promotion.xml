@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:local="http://schemas.android.com/apk/res-auto">
+    <include layout="@layout/control_dialog_background_fullscreen" />
+    <LinearLayout style="@style/UiDialogFullScreenStyle">
+        <include layout="@layout/control_dialog_header_fullscreen" />
+        <LinearLayout android:orientation="vertical" android:padding="8.0dp" android:layout_width="match_parent" android:layout_height="match_parent">
+            <WebView android:id="@id/APPwebPreview" android:layout_width="match_parent" android:layout_height="0.0dp" android:layout_weight="1.0" />
+            <com.metamoji.ui.common.UiButton android:id="@id/APPdownload" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="10.0dp" local:button_type="normal_blue" local:maintitle="@string/Promotion_Another_Product_Download" local:maintitle_gravity="center_horizontal" />
+            <com.metamoji.ui.common.UiButton android:id="@id/APPMoreInfo" android:visibility="gone" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="10.0dp" local:button_type="normal_blue" local:maintitle="@string/Promotion_Another_Product_More_Info" local:maintitle_gravity="center_horizontal" />
+            <com.metamoji.ui.common.UiButton android:id="@id/APPnomorepromo" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="10.0dp" android:layout_marginBottom="10.0dp" local:button_type="withcheckbox" local:maintitle="@string/Promotion_Another_Product_Do_Not_Show_Again" local:maintitle_gravity="center_horizontal" />
+        </LinearLayout>
+    </LinearLayout>
+</RelativeLayout>

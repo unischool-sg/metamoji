@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout android:layout_width="wrap_content" android:layout_height="wrap_content"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:local="http://schemas.android.com/apk/res-auto">
+    <include layout="@layout/control_dialog_background" />
+    <LinearLayout style="@style/UiDialogStyle">
+        <include layout="@layout/control_dialog_header" />
+        <ScrollView style="@style/UiDialogScrollViewStyle">
+            <LinearLayout style="@style/UiDialogBodyWithScrollStyle">
+                <TextView android:text="@string/Cabinet_Sort_Subtitle_Item" style="@style/UiDialogGroupTitleStyle" />
+                <com.metamoji.ui.common.UiRadioGroup android:orientation="horizontal" android:id="@id/cabinet_radiogroup_sort_subtitle" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/controlSpace" local:justify_width_withlargestchild="true">
+                    <com.metamoji.ui.common.UiRadioButton android:id="@id/cabinet_sort_title_btn" android:layout_width="0.0dp" android:layout_height="wrap_content" android:layout_weight="1.0" local:maintitle="@string/Cabinet_Sort_Title" local:radiobutton_type="left" />
+                    <com.metamoji.ui.common.UiRadioButton android:id="@id/cabinet_sort_updated_btn" android:layout_width="0.0dp" android:layout_height="wrap_content" android:layout_weight="1.0" local:maintitle="@string/Cabinet_Sort_Updated" local:radiobutton_type="center" />
+                    <com.metamoji.ui.common.UiRadioButton android:id="@id/cabinet_sort_created_btn" android:layout_width="0.0dp" android:layout_height="wrap_content" android:layout_weight="1.0" local:maintitle="@string/Cabinet_Sort_Created" local:radiobutton_type="right" />
+                </com.metamoji.ui.common.UiRadioGroup>
+                <TextView android:text="@string/Cabinet_Sort_Subtitle_Order" style="@style/UiDialogGroupTitleStyle" />
+                <com.metamoji.ui.common.UiRadioGroup android:orientation="horizontal" android:id="@id/cabinet_radiogroup_sort_order" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/controlSpace" local:justify_width_withlargestchild="true">
+                    <com.metamoji.ui.common.UiRadioButton android:id="@id/cabinet_sort_ascending_btn" android:layout_width="0.0dp" android:layout_height="wrap_content" android:layout_weight="1.0" local:maintitle="@string/Cabinet_Sort_Ascending" local:radiobutton_type="left" />
+                    <com.metamoji.ui.common.UiRadioButton android:id="@id/cabinet_sort_descending_btn" android:layout_width="0.0dp" android:layout_height="wrap_content" android:layout_weight="1.0" local:maintitle="@string/Cabinet_Sort_Descending" local:radiobutton_type="right" />
+                </com.metamoji.ui.common.UiRadioGroup>
+            </LinearLayout>
+        </ScrollView>
+    </LinearLayout>
+</RelativeLayout>

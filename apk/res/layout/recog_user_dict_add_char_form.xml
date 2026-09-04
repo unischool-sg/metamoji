@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout android:layout_width="match_parent" android:layout_height="match_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <LinearLayout android:gravity="center|top" android:layout_gravity="center|top" android:orientation="vertical" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="@dimen/recog_user_char_form_desc_margin_x" android:layout_marginRight="@dimen/recog_user_char_form_desc_margin_x">
+        <TextView android:textSize="16.0sp" android:layout_gravity="left" android:focusable="true" android:focusableInTouchMode="true" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="22.0dp" android:layout_marginBottom="18.0dp" android:text="@string/char_form_desc_text">
+            <requestFocus />
+        </TextView>
+        <TableLayout android:layout_width="wrap_content" android:layout_height="wrap_content">
+            <TableRow android:layout_width="wrap_content" android:layout_height="wrap_content">
+                <com.metamoji.mazec.ui.StrokeView android:id="@id/stroke_view" android:background="#ffffffff" android:layout_width="@dimen/recog_user_char_form_stroke_view_size" android:layout_height="@dimen/recog_user_char_form_stroke_view_size">
+                    <TextView android:textSize="16.0sp" android:textColor="#80808080" android:gravity="left" android:layout_gravity="center" android:id="@id/guide_text" android:padding="@dimen/recog_user_char_form_guid_padding" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/char_form_guid_text" />
+                </com.metamoji.mazec.ui.StrokeView>
+                <FrameLayout android:padding="@dimen/recog_user_char_form_arrow_padding" android:layout_width="wrap_content" android:layout_height="match_parent">
+                    <ImageView android:layout_gravity="center" android:id="@id/right_arrow_image" android:layout_width="51.0dp" android:layout_height="36.0dp" android:src="@drawable/arrow_right" />
+                </FrameLayout>
+                <RelativeLayout android:layout_width="wrap_content" android:layout_height="match_parent">
+                    <EditText android:id="@id/char_for_strokes" android:layout_width="90.0dp" android:layout_height="wrap_content" android:layout_centerVertical="true" android:inputType="text" android:privateImeOptions="com.metamoji.mazec-api?stroke_input=false&amp;user_char_form_register=false&amp;settings=false" android:imeOptions="actionDone" />
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/letter_label" android:layout_above="@id/char_for_strokes" />
+                    <Button android:id="@id/button_register" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="16.0dp" android:text="@string/register_button_label" android:layout_below="@id/char_for_strokes" android:layout_centerHorizontal="true" />
+                </RelativeLayout>
+            </TableRow>
+            <TableRow android:layout_width="wrap_content" android:layout_height="wrap_content">
+                <Button android:id="@id/button_clear" android:layout_width="@dimen/recog_user_char_form_stroke_view_size" android:layout_height="wrap_content" android:layout_marginTop="16.0dp" android:text="@string/clear_button_label" />
+            </TableRow>
+        </TableLayout>
+    </LinearLayout>
+    <FrameLayout android:id="@id/progress_overlay" android:background="#80808080" android:layout_width="match_parent" android:layout_height="match_parent">
+        <ProgressBar android:layout_gravity="center" android:background="#00000000" android:layout_width="wrap_content" android:layout_height="wrap_content" android:maxWidth="48.0dp" android:maxHeight="48.0dp" android:indeterminateOnly="true" android:indeterminateDrawable="@drawable/progress_animation" android:indeterminateBehavior="repeat" android:minWidth="48.0dp" android:minHeight="48.0dp" />
+    </FrameLayout>
+</FrameLayout>

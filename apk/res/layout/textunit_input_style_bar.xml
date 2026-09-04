@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:orientation="horizontal" android:background="@drawable/tuisb_background" android:padding="10.0dp" android:layout_width="match_parent" android:layout_height="wrap_content"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:local="http://schemas.android.com/apk/res-auto">
+    <com.metamoji.ui.ImageButtonWithText android:id="@id/fontnameBtn" android:background="@drawable/tuisb_fontname" android:layout_width="150.0dp" android:layout_height="wrap_content" local:minTextSize="7.0sp" local:textHorizontalAlign="left" local:textSize="14.0sp" />
+    <ImageButton android:id="@id/fontsizeMinusBtn" android:background="@drawable/tuisb_fontsize_minus" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="28.0dp" />
+    <com.metamoji.ui.ImageButtonWithText android:id="@id/fontsizeBtn" android:background="@drawable/tuisb_fontsize" android:layout_width="wrap_content" android:layout_height="wrap_content" local:minTextSize="7.0sp" local:textHorizontalAlign="center" local:textSize="14.0sp" />
+    <ImageButton android:id="@id/fontsizePlusBtn" android:background="@drawable/tuisb_fontsize_plus" android:layout_width="wrap_content" android:layout_height="wrap_content" />
+    <ImageButton android:id="@id/textColorBtn" android:background="@drawable/tuisb_textcolor" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="28.0dp" />
+    <ToggleButton android:id="@id/boldBtn" android:background="@drawable/tuisb_bold" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="28.0dp" android:textOn="" android:textOff="" android:minWidth="0.0dp" android:minHeight="0.0dp" />
+    <ToggleButton android:id="@id/italicBtn" android:background="@drawable/tuisb_italic" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textOn="" android:textOff="" android:minWidth="0.0dp" android:minHeight="0.0dp" />
+    <ToggleButton android:id="@id/underlineBtn" android:background="@drawable/tuisb_underline" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textOn="" android:textOff="" android:minWidth="0.0dp" android:minHeight="0.0dp" />
+    <ToggleButton android:id="@id/strikeoutBtn" android:background="@drawable/tuisb_strikeout" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textOn="" android:textOff="" android:minWidth="0.0dp" android:minHeight="0.0dp" />
+    <ImageButton android:id="@id/textAlignBtn" android:background="@drawable/tuisb_textalign" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="28.0dp" />
+    <ImageButton android:id="@id/listBtn" android:background="@drawable/tuisb_list" android:layout_width="wrap_content" android:layout_height="wrap_content" />
+    <ImageButton android:id="@id/insertLineSeparatorBtn" android:background="@drawable/tuisb_insertlineseparator" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="28.0dp" />
+</LinearLayout>

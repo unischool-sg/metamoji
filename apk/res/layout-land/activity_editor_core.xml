@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <FrameLayout android:id="@id/editor_core_root" android:layout_width="match_parent" android:layout_height="match_parent">
+        <RelativeLayout android:orientation="vertical" android:id="@id/deadlineInfoArea" android:visibility="gone" android:layout_width="match_parent" android:layout_height="match_parent" />
+        <LinearLayout android:orientation="vertical" android:id="@id/editing_area_root" android:layout_width="match_parent" android:layout_height="match_parent">
+            <LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="0.0dp" android:baselineAligned="false" android:layout_weight="1.0">
+                <FrameLayout android:id="@id/playlist_layer" android:layout_width="wrap_content" android:layout_height="match_parent" />
+                <FrameLayout android:layout_width="0.0dp" android:layout_height="match_parent" android:layout_weight="1.0">
+                    <LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="match_parent" android:baselineAligned="false">
+                        <fragment android:name="com.metamoji.nt.itemlist.NtPageList" android:id="@id/pagelist" android:layout_width="wrap_content" android:layout_height="match_parent" />
+                        <fragment android:name="com.metamoji.nt.itemlist.NtJumpList" android:id="@id/jumplist" android:layout_width="wrap_content" android:layout_height="match_parent" />
+                        <LinearLayout android:orientation="vertical" android:layout_width="0.0dp" android:layout_height="match_parent" android:layout_weight="1.0">
+                            <FrameLayout android:id="@id/editing_area" android:layout_width="match_parent" android:layout_height="0.0dp" android:layout_weight="1.0">
+                                <RelativeLayout android:id="@id/main" android:layout_width="match_parent" android:layout_height="match_parent" />
+                                <com.metamoji.un.video.UnVideoPlayerLayer android:id="@id/videoPlayerLayer" android:visibility="visible" android:layout_width="match_parent" android:layout_height="match_parent" />
+                                <RelativeLayout android:id="@id/JumpLocationView" android:visibility="invisible" android:layout_width="match_parent" android:layout_height="match_parent" />
+                                <FrameLayout android:layout_gravity="right" android:id="@id/collabobar_layer" android:layout_width="wrap_content" android:layout_height="match_parent" />
+                                <ImageView android:layout_gravity="left" android:id="@id/left_hitarea" android:background="@color/hitarea_background" android:clickable="false" android:layout_width="60.0dp" android:layout_height="match_parent" android:src="@drawable/onetap_scrollbutton_l" android:scaleType="center" android:contentDescription="@null" android:alpha="0.0" />
+                                <ImageView android:layout_gravity="right" android:id="@id/right_hitarea" android:background="@color/hitarea_background" android:clickable="false" android:layout_width="60.0dp" android:layout_height="match_parent" android:src="@drawable/onetap_scrollbutton_r" android:scaleType="center" android:contentDescription="@null" android:alpha="0.0" />
+                                <com.metamoji.ui.CustomHoverSelectorView android:id="@id/CustomHoverSelectorView" android:layout_width="match_parent" android:layout_height="match_parent" />
+                                <com.metamoji.un.text.UnTextEditUserInfoView android:id="@id/unTextEditUserInfoView" android:background="#00ffffff" android:clickable="false" android:clipChildren="true" android:layout_width="match_parent" android:layout_height="match_parent" android.visibility="visible" />
+                                <com.metamoji.nt.NtUnitEditUserInfoView android:id="@id/unitEditUserInfoView" android:background="#00ffffff" android:clickable="false" android:clipChildren="true" android:layout_width="match_parent" android:layout_height="match_parent" android.visibility="visible" />
+                                <com.metamoji.nt.NtNameTipInfoView android:id="@id/nameTipInfoView" android:background="#00ffffff" android:clickable="false" android:clipChildren="true" android:layout_width="match_parent" android:layout_height="match_parent" android.visibility="visible" />
+                            </FrameLayout>
+                        </LinearLayout>
+                    </LinearLayout>
+                    <fragment android:name="com.metamoji.noteanytime.BottomBar" android:layout_gravity="bottom" android:id="@id/bottombar" android:layout_width="match_parent" android:layout_height="wrap_content" />
+                </FrameLayout>
+            </LinearLayout>
+            <FrameLayout android:id="@id/playerbar_layer" android:clipChildren="false" android:layout_width="match_parent" android:layout_height="wrap_content" />
+            <com.metamoji.nt.NtTextUnitInputStyleBar android:id="@id/textunit_input_style_bar" android:visibility="gone" android:layout_width="match_parent" android:layout_height="wrap_content" />
+        </LinearLayout>
+        <include android:id="@id/error_info" layout="@layout/activity_editor_error_alternative" />
+        <fragment android:name="com.metamoji.nt.NtSetTextLocation" android:id="@id/setTextUnitLocation" android:layout_width="match_parent" android:layout_height="match_parent" />
+        <com.metamoji.tle.InputViewForTLE android:id="@id/inputViewForTLE" android:layout_width="0.0dp" android:layout_height="0.0dp" />
+        <FrameLayout android:id="@id/gadget_layer" android:clipChildren="false" android:layout_width="match_parent" android:layout_height="match_parent" />
+        <fragment android:name="com.metamoji.noteanytime.ActionBar" android:id="@id/actionbar" android:layout_width="match_parent" android:layout_height="wrap_content" />
+        <View android:id="@id/barrier_for_searchtextbar" android:visibility="invisible" android:layout_width="match_parent" android:layout_height="match_parent" />
+        <FrameLayout android:id="@id/collabo_mode_dialog_layer" android:clipChildren="false" android:layout_width="match_parent" android:layout_height="match_parent" />
+        <com.metamoji.media.voice.ui.VcTimeBalloonLayout android:id="@id/VcTimeBalloonView" android:visibility="invisible" android:layout_width="match_parent" android:layout_height="match_parent" />
+        <com.metamoji.ui.CustomMenuView android:id="@id/CustomMenuView" android:layout_width="match_parent" android:layout_height="match_parent" />
+        <com.metamoji.ui.CustomHelpView android:id="@id/CustomHelpView" android:visibility="invisible" android:layout_width="match_parent" android:layout_height="match_parent" />
+        <FrameLayout android:id="@id/LoggingView" android:background="@drawable/border_support_logging" android:visibility="gone" android:layout_width="match_parent" android:layout_height="match_parent" />
+    </FrameLayout>
+</merge>

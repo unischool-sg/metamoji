@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:orientation="horizontal" android:background="@drawable/item_cabinet_detail_background" android:layout_width="match_parent" android:layout_height="wrap_content"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <RelativeLayout android:layout_width="@dimen/cabinetDetailThumbnailWidth" android:layout_height="@dimen/cabinetDetailThumbnailHeight" android:layout_marginLeft="@dimen/cabinetDetailThumbnailHPadding" android:layout_marginTop="@dimen/cabinetDetailThumbnailVPadding" android:layout_marginRight="@dimen/cabinetDetailThumbnailHPadding" android:layout_marginBottom="@dimen/cabinetDetailThumbnailVPadding">
+        <ImageView android:id="@id/cabinet_thumb_folder" android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/cabinet_thumb_folder" android:layout_centerInParent="true" />
+    </RelativeLayout>
+    <LinearLayout android:orientation="vertical" android:layout_width="wrap_content" android:layout_height="wrap_content">
+        <GridLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:columnCount="2">
+            <com.metamoji.ui.cabinet.OutlineCharacterOnActivatedTextView android:id="@id/folderNameHeader" android:paddingTop="@dimen/cabinetDetailDateTextTopPadding" android:text="@string/Cabinet_FolderName" style="@style/CabinetDetailText.Header" />
+            <com.metamoji.ui.cabinet.OutlineCharacterOnActivatedTextView android:ellipsize="end" android:id="@id/folderName" android:maxLines="2" style="@style/CabinetDetailText.Value" />
+            <com.metamoji.ui.cabinet.OutlineCharacterOnActivatedTextView android:text="@string/Cabinet_NoteNum" style="@style/CabinetDetailText.Header" />
+            <com.metamoji.ui.cabinet.OutlineCharacterOnActivatedTextView android:id="@id/noteNum" style="@style/CabinetDetailText.Value" />
+        </GridLayout>
+    </LinearLayout>
+</LinearLayout>

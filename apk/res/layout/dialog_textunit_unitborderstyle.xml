@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout android:layout_width="wrap_content" android:layout_height="wrap_content"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:local="http://schemas.android.com/apk/res-auto">
+    <include layout="@layout/control_dialog_background" />
+    <LinearLayout style="@style/UiDialogStyle">
+        <include layout="@layout/control_dialog_header" />
+        <LinearLayout style="@style/UiDialogBodyStyle">
+            <ListView android:id="@id/list" android:background="#ffffff" android:layout_width="match_parent" android:layout_height="match_parent" android:listSelector="@drawable/selector_listitem" />
+        </LinearLayout>
+    </LinearLayout>
+</RelativeLayout>

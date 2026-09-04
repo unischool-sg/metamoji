@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:orientation="vertical" android:background="@color/dialog_background" android:paddingLeft="@dimen/cabinetUserViewPaddingLeft" android:paddingTop="@dimen/cabinetUserViewPaddingTop" android:paddingRight="@dimen/cabinetUserViewPaddingRight" android:paddingBottom="@dimen/cabinetUserViewPaddingBottom" android:layout_width="match_parent" android:layout_height="match_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:local="http://schemas.android.com/apk/res-auto">
+    <TextView android:textSize="20.0dp" android:textStyle="bold" android:textColor="@color/dialog_text" android:id="@id/taxtview_title" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="10.0dp" android:layout_marginTop="30.0dp" android:text="@string/Cabinet_User_Main_Title" />
+    <LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content">
+        <LinearLayout android:orientation="vertical" android:layout_width="0.0dp" android:layout_height="wrap_content" android:layout_weight="1.0">
+            <com.metamoji.ui.common.UiButton android:layout_gravity="left" android:id="@id/button_user_entry" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginLeft="10.0dp" android:layout_marginTop="20.0dp" local:button_type="normal_blue" local:maintitle="@string/Cabinet_User_Button_NewEntry" local:maintitle_gravity="center_horizontal" />
+            <com.metamoji.ui.common.UiButton android:layout_gravity="left" android:id="@id/button_user_login" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginLeft="10.0dp" android:layout_marginTop="10.0dp" local:button_type="normal_blue" local:maintitle="@string/Cabinet_User_Button_Login" local:maintitle_gravity="center_horizontal" />
+            <TextView android:textSize="14.0dp" android:textStyle="normal" android:textColor="@color/dialog_text" android:id="@id/taxtview_message1" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="10.0dp" android:layout_marginTop="2.0dp" android:text="@string/Cabinet_User_Main_Attention" />
+            <com.metamoji.ui.common.UiButton android:layout_gravity="left" android:id="@id/button_back" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginLeft="10.0dp" android:layout_marginTop="20.0dp" local:button_type="normal" local:maintitle="@string/Cabinet_User_Main_BackButton" local:maintitle_gravity="center_horizontal" />
+        </LinearLayout>
+        <FrameLayout android:visibility="invisible" android:layout_width="@dimen/cabinetUserViewSpace" android:layout_height="wrap_content" />
+        <LinearLayout android:orientation="vertical" android:layout_width="0.0dp" android:layout_height="wrap_content" android:layout_weight="1.0">
+            <ImageView android:layout_gravity="center" android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/user_dccloud" />
+        </LinearLayout>
+    </LinearLayout>
+    <LinearLayout android:orientation="vertical" android:paddingLeft="@dimen/cabinetUserViewMessagePaddingLeft" android:paddingRight="@dimen/cabinetUserViewMessagePaddingRight" android:layout_width="match_parent" android:layout_height="wrap_content">
+        <TextView android:textSize="14.0dp" android:textStyle="normal" android:id="@id/taxtview_message2" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="10.0dp" android:layout_marginTop="30.0dp" android:layout_marginRight="10.0dp" android:text="@string/Cabinet_User_Main_New_Message4" />
+        <TextView android:textSize="14.0dp" android:textStyle="normal" android:id="@id/taxtview_message3" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="10.0dp" android:layout_marginTop="10.0dp" android:layout_marginRight="10.0dp" android:text="@string/Cabinet_User_Main_New_Message5" />
+    </LinearLayout>
+    <FrameLayout android:visibility="invisible" android:layout_width="match_parent" android:layout_height="0.0dp" android:layout_weight="1.0" />
+    <LinearLayout android:gravity="center" android:layout_gravity="right|bottom" android:orientation="horizontal" android:layout_width="wrap_content" android:layout_height="wrap_content">
+        <ImageButton android:id="@id/button_question" android:background="@null" android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/control_button_user_maru" />
+        <TextView android:textSize="14.0dp" android:textStyle="bold" android:textColor="@color/dialog_text" android:background="@null" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/Cabinet_User_Main_Whats" />
+    </LinearLayout>
+</LinearLayout>

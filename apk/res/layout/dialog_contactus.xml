@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <include layout="@layout/control_dialog_background" />
+    <LinearLayout style="@style/UiDialogStyle">
+        <include layout="@layout/control_dialog_header" />
+        <ScrollView style="@style/UiDialogScrollViewStyle">
+            <LinearLayout android:layout_width="@dimen/ContactUsDialogWidth" style="@style/UiDialogBodyWithScrollStyle">
+                <FrameLayout style="@style/UiDialogGroupDownWhiteStyle">" 
+                    <TextView android:textColor="#000000" android:textColorLink="#196e7f" android:autoLink="email" android:background="@null" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/ContactUs_Message" android:singleLine="false" />
+                </FrameLayout>
+            </LinearLayout>
+        </ScrollView>
+    </LinearLayout>
+</RelativeLayout>

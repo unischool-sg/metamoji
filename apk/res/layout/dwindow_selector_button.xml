@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <ImageView android:id="@id/dwindow_select_background" android:background="@drawable/hoverselector_pen_preview_frame" android:layout_width="match_parent" android:layout_height="match_parent" android:contentDescription="@null" />
+    <ImageView android:id="@id/dwindow_select_preview" android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="fitXY" android:contentDescription="@null" />
+    <ImageButton android:id="@id/dwindow_select_button" android:background="@drawable/dwindow_select_button" android:layout_width="match_parent" android:layout_height="match_parent" android:contentDescription="@null" />
+</merge>

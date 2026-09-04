@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout android:background="@null" android:layout_width="match_parent" android:layout_height="match_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <com.metamoji.ui.cabinet.NormalGridView android:id="@id/cabinet_normal_view" android:visibility="invisible" android:layout_width="match_parent" android:layout_height="match_parent" android:listSelector="#00000000" />
+    <com.metamoji.ui.cabinet.DetailGridView android:id="@id/cabinet_detail_view" android:visibility="invisible" android:layout_width="match_parent" android:layout_height="match_parent" android:listSelector="#00000000" />
+    <com.metamoji.ui.cabinet.SimpleGridView android:id="@id/cabinet_simple_view" android:visibility="invisible" android:layout_width="match_parent" android:layout_height="match_parent" android:listSelector="#00000000" />
+</FrameLayout>

@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout android:layout_width="wrap_content" android:layout_height="wrap_content"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:local="http://schemas.android.com/apk/res-auto">
+    <include layout="@layout/control_dialog_background" />
+    <LinearLayout style="@style/UiDialogStyle">
+        <include layout="@layout/control_dialog_header" />
+        <ScrollView style="@style/UiDialogScrollViewStyle">
+            <LinearLayout style="@style/UiDialogBodyWithScrollStyle">
+                <LinearLayout android:orientation="vertical" android:id="@id/groupType" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/controlSpaceWide">
+                    <com.metamoji.ui.common.UiTextView android:text="@string/SENDDIALOG_LABEL_TYPE" style="@style/UiDialogGroupTitleStyle" />
+                    <com.metamoji.ui.common.UiRadioGroup android:orientation="vertical" android:id="@id/radioGroupType" android:layout_width="match_parent" android:layout_height="wrap_content">
+                        <com.metamoji.ui.common.UiRadioButton android:id="@id/typePdfBtn" android:layout_width="match_parent" android:layout_height="wrap_content" local:maintitle="@string/Share_Format_PDF" local:radiobutton_type="withcheckboxTop" />
+                        <com.metamoji.ui.common.UiRadioButton android:id="@id/typeJpegBtn" android:layout_width="match_parent" android:layout_height="wrap_content" local:maintitle="@string/SENDDIALOG_TYPE_JPEG" local:radiobutton_type="withcheckboxMid" />
+                        <com.metamoji.ui.common.UiRadioButton android:id="@id/typeTextBtn" android:layout_width="match_parent" android:layout_height="wrap_content" local:maintitle="@string/SENDDIALOG_TYPE_TEXT" local:radiobutton_type="withcheckboxMid" />
+                        <com.metamoji.ui.common.UiRadioButton android:id="@id/typeTextFileBtn" android:layout_width="match_parent" android:layout_height="wrap_content" local:maintitle="@string/SENDDIALOG_TYPE_TEXTFILE" local:radiobutton_type="withcheckboxMid" />
+                        <com.metamoji.ui.common.UiRadioButton android:id="@id/typeNoteAnytimeBtn" android:layout_width="match_parent" android:layout_height="wrap_content" local:maintitle="@string/Share_Format_Doc" local:radiobutton_type="withcheckboxBottom" />
+                    </com.metamoji.ui.common.UiRadioGroup>
+                </LinearLayout>
+                <LinearLayout android:orientation="vertical" android:id="@id/groupPage" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/controlSpaceWide">
+                    <com.metamoji.ui.common.UiTextView android:text="@string/SENDDIALOG_LABEL_PAGE" style="@style/UiDialogGroupTitleStyle" />
+                    <com.metamoji.ui.common.UiRadioGroup android:orientation="vertical" android:id="@id/radioGroupPage" android:layout_width="match_parent" android:layout_height="wrap_content">
+                        <com.metamoji.ui.common.UiRadioButton android:id="@id/pageSelectedAreaBtn" android:layout_width="match_parent" android:layout_height="wrap_content" local:maintitle="@string/Share_Format_Image_SelectedArea" local:radiobutton_type="withcheckboxTop" />
+                        <com.metamoji.ui.common.UiRadioButton android:id="@id/pageAllBtn" android:layout_width="match_parent" android:layout_height="wrap_content" local:maintitle="@string/SENDDIALOG_PAGE_ALL" local:radiobutton_type="withcheckboxMid" />
+                        <com.metamoji.ui.common.UiRadioButton android:id="@id/pageCurrentBtn" android:layout_width="match_parent" android:layout_height="wrap_content" local:maintitle="@string/SENDDIALOG_PAGE_CURRENT" local:radiobutton_type="withcheckboxMid" />
+                        <com.metamoji.ui.common.UiRadioButton android:id="@id/pageNumRangeBtn" android:layout_width="match_parent" android:layout_height="wrap_content" local:maintitle="@string/SENDDIALOG_PAGE_SELECT" local:radiobutton_type="withcheckboxBottom" />
+                    </com.metamoji.ui.common.UiRadioGroup>
+                    <LinearLayout android:gravity="center_vertical" android:orientation="horizontal" android:id="@id/groupPageNumRange" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginLeft="50.0dp" android:layout_marginTop="@dimen/controlSpaceWide">
+                        <Button android:textSize="14.0sp" android:textColor="@color/dialog_text" android:id="@id/fromPageNumBtn" android:background="@drawable/design1_textfield" android:layout_width="wrap_content" android:layout_height="wrap_content" android:minWidth="50.0dp" android:minHeight="@dimen/buttonNormalHeight" />
+                        <TextView android:textSize="14.0sp" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="10.0dp" android:layout_marginRight="10.0dp" android:text="～" />
+                        <Button android:textSize="14.0sp" android:textColor="@color/dialog_text" android:id="@id/toPageNumBtn" android:background="@drawable/design1_textfield" android:layout_width="wrap_content" android:layout_height="wrap_content" android:minWidth="50.0dp" android:minHeight="@dimen/buttonNormalHeight" />
+                    </LinearLayout>
+                </LinearLayout>
+                <LinearLayout android:orientation="vertical" android:id="@id/groupUser" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/controlSpaceWide">
+                    <com.metamoji.ui.common.UiTextView android:text="@string/SENDDIALOG_LABEL_USER" style="@style/UiDialogGroupTitleStyle" />
+                    <com.metamoji.ui.common.UiRadioGroup android:orientation="vertical" android:id="@id/radioGroupUser" android:layout_width="match_parent" android:layout_height="wrap_content">
+                        <com.metamoji.ui.common.UiRadioButton android:id="@id/userCurrentBtn" android:layout_width="match_parent" android:layout_height="wrap_content" local:maintitle="@string/SENDDIALOG_USER_CURRENT" local:radiobutton_type="withcheckboxTop" />
+                        <com.metamoji.ui.common.UiRadioButton android:id="@id/userAllBtn" android:layout_width="match_parent" android:layout_height="wrap_content" local:maintitle="@string/SENDDIALOG_USER_ALL" local:radiobutton_type="withcheckboxMid" />
+                        <com.metamoji.ui.common.UiRadioButton android:id="@id/userSelectedBtn" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/controlSpaceWide" local:maintitle="@string/SENDDIALOG_USER_SELECT" local:radiobutton_type="withsubmenu_and_checkbox_Bottom" />
+                    </com.metamoji.ui.common.UiRadioGroup>
+                    <LinearLayout android:orientation="horizontal" android:id="@id/mergePDFView" android:layout_marginBottom="@dimen/controlSpaceWide" style="@style/UiDialogGroupUpStyle">
+                        <com.metamoji.ui.common.UiTextView android:id="@id/mergePDFText" android:layout_marginRight="@dimen/controlSpace" android:text="@string/SENDDIALOG_MERGE_INTO_ONE_PDF" style="@style/UiDialogLabelStyle" />
+                        <com.metamoji.ui.common.UiSwitch android:id="@id/switchMergePDF" style="@style/UiDialogSwitchStyle" />
+                    </LinearLayout>
+                    <LinearLayout android:orientation="horizontal" android:id="@id/userToalPageCountView" style="@style/UiDialogGroupUpStyleTop">
+                        <com.metamoji.ui.common.UiTextView android:id="@id/userToalPageCountText" android:text="@string/SENDDIALOG_TOTAL_PAGE_COUNT" style="@style/UiDialogLabelStyle" />
+                    </LinearLayout>
+                    <LinearLayout android:orientation="horizontal" android:id="@id/userSendTypeView" style="@style/UiDialogGroupUpStyleBottom">
+                        <com.metamoji.ui.common.UiTextView android:id="@id/userSendTypeText" android:text="@string/SENDDIALOG_LABEL_SENDTYPE" style="@style/UiDialogLabelStyle" />
+                    </LinearLayout>
+                </LinearLayout>
+                <LinearLayout android:orientation="vertical" android:id="@id/groupMedia" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/controlSpaceWide">
+                    <com.metamoji.ui.common.UiTextView android:text="@string/SENDDIALOG_LABEL_VOICE_FILES" style="@style/UiDialogGroupTitleStyle" />
+                    <LinearLayout android:gravity="center_vertical" android:orientation="horizontal" android:id="@id/groupIncludeVoiceFile" style="@style/UiDialogGroupUpStyleTop">
+                        <com.metamoji.ui.common.UiTextView android:layout_marginRight="@dimen/controlSpace" android:text="@string/SENDDIALOG_INCLUDED_VOICE_FILES" style="@style/UiDialogLabelStyle" />
+                        <com.metamoji.ui.common.UiSwitch android:id="@id/switchIncludeVoiceFile" style="@style/UiDialogSwitchStyle" />
+                    </LinearLayout>
+                    <LinearLayout android:gravity="center_vertical" android:orientation="horizontal" android:id="@id/groupShareVoiceFile" style="@style/UiDialogGroupUpStyleBottom">
+                        <com.metamoji.ui.common.UiTextView android:id="@id/textShareVoiceFile" android:layout_marginRight="@dimen/controlSpace" android:text="@string/App_SenddialogSharedVoiceFiles" style="@style/UiDialogLabelStyle" />
+                        <com.metamoji.ui.common.UiSwitch android:id="@id/switchShareVoiceFile" style="@style/UiDialogSwitchStyle" />
+                    </LinearLayout>
+                </LinearLayout>
+                <com.metamoji.ui.common.UiButton android:layout_gravity="right" android:id="@id/execBtn" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="@dimen/controlSpaceWide" local:maintitle="@string/Menu_Send" />
+            </LinearLayout>
+        </ScrollView>
+    </LinearLayout>
+</RelativeLayout>

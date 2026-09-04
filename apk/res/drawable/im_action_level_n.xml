@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<level-list
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@drawable/new_line_na_n" android:maxLevel="0" />
+    <item android:drawable="@drawable/new_line_na_n" android:maxLevel="1" />
+    <item android:drawable="@drawable/im_action_go_n" android:maxLevel="2" />
+    <item android:drawable="@drawable/im_action_search_n" android:maxLevel="3" />
+    <item android:drawable="@drawable/im_action_send_n" android:maxLevel="4" />
+    <item android:drawable="@drawable/im_action_next_n" android:maxLevel="5" />
+    <item android:drawable="@drawable/im_action_done_n" android:maxLevel="6" />
+    <item android:drawable="@drawable/im_action_prev_n" android:maxLevel="7" />
+</level-list>

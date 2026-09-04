@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout android:layout_width="wrap_content" android:layout_height="wrap_content"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:local="http://schemas.android.com/apk/res-auto">
+    <include layout="@layout/control_dialog_background" />
+    <LinearLayout style="@style/UiDialogStyle">
+        <include layout="@layout/control_dialog_header" />
+        <ScrollView style="@style/UiDialogScrollViewStyle">
+            <LinearLayout style="@style/UiDialogBodyWithScrollStyle">
+                <TextView android:text="@string/Cabinet_Title" style="@style/UiDialogGroupTitleStyle" />
+                <com.metamoji.ui.common.UiEditText android:id="@id/Title_EditText" android:nextFocusLeft="@id/Title_EditText" android:nextFocusRight="@id/Title_EditText" android:nextFocusUp="@id/Title_EditText" android:nextFocusDown="@id/Title_EditText" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/controlSpaceWide" android:inputType="text" android:privateImeOptions="com.metamoji.mazecapi?stroke_input=false" android:imeOptions="actionDone" android:nextFocusForward="@id/Title_EditText" />
+                <com.metamoji.ui.common.UiTextView android:text="@string/Editor_NoteInfo_DocInfo_Title" style="@style/UiDialogGroupTitleStyle" />
+                <LinearLayout android:orientation="horizontal" style="@style/UiDialogGroupUpStyleTop">
+                    <com.metamoji.ui.common.UiTextView android:layout_marginRight="@dimen/controlSpace" android:text="@string/Cabinet_Sort_Created" style="@style/UiDialogLabelStyle" />
+                    <com.metamoji.ui.common.UiTextView android:textStyle="normal" android:gravity="right|center" android:layout_gravity="right|center" android:id="@id/dlg_title_edit_createtime" style="@style/UiDialogLabelStyle" />
+                </LinearLayout>
+                <LinearLayout android:orientation="horizontal" android:layout_marginBottom="@dimen/controlSpaceWide" style="@style/UiDialogGroupUpStyleBottom">
+                    <com.metamoji.ui.common.UiTextView android:layout_marginRight="@dimen/controlSpace" android:text="@string/Editor_NoteInfo_Lastupdated_Title" style="@style/UiDialogLabelStyle" />
+                    <com.metamoji.ui.common.UiTextView android:textStyle="normal" android:gravity="right|center" android:layout_gravity="right|center" android:id="@id/dlg_title_edit_timestamp" style="@style/UiDialogLabelStyle" />
+                </LinearLayout>
+            </LinearLayout>
+        </ScrollView>
+    </LinearLayout>
+</RelativeLayout>

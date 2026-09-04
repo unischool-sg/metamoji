@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout android:background="#ffd2d2d2" android:layout_width="wrap_content" android:layout_height="wrap_content"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <LinearLayout android:orientation="horizontal" android:id="@id/itemView" android:layout_width="250.0dp" android:layout_height="40.0dp" android:layout_marginBottom="1.0dp">
+        <ImageView android:layout_gravity="center_vertical" android:id="@id/docIcon" android:duplicateParentState="true" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="5.0dp" android:layout_marginRight="5.0dp" android:src="@drawable/htab_note_icon_dark" />
+        <TextView android:ellipsize="end" android:layout_gravity="center_vertical" android:id="@id/label" android:duplicateParentState="true" android:layout_width="0.0dp" android:layout_height="wrap_content" android:scrollHorizontally="true" android:singleLine="true" android:layout_weight="1.0" />
+        <ImageView android:layout_gravity="center_vertical" android:id="@id/closeIcon" android:duplicateParentState="true" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="5.0dp" android:layout_marginRight="5.0dp" android:src="@drawable/htab_close_button" />
+    </LinearLayout>
+</FrameLayout>

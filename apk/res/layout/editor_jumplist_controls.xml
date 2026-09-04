@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:orientation="horizontal" android:id="@id/editor_bottombar_jumplist_controls" android:background="@drawable/itemlist_tab_back" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="10.0dp"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <ImageButton android:id="@id/editor_bottombar_jumplist_prev" android:background="@null" android:layout_width="33.0dp" android:layout_height="28.0dp" android:layout_marginTop="5.0dp" android:src="@drawable/editor_bottombar_prev" android:scaleType="center" android:contentDescription="@null" />
+    <FrameLayout android:layout_width="108.0dp" android:layout_height="33.0dp">
+        <ImageButton android:id="@id/editor_bottombar_jumplist_tab" android:background="@null" android:layout_width="match_parent" android:layout_height="match_parent" android:src="@drawable/editor_bottombar_jumplist_tab" android:scaleType="fitXY" android:contentDescription="@null" />
+        <LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="match_parent" android:layout_marginLeft="8.0dp" android:layout_marginRight="8.0dp">
+            <TextView android:textSize="14.0sp" android:textColor="#323a45" android:gravity="center" android:id="@id/editor_bottombar_jumplist_tab_label" android:layout_width="0.0dp" android:layout_height="match_parent" android:text="@null" android:layout_weight="1.0" />
+        </LinearLayout>
+    </FrameLayout>
+    <ImageButton android:id="@id/editor_bottombar_jumplist_next" android:background="@null" android:layout_width="33.0dp" android:layout_height="28.0dp" android:layout_marginTop="5.0dp" android:src="@drawable/editor_bottombar_next" android:scaleType="center" android:contentDescription="@null" />
+    <FrameLayout android:id="@id/editor_bottombar_pagelist_change_tab_layout" android:visibility="gone" android:layout_width="46.0dp" android:layout_height="33.0dp">
+        <ImageButton android:id="@id/editor_bottombar_pagelist_change_tab" android:background="@null" android:layout_width="46.0dp" android:layout_height="33.0dp" android:src="@drawable/editor_bottombar_pagelist_change_tab" android:scaleType="fitCenter" android:contentDescription="@null" />
+        <TextView android:textSize="9.0sp" android:textColor="#323a45" android:gravity="center" android:layout_width="46.0dp" android:layout_height="33.0dp" android:text="@string/MMJNT_LSTR_LOCATION_JUMP" />
+    </FrameLayout>
+</LinearLayout>

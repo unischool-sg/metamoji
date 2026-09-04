@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.metamoji.mazec.ui.MenuSelectLanguageArranger android:orientation="vertical" android:background="@drawable/bk_menu_item" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="6.0dp"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <FrameLayout android:id="@id/im_menu_select_language_frame" android:layout_width="match_parent" android:layout_height="wrap_content">
+        <include android:id="@id/im_menu_select_language" android:layout_width="match_parent" android:layout_height="wrap_content" layout="@layout/im_menu_select_language" />
+        <include android:layout_gravity="right|bottom" android:id="@id/im_menu_language_purchase_on_menu_select" android:visibility="gone" android:layout_width="wrap_content" android:layout_height="wrap_content" layout="@layout/im_menu_language_purchase" />
+    </FrameLayout>
+    <include android:layout_gravity="left" android:id="@id/im_menu_language_purchase_alone" android:visibility="gone" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="8.0dp" layout="@layout/im_menu_language_purchase" />
+</com.metamoji.mazec.ui.MenuSelectLanguageArranger>

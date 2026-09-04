@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:orientation="vertical" android:background="#99808080" android:layout_width="match_parent" android:layout_height="match_parent" android:alpha="0.9"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:local="http://schemas.android.com/apk/res-auto">
+    <RelativeLayout android:orientation="vertical" android:id="@id/main" android:layout_width="match_parent" android:layout_height="match_parent">
+        <com.metamoji.un.sound.UnSoundUnitRecorderBar android:orientation="horizontal" android:id="@id/recorder_bar" android:background="@drawable/school_media_bar" android:visibility="gone" android:layout_width="wrap_content" android:layout_height="wrap_content">
+            <ImageView android:id="@id/record_button" android:clickable="true" android:layout_width="40.0dp" android:layout_height="40.0dp" />
+            <TextView android:textSize="16.0dp" android:textStyle="bold" android:gravity="center_vertical" android:layout_gravity="center_vertical" android:id="@id/record_time_label" android:layout_width="60.0dp" android:layout_height="40.0dp" android:text="00:00" android:layout_alignParentLeft="true" />
+            <TextView android:textSize="16.0dp" android:textStyle="bold" android:gravity="center_vertical" android:layout_gravity="center_vertical" android:id="@id/recording_label" android:visibility="invisible" android:layout_width="wrap_content" android:layout_height="40.0dp" android:layout_marginRight="8.0dp" android:layout_alignParentLeft="true" />
+        </com.metamoji.un.sound.UnSoundUnitRecorderBar>
+        <com.metamoji.media.ui.UnMediaPlayerBar android:orientation="horizontal" android:id="@id/player_bar" android:background="@drawable/school_media_bar" android:visibility="gone" android:layout_width="wrap_content" android:layout_height="wrap_content">
+            <ImageView android:id="@id/play_button" android:clickable="true" android:layout_width="40.0dp" android:layout_height="40.0dp" />
+            <TextView android:textSize="16.0dp" android:textStyle="bold" android:gravity="center_vertical" android:layout_gravity="center_vertical" android:id="@id/play_time_label" android:layout_width="60.0dp" android:layout_height="40.0dp" android:text="00:00" android:layout_alignParentLeft="true" />
+            <SeekBar android:id="@id/seek_bar" android:layout_width="100.0dp" android:layout_height="40.0dp" />
+            <TextView android:textSize="16.0dp" android:textStyle="bold" android:gravity="center_vertical" android:layout_gravity="center_vertical" android:id="@id/rerecord_button" android:clickable="true" android:layout_width="wrap_content" android:layout_height="40.0dp" android:layout_marginRight="8.0dp" android:text="@string/SCHOOL_SOUND_UNIT_RERECORD" android:layout_alignParentLeft="true" />
+        </com.metamoji.media.ui.UnMediaPlayerBar>
+    </RelativeLayout>
+</LinearLayout>

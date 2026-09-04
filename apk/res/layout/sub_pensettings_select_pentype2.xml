@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:orientation="horizontal" android:layout_width="wrap_content" android:layout_height="wrap_content" android:minWidth="400.0dp"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <ImageView android:id="@id/drawSample" android:background="@drawable/hoverselector_pen_preview_frame" android:layout_width="70.0dp" android:layout_height="70.0dp" />
+    <HorizontalScrollView android:layout_width="0.0dp" android:layout_height="wrap_content" android:layout_weight="1.0">
+        <LinearLayout android:orientation="horizontal" android:layout_width="wrap_content" android:layout_height="wrap_content">
+            <com.metamoji.ui.common.UiImageRadioButton android:layout_gravity="bottom" android:id="@id/pentypeStd1" android:background="@color/transparent" android:layout_width="match_parent" android:layout_height="match_parent" android:layout_marginTop="8.0dp" android:layout_marginBottom="3.0dp" android:src="@drawable/dlg_button_pentype_std1" android:scaleType="fitCenter" android:layout_weight="1.0" />
+            <com.metamoji.ui.common.UiImageRadioButton android:layout_gravity="bottom" android:id="@id/pentypeMrk1" android:background="@color/transparent" android:layout_width="match_parent" android:layout_height="match_parent" android:layout_marginTop="8.0dp" android:layout_marginBottom="3.0dp" android:src="@drawable/dlg_button_pentype_mrk1" android:scaleType="fitCenter" android:layout_weight="1.0" />
+            <com.metamoji.ui.common.UiImageRadioButton android:layout_gravity="bottom" android:id="@id/pentypeCal1" android:background="@color/transparent" android:layout_width="match_parent" android:layout_height="match_parent" android:layout_marginTop="8.0dp" android:layout_marginBottom="3.0dp" android:src="@drawable/dlg_button_pentype_cal1" android:scaleType="fitCenter" android:layout_weight="1.0" />
+            <com.metamoji.ui.common.UiImageRadioButton android:layout_gravity="bottom" android:id="@id/pentypeFnt1" android:background="@color/transparent" android:layout_width="match_parent" android:layout_height="match_parent" android:layout_marginTop="8.0dp" android:layout_marginBottom="3.0dp" android:src="@drawable/dlg_button_pentype_fnt1" android:scaleType="fitCenter" android:layout_weight="1.0" />
+            <com.metamoji.ui.common.UiImageRadioButton android:layout_gravity="bottom" android:id="@id/pentypeBrs1" android:background="@color/transparent" android:layout_width="match_parent" android:layout_height="match_parent" android:layout_marginTop="8.0dp" android:layout_marginBottom="3.0dp" android:src="@drawable/dlg_button_pentype_brs1" android:scaleType="fitCenter" android:layout_weight="1.0" />
+        </LinearLayout>
+    </HorizontalScrollView>
+</LinearLayout>

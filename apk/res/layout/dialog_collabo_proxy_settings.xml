@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout android:layout_width="wrap_content" android:layout_height="wrap_content"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:local="http://schemas.android.com/apk/res-auto">
+    <include layout="@layout/control_dialog_background" />
+    <LinearLayout style="@style/UiDialogStyle">
+        <include layout="@layout/control_dialog_header" />
+        <ScrollView style="@style/UiDialogScrollViewStyle">
+            <LinearLayout style="@style/UiDialogBodyWithScrollStyle">
+                <LinearLayout android:orientation="vertical" style="@style/UiDialogGroupUpStyle">
+                    <LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/controlSpace">
+                        <com.metamoji.ui.common.UiTextView android:gravity="center_vertical" android:layout_height="match_parent" android:layout_marginRight="@dimen/controlSpace" android:text="@string/CollaboProxyDlg_UseProxyServer" style="@style/UiDialogLabelStyle" />
+                        <com.metamoji.ui.common.UiSwitch android:id="@id/useProxySwitch" style="@style/UiDialogSwitchStyle" />
+                    </LinearLayout>
+                    <LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginLeft="@dimen/controlSpaceWide" android:layout_marginTop="@dimen/controlSpace">
+                        <com.metamoji.ui.common.UiTextView android:layout_gravity="center_vertical" android:id="@id/hostLabel" android:layout_width="100.0dp" android:layout_height="wrap_content" android:layout_marginRight="@dimen/controlSpace" android:text="@string/CollaboProxyDlg_Address" style="@style/UiDialogNarrowLabelStyle" />
+                        <com.metamoji.ui.common.UiEditText android:id="@id/hostEdit" android:layout_width="match_parent" android:layout_height="wrap_content" android:inputType="text" android:privateImeOptions="com.metamoji.mazecapi?stroke_input=false" />
+                    </LinearLayout>
+                    <LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginLeft="@dimen/controlSpaceWide" android:layout_marginTop="0.0dp">
+                        <com.metamoji.ui.common.UiTextView android:layout_gravity="center_vertical" android:id="@id/portLabel" android:layout_width="100.0dp" android:layout_height="wrap_content" android:layout_marginRight="@dimen/controlSpace" android:text="@string/CollaboProxyDlg_Port.Text" style="@style/UiDialogNarrowLabelStyle" />
+                        <com.metamoji.ui.common.UiEditText android:id="@id/portEdit" android:layout_width="match_parent" android:layout_height="wrap_content" android:inputType="number" android:privateImeOptions="com.metamoji.mazecapi?stroke_input=false" />
+                    </LinearLayout>
+                    <LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginLeft="@dimen/controlSpaceWide" android:layout_marginTop="@dimen/controlSpace">
+                        <com.metamoji.ui.common.UiTextView android:id="@id/requireAuthLabel" android:layout_marginRight="@dimen/controlSpace" android:text="@string/CollaboProxyDlg_Authentication" style="@style/UiDialogLabelStyle" />
+                        <com.metamoji.ui.common.UiSwitch android:id="@id/requireAuthSwitch" style="@style/UiDialogSwitchStyle" />
+                    </LinearLayout>
+                    <LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginLeft="@dimen/controlSpaceWide">
+                        <com.metamoji.ui.common.UiTextView android:layout_gravity="center_vertical" android:id="@id/userNameLabel" android:layout_width="100.0dp" android:layout_height="wrap_content" android:layout_marginRight="@dimen/controlSpace" android:text="@string/CollaboProxyDlg_UserName" style="@style/UiDialogNarrowLabelStyle" />
+                        <com.metamoji.ui.common.UiEditText android:id="@id/userNameEdit" android:layout_width="match_parent" android:layout_height="wrap_content" android:inputType="text" android:privateImeOptions="com.metamoji.mazecapi?stroke_input=false" />
+                    </LinearLayout>
+                    <LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginLeft="@dimen/controlSpaceWide" android:layout_marginTop="0.0dp">
+                        <com.metamoji.ui.common.UiTextView android:layout_gravity="center_vertical" android:id="@id/passwordLabel" android:layout_width="100.0dp" android:layout_height="wrap_content" android:layout_marginRight="@dimen/controlSpace" android:text="@string/CollaboProxyDlg_Password" style="@style/UiDialogNarrowLabelStyle" />
+                        <com.metamoji.ui.common.UiEditText android:id="@id/passwordEdit" android:layout_width="match_parent" android:layout_height="wrap_content" android:inputType="textPassword" android:privateImeOptions="com.metamoji.mazecapi?stroke_input=false" />
+                    </LinearLayout>
+                </LinearLayout>
+            </LinearLayout>
+        </ScrollView>
+    </LinearLayout>
+</RelativeLayout>

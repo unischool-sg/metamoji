@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:local="http://schemas.android.com/apk/res-auto">
+    <include layout="@layout/control_dialog_background" />
+    <LinearLayout style="@style/UiDialogStyle">
+        <include layout="@layout/control_dialog_header" />
+        <LinearLayout android:id="@id/containerLayout" android:layout_height="match_parent" style="@style/UiDialogBodyStyle">
+            <com.metamoji.ui.common.UiTextView android:layout_marginTop="@dimen/controlSpaceWide" android:text="@string/Cabinet_SdAddMemberDlgAdditionalMessageLabel" style="@style/UiDialogGroupTitleStyle" />
+            <com.metamoji.ui.common.UiEditText android:id="@id/edittext_invite_msg" android:layout_width="match_parent" android:layout_height="wrap_content" android:lines="3" android:inputType="textMultiLine" />
+        </LinearLayout>
+    </LinearLayout>
+</RelativeLayout>

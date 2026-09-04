@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:local="http://schemas.android.com/apk/res-auto">
+    <LinearLayout android:gravity="center_vertical" android:orientation="vertical" android:paddingTop="0.0dp" android:paddingBottom="0.0dp" android:layout_width="match_parent" android:layout_height="wrap_content">
+        <LinearLayout android:gravity="center_vertical" android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content">
+            <TextView android:textSize="@dimen/notifyPreviewTitleTextSizeM" android:textStyle="bold" android:id="@id/title_comment" android:paddingTop="@dimen/productNamePaddingTop" android:paddingBottom="@dimen/productNamePaddingBottom" style="@style/NotifyAddonStore_TextView" />
+            <View android:layout_width="0.0dp" android:layout_height="0.0dp" android:layout_weight="1.0" />
+            <com.metamoji.ui.common.UiButton android:id="@id/button_to_googleplay" android:visibility="gone" android:layout_width="wrap_content" android:layout_height="wrap_content" local:button_type="inapppurchase" local:maintitle="@string/AddOnStore_GooglePlayBtn" />
+        </LinearLayout>
+        <LinearLayout android:gravity="center_vertical" android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content">
+            <TextView android:textStyle="bold" android:layout_gravity="left|center" android:id="@id/subtitle_comment" android:paddingLeft="@dimen/headerPaddingLeft" android:visibility="gone" style="@style/NotifyAddonStore_TextView" />
+            <View android:layout_width="0.0dp" android:layout_height="0.0dp" android:layout_weight="1.0" />
+            <ImageView android:id="@id/icon_pink_cart" android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/library_store_cart" />
+            <TextView android:textColor="@color/notify_addonstore_text" android:id="@id/text_price" android:layout_width="wrap_content" android:layout_height="wrap_content" />
+            <com.metamoji.ui.common.UiButton android:id="@id/button_purchase" android:layout_width="wrap_content" android:layout_height="wrap_content" local:button_type="inapppurchase" local:maintitle="@string/Library_Store_PurchaseBtn" />
+            <com.metamoji.ui.common.UiButton android:id="@id/button_install" android:visibility="gone" android:layout_width="wrap_content" android:layout_height="wrap_content" local:button_type="normal" local:maintitle="@string/InAppPurchase_Use" />
+        </LinearLayout>
+    </LinearLayout>
+</FrameLayout>

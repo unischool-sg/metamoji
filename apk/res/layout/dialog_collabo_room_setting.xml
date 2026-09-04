@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:local="http://schemas.android.com/apk/res-auto">
+    <include layout="@layout/control_dialog_background" />
+    <LinearLayout style="@style/UiDialogStyle">
+        <include layout="@layout/control_dialog_header" />
+        <ScrollView style="@style/UiDialogScrollViewStyle">
+            <LinearLayout android:orientation="vertical" style="@style/UiDialogBodyWithScrollStyle">
+                <TextView android:textSize="15.0dp" android:id="@id/openDateLabel" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/MMJNT_LSTR_START_DATE_TIME" style="@style/UiDialogGroupTitleStyle" />
+                <com.metamoji.ui.common.UiRadioGroup android:orientation="vertical" android:id="@id/openDateGroup" android:layout_width="match_parent" android:layout_height="wrap_content">
+                    <com.metamoji.ui.common.UiRadioButton android:enabled="false" android:id="@id/openDateNoDateBtn" android:layout_width="match_parent" android:layout_height="wrap_content" local:maintitle="@string/RoomEditDlg_OpenDate_NotSet" local:radiobutton_type="withcheckboxTop" />
+                    <com.metamoji.ui.common.UiRadioButton android:enabled="false" android:id="@id/openDateHasDateBtn" android:layout_width="match_parent" android:layout_height="wrap_content" local:maintitle="@string/RoomEditDlg_OpenDate_Set" local:maintitle_weight="1" local:radiobutton_type="withcheckboxBottom" local:subtitle_weight="2" />
+                </com.metamoji.ui.common.UiRadioGroup>
+                <LinearLayout android:orientation="horizontal" android:id="@id/scoreEnableLayout" android:layout_marginTop="@dimen/controlSpace" style="@style/UiDialogGroupUpStyle">
+                    <com.metamoji.ui.common.UiTextView android:gravity="left|center" android:layout_width="wrap_content" android:layout_height="match_parent" android:text="@string/MMJNT_LSTR_SCORESETTING_USE" style="@style/UiDialogLabelStyle" />
+                    <com.metamoji.ui.common.UiSwitch android:id="@id/scoreEnableSwitch" android:layout_marginLeft="@dimen/controlSpace" style="@style/UiDialogSwitchStyle" />
+                </LinearLayout>
+                <LinearLayout android:orientation="horizontal" android:id="@id/allowToEditOthersWritingsLayout" android:layout_marginTop="@dimen/controlSpace" android:layout_marginBottom="@dimen/controlSpace" style="@style/UiDialogGroupUpStyle">
+                    <com.metamoji.ui.common.UiTextView android:gravity="left|center" android:layout_width="wrap_content" android:layout_height="match_parent" android:text="@string/MMJNT_LSTR_ALLOW_TO_EDIT_OTHERS_WRITINGS" style="@style/UiDialogLabelStyle" />
+                    <com.metamoji.ui.common.UiSwitch android:id="@id/allowToEditOthersWritingsSwitch" android:layout_marginLeft="@dimen/controlSpace" style="@style/UiDialogSwitchStyle" />
+                </LinearLayout>
+                <LinearLayout android:orientation="horizontal" android:id="@id/allowToOperationPageLayout" android:layout_marginBottom="@dimen/controlSpace" style="@style/UiDialogGroupUpStyle">
+                    <com.metamoji.ui.common.UiTextView android:gravity="left|center" android:layout_width="wrap_content" android:layout_height="match_parent" android:text="@string/MMJNT_LSTR_ALLOW_STUDENT_TO_OPERATION_PAGE" style="@style/UiDialogLabelStyle" />
+                    <com.metamoji.ui.common.UiSwitch android:id="@id/allowToOperationPageSwitch" android:layout_marginLeft="@dimen/controlSpace" style="@style/UiDialogSwitchStyle" />
+                </LinearLayout>
+                <LinearLayout android:orientation="horizontal" android:id="@id/allowToSaveNoteAndCopyPageLayout" android:layout_marginBottom="@dimen/controlSpace" style="@style/UiDialogGroupUpStyle">
+                    <com.metamoji.ui.common.UiTextView android:gravity="left|center" android:layout_width="wrap_content" android:layout_height="match_parent" android:text="@string/MMJNT_LSTR_ALLOW_STUDENT_TO_SAVE_NOTE_AND_COPY_PAGE" style="@style/UiDialogLabelStyle" />
+                    <com.metamoji.ui.common.UiSwitch android:id="@id/allowToSaveNoteAndCopyPageSwitch" android:layout_marginLeft="@dimen/controlSpace" style="@style/UiDialogSwitchStyle" />
+                </LinearLayout>
+                <LinearLayout android:orientation="horizontal" android:id="@id/allowToChangeGroupByStudentLayout" android:layout_marginBottom="@dimen/controlSpace" style="@style/UiDialogGroupUpStyle">
+                    <com.metamoji.ui.common.UiTextView android:gravity="left|center" android:layout_width="wrap_content" android:layout_height="match_parent" android:text="@string/MMJNT_LSTR_ALLOW_CHANGE_GROUP_BY_STUDENT" style="@style/UiDialogLabelStyle" />
+                    <com.metamoji.ui.common.UiSwitch android:id="@id/allowToChangeGroupByStudentSwitch" android:layout_marginLeft="@dimen/controlSpace" style="@style/UiDialogSwitchStyle" />
+                </LinearLayout>
+                <LinearLayout android:orientation="horizontal" android:id="@id/allowToJoinNoteLayout" android:layout_marginBottom="@dimen/controlSpace" style="@style/UiDialogGroupUpStyle">
+                    <com.metamoji.ui.common.UiTextView android:gravity="left|center" android:layout_width="wrap_content" android:layout_height="match_parent" android:text="@string/MMJNT_LSTR_ALLOW_STUDENT_TO_JOIN_NOTE" style="@style/UiDialogLabelStyle" />
+                    <com.metamoji.ui.common.UiSwitch android:id="@id/allowToJoinNoteSwitch" android:layout_marginLeft="@dimen/controlSpace" style="@style/UiDialogSwitchStyle" />
+                </LinearLayout>
+                <com.metamoji.ui.common.UiButton android:id="@id/passwordBtn" android:layout_width="match_parent" android:layout_height="wrap_content" local:button_type="withsub_bottom" local:maintitle="@string/CreateShareNoteDlg_Btn_Password" />
+            </LinearLayout>
+        </ScrollView>
+    </LinearLayout>
+    <com.metamoji.ui.CustomMenuView android:id="@id/CustomMenuView" android:layout_width="match_parent" android:layout_height="match_parent" />
+</RelativeLayout>

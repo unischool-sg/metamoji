@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout android:layout_width="match_parent" android:layout_height="match_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:local="http://schemas.android.com/apk/res-auto">
+    <FrameLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_alignLeft="@id/control_dialog" android:layout_alignTop="@id/control_dialog" android:layout_alignRight="@id/control_dialog" android:layout_alignBottom="@id/control_dialog">
+        <ImageView android:background="@null" android:layout_width="match_parent" android:layout_height="match_parent" android:src="@drawable/school_monitoring_base" android:scaleType="fitXY" android:contentDescription="@null" />
+    </FrameLayout>
+    <LinearLayout android:orientation="vertical" android:id="@id/control_dialog" android:paddingLeft="@dimen/dialogPaddingLeft" android:paddingTop="@dimen/dialogPaddingTop" android:paddingRight="@dimen/dialogPaddingRight" android:paddingBottom="@dimen/dialogPaddingBottom" android:layout_width="match_parent" android:layout_height="match_parent" android:layout_alignParentRight="true">
+        <include layout="@layout/control_dialog_header" />
+        <LinearLayout android:orientation="vertical" android:id="@id/control_dialog_body" android:paddingLeft="0.0dp" android:paddingTop="0.0dp" android:paddingRight="0.0dp" android:paddingBottom="0.0dp" android:layout_width="match_parent" android:layout_height="0.0dp" android:layout_weight="1.0">
+            <LinearLayout android:layout_gravity="center" android:orientation="vertical" android:id="@id/qrCodeReader" android:visibility="invisible" android:layout_width="match_parent" android:layout_height="match_parent" android:layout_marginTop="@dimen/controlSpace">
+                <FrameLayout android:layout_gravity="center" android:id="@id/qrCodePreviewBase" android:layout_width="match_parent" android:layout_height="match_parent">
+                    <SurfaceView android:id="@id/qrCodePreview" android:layout_width="match_parent" android:layout_height="match_parent" />
+                    <com.metamoji.ui.cabinet.user.QRCode.QRCodeFinderView android:id="@id/qrCodeFinderView" android:layout_width="match_parent" android:layout_height="match_parent" />
+                    <ImageView android:layout_gravity="end|top" android:id="@id/camera_switching_btn" android:clickable="true" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4.0dp" android:src="@drawable/school_camera_switching" android:alpha="0.7" android:layout_marginEnd="4.0dp" />
+                    <View android:id="@id/qrCodePreviewGuard" android:background="#d3d3d3" android:visibility="gone" android:layout_width="match_parent" android:layout_height="match_parent" />
+                </FrameLayout>
+                <com.metamoji.ui.common.UiTextView android:textColor="#ff0000" android:gravity="center" android:id="@id/qrCodeErrorLabel" android:visibility="invisible" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/School_Msg_Bad_QRCode" />
+            </LinearLayout>
+        </LinearLayout>
+    </LinearLayout>
+</RelativeLayout>

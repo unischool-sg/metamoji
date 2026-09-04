@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout android:layout_width="wrap_content" android:layout_height="wrap_content"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:local="http://schemas.android.com/apk/res-auto">
+    <include layout="@layout/control_dialog_background" />
+    <LinearLayout style="@style/UiDialogStyle">
+        <include layout="@layout/control_dialog_header" />
+        <LinearLayout android:layout_height="match_parent" android:minHeight="400.0dp" style="@style/UiDialogBodyStyle">
+            <LinearLayout android:layout_gravity="right" android:orientation="horizontal" android:id="@id/inviteBlock" android:paddingLeft="2.0dp" android:paddingTop="2.0dp" android:paddingRight="2.0dp" android:paddingBottom="2.0dp" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/controlSpaceWide">
+                <com.metamoji.ui.common.UiButton android:id="@id/inviteButton" android:layout_width="wrap_content" android:layout_height="wrap_content" local:button_type="sub" local:maintitle="@string/CabinetSd_DriveMember_Dg_AddMemberBtn" />
+                <com.metamoji.ui.common.UiButton android:id="@id/deleteButton" android:layout_width="wrap_content" android:layout_height="wrap_content" local:button_type="sub" local:maintitle="@string/Cabinet_Button_Delete" />
+            </LinearLayout>
+            <LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content">
+                <LinearLayout android:gravity="right" android:layout_gravity="right" android:orientation="horizontal" android:paddingLeft="2.0dp" android:paddingTop="2.0dp" android:paddingRight="2.0dp" android:paddingBottom="4.0dp" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_weight="1.0">
+                    <ImageView android:layout_gravity="center" android:layout_width="20.0dp" android:layout_height="20.0dp" android:src="@drawable/school_user_teacher" android:scaleType="fitCenter" android:contentDescription="@null" />
+                    <TextView android:textSize="10.0dp" android:gravity="center" android:id="@id/teacherCount" android:layout_width="wrap_content" android:layout_height="match_parent" android:layout_marginLeft="4.0dp" android:singleLine="true" />
+                    <ImageView android:layout_gravity="center" android:id="@id/roleImage" android:layout_width="20.0dp" android:layout_height="20.0dp" android:src="@drawable/school_user_student" android:scaleType="fitCenter" android:contentDescription="@null" />
+                    <TextView android:textSize="10.0dp" android:gravity="center" android:id="@id/studentCount" android:layout_width="wrap_content" android:layout_height="match_parent" android:layout_marginLeft="4.0dp" android:singleLine="true" />
+                </LinearLayout>
+            </LinearLayout>
+            <ListView android:id="@id/memberList" android:background="@drawable/group_background_down" android:layout_width="match_parent" android:layout_height="0.0dp" android:layout_weight="1.0" />
+        </LinearLayout>
+    </LinearLayout>
+</RelativeLayout>

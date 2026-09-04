@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:id="@id/product_gold_service" android:visibility="gone" style="@style/AddOnStoreProductGroup"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <LinearLayout android:orientation="vertical" style="@style/UiDialogProductNameBackgroundStyle">
+        <include android:id="@id/layout_goldservice" layout="@layout/addon_store_product_title" />
+    </LinearLayout>
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="12.0dp" android:text="@string/InAppPurchase_GoldService_Comment_1" />
+    <ImageView android:layout_gravity="center" android:id="@id/goldservice_drive_image" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginBottom="20.0dp" android:scaleType="centerInside" />
+    <TextView android:textSize="@dimen/AddOnStoreCaptionLargeTextSize" android:textStyle="bold" android:id="@id/goldservice_drive_caption" android:layout_width="match_parent" android:layout_height="wrap_content" />
+    <TextView android:textSize="@dimen/AddOnStoreCommentTextSize" android:id="@id/goldservice_drive_comment" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="20.0dp" />
+    <ImageView android:layout_gravity="center" android:id="@id/goldservice_cloud_increase_image" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginBottom="20.0dp" android:scaleType="centerInside" />
+    <TextView android:textSize="@dimen/AddOnStoreCaptionLargeTextSize" android:textStyle="bold" android:id="@id/goldservice_cloud_increase_caption" android:layout_width="match_parent" android:layout_height="wrap_content" />
+    <TextView android:textSize="@dimen/AddOnStoreCommentTextSize" android:id="@id/goldservice_cloud_increase_comment" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="20.0dp" />
+    <ImageView android:layout_gravity="center" android:id="@id/goldservice_share_image" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginBottom="20.0dp" android:scaleType="centerInside" />
+    <TextView android:textSize="@dimen/AddOnStoreCaptionLargeTextSize" android:textStyle="bold" android:id="@id/goldservice_share_caption" android:layout_width="match_parent" android:layout_height="wrap_content" />
+    <TextView android:textSize="@dimen/AddOnStoreCommentTextSize" android:id="@id/goldservice_share_comment" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="20.0dp" />
+    <TextView android:textSize="@dimen/AddOnStoreCaptionTextSize" android:textStyle="bold" android:id="@id/goldservice_autosync_caption" android:layout_width="match_parent" android:layout_height="wrap_content" />
+    <TextView android:textSize="@dimen/AddOnStoreCommentMiniTextSize" android:id="@id/goldservice_autosync_comment" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="20.0dp" />
+    <TextView android:textSize="@dimen/AddOnStoreCaptionTextSize" android:textStyle="bold" android:id="@id/goldservice_contents_caption" android:layout_width="match_parent" android:layout_height="wrap_content" />
+    <TextView android:textSize="@dimen/AddOnStoreCommentMiniTextSize" android:id="@id/goldservice_contents_comment" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="20.0dp" />
+    <TextView android:textSize="@dimen/AddOnStoreCaptionTextSize" android:textStyle="bold" android:id="@id/goldservice_customize_caption" android:layout_width="match_parent" android:layout_height="wrap_content" />
+    <TextView android:textSize="@dimen/AddOnStoreCommentMiniTextSize" android:id="@id/goldservice_customize_comment" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="20.0dp" />
+    <TextView android:textSize="@dimen/AddOnStoreCaptionTextSize" android:textStyle="bold" android:id="@id/goldservice_functions_caption" android:layout_width="match_parent" android:layout_height="wrap_content" />
+    <TextView android:textSize="@dimen/AddOnStoreCommentMiniTextSize" android:id="@id/goldservice_functions_comment" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="20.0dp" />
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/controlSpace" android:text="@string/MMJID_INAPPPURCHASE_GOLDSERVICE_COMMENT_7" />
+    <LinearLayout android:orientation="vertical" android:id="@id/dc_not_regist" android:visibility="gone" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="@dimen/AddOnStoreDCRegistMsgTopMargin" android:layout_marginBottom="@dimen/controlSpace">
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/MMJID_SHARE_LICENSE_MSG_NOT_REGIST_CABINETUSER" />
+        <LinearLayout android:gravity="center" android:layout_gravity="right" android:orientation="horizontal" android:id="@id/registDCFreeButton" android:background="@drawable/control_button_normal_blue" android:clickable="true" android:layout_width="wrap_content" android:layout_height="wrap_content" android:minHeight="14.0dp">
+            <TextView android:textSize="15.0dp" android:textStyle="bold" android:textColor="@drawable/control_button_textcolor_blue" android:paddingLeft="20.0dp" android:paddingRight="20.0dp" android:duplicateParentState="true" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/MMJID_SHARE_LICENSE_NOT_REGIST_CABINETUSER_BUTTON" />
+        </LinearLayout>
+    </LinearLayout>
+    <LinearLayout android:orientation="vertical" android:id="@id/dc_regist" android:visibility="gone" android:layout_width="match_parent" android:layout_height="wrap_content">
+        <LinearLayout android:orientation="vertical" android:layout_width="match_parent" android:layout_height="wrap_content">
+            <LinearLayout android:orientation="horizontal" style="@style/UiDialogGroupUpStyleTop">
+                <TextView android:text="@string/SystemOption_CabinetUser_AccountKind" style="@style/UiDialogLabelStyle" />
+                <com.metamoji.ui.common.UiTextView android:textStyle="normal" android:gravity="right|center" android:layout_gravity="right|center" android:id="@id/account_cource" style="@style/UiDialogLabelStyle" />
+            </LinearLayout>
+            <LinearLayout android:orientation="horizontal" style="@style/UiDialogGroupUpStyleMid">
+                <TextView android:text="@string/SystemOption_CabinetUser_Account_Expires" style="@style/UiDialogLabelStyle" />
+                <com.metamoji.ui.common.UiTextView android:textStyle="normal" android:gravity="right|center" android:layout_gravity="right|center" android:id="@id/account_term" style="@style/UiDialogLabelStyle" />
+            </LinearLayout>
+            <LinearLayout android:orientation="horizontal" style="@style/UiDialogGroupUpStyleBottom">
+                <TextView android:text="@string/SystemOption_CabinetUser_AccountSpec" style="@style/UiDialogLabelStyle" />
+                <com.metamoji.ui.common.UiTextView android:textStyle="normal" android:gravity="right|center" android:layout_gravity="right|center" android:id="@id/account_capacity" style="@style/UiDialogLabelStyle" />
+            </LinearLayout>
+        </LinearLayout>
+        <RelativeLayout android:id="@id/share_info" android:background="@drawable/addon_store_group_frame" android:padding="@dimen/AddOnStoreGroupPadding" android:visibility="gone" android:layout_width="match_parent" android:layout_height="@dimen/AddOnStoreServerMsgHeight" android:layout_marginTop="@dimen/controlSpace">
+            <TextView android:textSize="14.0dp" android:id="@id/share_service_server_msg_text" android:layout_width="match_parent" android:layout_height="match_parent" />
+            <ProgressBar android:id="@id/share_service_indicator" android:visibility="gone" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_centerInParent="true" style="@style/UiProgressBar" />
+        </RelativeLayout>
+    </LinearLayout>
+    <LinearLayout android:gravity="center" android:orientation="vertical" android:background="@drawable/addon_store_product_list_frame" android:padding="@dimen/AddOnStoreGroupPadding" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="@dimen/controlSpace">
+        <TextView android:textSize="15.0dp" android:textStyle="bold" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/InAppPurchase_GoldService" />
+        <include android:id="@id/layout_goldservice_base1_1month" layout="@layout/addon_store_goldservice_item" />
+        <View android:background="#c1c1c1" android:layout_width="match_parent" android:layout_height="1.0dp" />
+        <include android:id="@id/layout_goldservice_base1_12month" layout="@layout/addon_store_goldservice_item" />
+    </LinearLayout>
+    <LinearLayout android:gravity="center" android:orientation="vertical" android:id="@id/share_product" android:background="@drawable/addon_store_product_list_frame" android:padding="@dimen/AddOnStoreGroupPadding" android:visibility="gone" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="@dimen/controlSpace">
+        <TextView android:textSize="15.0dp" android:textStyle="bold" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/InAppPurchase_ShareService_Extention" />
+        <include android:id="@id/layout_shareservice_type1_thismonth" layout="@layout/addon_store_goldservice_item" />
+        <View android:background="#c1c1c1" android:layout_width="match_parent" android:layout_height="1.0dp" />
+        <include android:id="@id/layout_shareservice_type2_1month" android:visibility="gone" layout="@layout/addon_store_goldservice_item" />
+        <include android:id="@id/layout_shareservice_type2_2month" android:visibility="gone" layout="@layout/addon_store_goldservice_item" />
+        <include android:id="@id/layout_shareservice_type2_3month" android:visibility="gone" layout="@layout/addon_store_goldservice_item" />
+        <include android:id="@id/layout_shareservice_type2_4month" android:visibility="gone" layout="@layout/addon_store_goldservice_item" />
+        <include android:id="@id/layout_shareservice_type2_5month" android:visibility="gone" layout="@layout/addon_store_goldservice_item" />
+        <include android:id="@id/layout_shareservice_type2_6month" android:visibility="gone" layout="@layout/addon_store_goldservice_item" />
+        <include android:id="@id/layout_shareservice_type2_7month" android:visibility="gone" layout="@layout/addon_store_goldservice_item" />
+        <include android:id="@id/layout_shareservice_type2_8month" android:visibility="gone" layout="@layout/addon_store_goldservice_item" />
+        <include android:id="@id/layout_shareservice_type2_9month" android:visibility="gone" layout="@layout/addon_store_goldservice_item" />
+        <include android:id="@id/layout_shareservice_type2_10month" android:visibility="gone" layout="@layout/addon_store_goldservice_item" />
+        <include android:id="@id/layout_shareservice_type2_11month" android:visibility="gone" layout="@layout/addon_store_goldservice_item" />
+        <include android:id="@id/layout_shareservice_type2_12month" android:visibility="gone" layout="@layout/addon_store_goldservice_item" />
+    </LinearLayout>
+</LinearLayout>

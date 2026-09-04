@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:local="http://schemas.android.com/apk/res-auto">
+    <include layout="@layout/control_dialog_background" />
+    <LinearLayout style="@style/UiDialogStyle">
+        <include layout="@layout/control_dialog_header" />
+        <ScrollView style="@style/UiDialogScrollViewStyle">
+            <LinearLayout style="@style/UiDialogBodyStyle">
+                <TextView android:textSize="15.0dp" android:textStyle="bold" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="10.0dp" android:text="@string/MMJID_MAKE_DLG_NICKNAME_LABEL" android:layout_centerHorizontal="true" android:layout_centerVertical="true" />
+                <com.metamoji.ui.common.UiEditText android:id="@id/EditText_Nickname" android:layout_width="match_parent" android:layout_height="wrap_content" android:inputType="text" android:privateImeOptions="com.metamoji.mazecapi?stroke_input=false" android:imeOptions="actionNext" />
+                <TextView android:textSize="15.0dp" android:textStyle="bold" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="10.0dp" android:layout_marginTop="15.0dp" android:text="@string/MMJID_SIGNIN_DLG_ID_LABEL" android:layout_centerHorizontal="true" android:layout_centerVertical="true" />
+                <com.metamoji.ui.common.UiEditText android:id="@id/EditText_Mainaddress" android:layout_width="match_parent" android:layout_height="wrap_content" android:inputType="text" />
+                <com.metamoji.ui.common.UiButton android:id="@id/dlg_editaccount_locale_button" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="5.0dp" android:layout_marginBottom="@dimen/controlSpace" local:button_type="withsubmenu" local:maintitle="@string/Cabinet_SystemOption_EditAccount_Locale" />
+                <TextView android:textSize="15.0dp" android:textStyle="bold" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="10.0dp" android:layout_marginTop="20.0dp" android:text="@string/Cabinet_User_Password" android:layout_centerHorizontal="true" android:layout_centerVertical="true" />
+                <com.metamoji.ui.common.UiEditText android:id="@id/EditText_Password" android:layout_width="match_parent" android:layout_height="wrap_content" android:inputType="text" />
+                <TextView android:textColor="#158aa2" android:layout_gravity="right" android:id="@id/dlg_text_editaccount" android:clickable="true" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginRight="8.0dp" android:text="@string/Cabinet_User_ForgotPass" />
+                <LinearLayout android:gravity="right" android:orientation="vertical" android:layout_width="match_parent" android:layout_height="match_parent" android:layout_marginTop="20.0dp">
+                    <com.metamoji.ui.common.UiButton android:layout_gravity="right" android:id="@id/button_editaccount" android:layout_width="wrap_content" android:layout_height="wrap_content" local:button_type="sub" local:maintitle="@string/Cabinet_User_EditAccount_Button_Title" />
+                </LinearLayout>
+            </LinearLayout>
+        </ScrollView>
+    </LinearLayout>
+</RelativeLayout>

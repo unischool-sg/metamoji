@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:local="http://schemas.android.com/apk/res-auto">
+    <include layout="@layout/control_dialog_background" />
+    <LinearLayout style="@style/UiDialogStyle">
+        <include layout="@layout/control_dialog_header" />
+        <ScrollView style="@style/UiDialogScrollViewStyle">
+            <LinearLayout style="@style/UiDialogBodyWithScrollStyle">
+                <LinearLayout android:orientation="horizontal" android:layout_marginBottom="@dimen/controlSpaceWide" style="@style/UiDialogGroupUpStyle">
+                    <com.metamoji.ui.common.UiTextView android:id="@id/textview_useCloud" android:layout_marginRight="@dimen/controlSpace" android:text="@string/SYSTEMOPTION_USE_CLOUD_CHECK" style="@style/UiDialogLabelStyle" />
+                    <com.metamoji.ui.common.UiSwitch android:id="@id/switch_useCloud" style="@style/UiDialogSwitchStyle" />
+                </LinearLayout>
+                <LinearLayout android:orientation="vertical" android:layout_marginTop="@dimen/controlSpaceWide" android:layout_marginBottom="@dimen/controlSpaceWide" style="@style/UiDialogGroupUpStyle">
+                    <LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/controlSpaceWide">
+                        <com.metamoji.ui.common.UiTextView android:id="@id/autosync_sutosync_label" android:layout_marginRight="@dimen/controlSpace" android:text="@string/Cabinet_User_Lable_AutoSync" style="@style/UiDialogLabelStyle" />
+                        <com.metamoji.ui.common.UiSwitch android:id="@id/switch_autosync" style="@style/UiDialogSwitchStyle" />
+                    </LinearLayout>
+                    <LinearLayout android:orientation="horizontal" android:id="@id/autosync_interval_controls" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="5.0dp">
+                        <com.metamoji.ui.common.UiTextView android:gravity="end" android:layout_gravity="end" android:id="@id/autosync_interval_label" android:layout_marginRight="@dimen/controlSpace" android:text="@string/Cabinet_User_Lable_AutoSyncInterval" style="@style/UiDialogLabelStyle" />
+                        <com.metamoji.ui.common.UiRadioGroup android:layout_gravity="right|center" android:orientation="horizontal" android:id="@id/autosync_interval_group" android:layout_width="wrap_content" android:layout_height="wrap_content" local:justify_width_withlargestchild="true">
+                            <com.metamoji.ui.common.UiRadioButton android:id="@id/autosync_interval_15min" android:layout_width="wrap_content" android:layout_height="wrap_content" local:maintitle="@string/Cabinet_User_AutoSyncInterval_15min" local:radiobutton_type="small_left" />
+                            <com.metamoji.ui.common.UiRadioButton android:id="@id/autosync_interval_30min" android:layout_width="wrap_content" android:layout_height="wrap_content" local:maintitle="@string/Cabinet_User_AutoSyncInterval_30min" local:radiobutton_type="small_center" />
+                            <com.metamoji.ui.common.UiRadioButton android:id="@id/autosync_interval_60min" android:layout_width="wrap_content" android:layout_height="wrap_content" local:maintitle="@string/Cabinet_User_AutoSyncInterval_60min" local:radiobutton_type="small_center" />
+                            <com.metamoji.ui.common.UiRadioButton android:id="@id/autosync_interval_1day" android:layout_width="wrap_content" android:layout_height="wrap_content" local:maintitle="@string/Cabinet_User_AutoSyncInterval_1day" local:radiobutton_type="small_right" />
+                        </com.metamoji.ui.common.UiRadioGroup>
+                    </LinearLayout>
+                    <LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="5.0dp">
+                        <com.metamoji.ui.common.UiTextView android:gravity="end" android:layout_gravity="end" android:id="@id/autosync_cellular_label" android:layout_marginRight="@dimen/controlSpace" android:text="@string/Cabinet_User_SystemOption_AutoSync_Cellular_Wimax" style="@style/UiDialogLabelStyle" />
+                        <com.metamoji.ui.common.UiSwitch android:id="@id/switch_autosync_cellular" style="@style/UiDialogSwitchStyle" />
+                    </LinearLayout>
+                </LinearLayout>
+                <LinearLayout android:orientation="horizontal" style="@style/UiDialogGroupUpStyle">
+                    <TextView android:id="@id/textview_cabinetuser_accountkind" android:text="@string/SystemOption_CabinetUser_AccountKind" style="@style/UiDialogLabelStyle" />
+                    <com.metamoji.ui.common.UiTextView android:textStyle="normal" android:gravity="right|center" android:layout_gravity="right|center" android:id="@id/textview_accountkind_label" style="@style/UiDialogLabelStyle" />
+                </LinearLayout>
+                <LinearLayout android:orientation="horizontal" android:id="@id/textview_accountexpires_group" android:layout_marginTop="@dimen/controlSpace" style="@style/UiDialogGroupUpStyle">
+                    <TextView android:id="@id/textview_cabinetuser_accountexpires" android:text="@string/SystemOption_CabinetUser_Account_Expires" style="@style/UiDialogLabelStyle" />
+                    <com.metamoji.ui.common.UiTextView android:textStyle="normal" android:gravity="right|center" android:layout_gravity="right|center" android:id="@id/textview_accountexpires_label" style="@style/UiDialogLabelStyle" />
+                </LinearLayout>
+                <com.metamoji.ui.common.UiButton android:layout_gravity="right|center" android:id="@id/button_cabinetuser_upgrade" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="@dimen/controlSpace" local:button_type="normal" local:maintitle="@string/Cabinet_User_Button_Upgrade" />
+                <LinearLayout android:orientation="horizontal" android:layout_marginTop="@dimen/controlSpaceWide" style="@style/UiDialogGroupUpStyle">
+                    <TextView android:id="@id/textview_cabinetuser_accountspec" android:text="@string/SystemOption_CabinetUser_AccountSpec" style="@style/UiDialogLabelStyle" />
+                    <com.metamoji.ui.common.UiTextView android:textStyle="normal" android:gravity="right|center" android:layout_gravity="right|center" android:id="@id/textview_accountspec_label" style="@style/UiDialogLabelStyle" />
+                </LinearLayout>
+                <com.metamoji.ui.common.UiButton android:layout_gravity="right|center" android:id="@id/button_cabinetuser_recalc" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="@dimen/controlSpace" local:button_type="normal" local:maintitle="@string/Cabinet_User_Button_Recalc" />
+            </LinearLayout>
+        </ScrollView>
+    </LinearLayout>
+</RelativeLayout>

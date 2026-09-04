@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:orientation="vertical" android:id="@id/root" android:paddingTop="@dimen/dialogPaddingTop" android:layout_width="match_parent" android:layout_height="match_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:local="http://schemas.android.com/apk/res-auto">
+    <LinearLayout android:orientation="horizontal" android:paddingLeft="@dimen/headerPaddingLeft" android:paddingTop="@dimen/headerPaddingTop" android:paddingRight="@dimen/headerPaddingRight" android:layout_width="match_parent" android:layout_height="@dimen/headerHeight">
+        <com.metamoji.ui.common.UiButtonHeader android:layout_gravity="start|center" android:id="@id/cancel" android:paddingTop="@dimen/headerButtonPaddingTop" android:layout_width="wrap_content" android:layout_height="match_parent" local:imageresource="@drawable/control_button_header_blue" local:title="@string/Button_Cancel_J" />
+        <com.metamoji.ui.common.UiTextView android:id="@id/webpage_edit_title" android:text="@string/Library_AddWebPage" style="@style/UiDialogTitleStyle" />
+        <com.metamoji.ui.common.UiButtonHeader android:layout_gravity="end|center" android:id="@id/done" android:paddingTop="@dimen/headerButtonPaddingTop" android:layout_width="wrap_content" android:layout_height="match_parent" local:imageresource="@drawable/control_button_header_purple" local:title="@string/Button_Done_J" />
+    </LinearLayout>
+    <LinearLayout android:gravity="center_vertical" android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="5.0dp" android:layout_marginBottom="5.0dp">
+        <com.metamoji.ui.common.UiImageButton android:id="@id/back" android:background="@null" android:layout_width="30.0dp" android:layout_height="30.0dp" android:layout_marginLeft="5.0dp" android:layout_marginRight="5.0dp" android:src="@drawable/button_page_prev" android:scaleType="fitCenter" />
+        <com.metamoji.ui.common.UiImageButton android:id="@id/forward" android:background="@null" android:layout_width="30.0dp" android:layout_height="30.0dp" android:layout_marginLeft="5.0dp" android:layout_marginRight="5.0dp" android:src="@drawable/button_page_next" android:scaleType="fitCenter" />
+        <com.metamoji.ui.common.UiEditText android:id="@id/text_url" android:layout_width="0.0dp" android:layout_height="wrap_content" android:layout_marginRight="5.0dp" android:text="" android:layout_weight="1.0" android:inputType="textUri" android:imeOptions="actionGo" />
+        <com.metamoji.ui.common.UiImageButton android:id="@id/openInBrowser" android:background="@null" android:layout_width="40.0dp" android:layout_height="40.0dp" android:layout_marginLeft="5.0dp" android:layout_marginRight="5.0dp" android:src="@drawable/design1_webunit_external_browser_n" android:scaleType="fitCenter" />
+        <com.metamoji.ui.common.UiImageButton android:id="@id/qrCodeReader" android:background="@null" android:layout_width="40.0dp" android:layout_height="40.0dp" android:layout_marginLeft="5.0dp" android:layout_marginRight="5.0dp" android:src="@drawable/design1_webunit_qr_code_n" android:scaleType="fitCenter" />
+        <com.metamoji.ui.common.UiImageButton android:id="@id/bookmark" android:background="@null" android:layout_width="40.0dp" android:layout_height="40.0dp" android:layout_marginLeft="5.0dp" android:layout_marginRight="5.0dp" android:src="@drawable/design1_webbookmark_n" android:scaleType="fitCenter" />
+    </LinearLayout>
+    <WebView android:id="@id/web_view" android:layout_width="match_parent" android:layout_height="match_parent">
+        <requestFocus />
+    </WebView>
+</LinearLayout>

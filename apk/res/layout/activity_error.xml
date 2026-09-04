@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:gravity="center" android:orientation="vertical" android:layout_width="match_parent" android:layout_height="match_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:local="http://schemas.android.com/apk/res-auto">
+    <TextView android:gravity="center" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="10.0dp" android:layout_marginBottom="10.0dp" android:text="@string/Msg_Note_Open_Error" />
+    <TextView android:gravity="center" android:id="@id/message" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="10.0dp" android:layout_marginTop="10.0dp" android:layout_marginRight="10.0dp" android:layout_marginBottom="10.0dp" android:text="" />
+    <LinearLayout android:orientation="horizontal" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="10.0dp">
+        <com.metamoji.ui.common.UiButton android:gravity="center" android:layout_gravity="center|bottom" android:id="@id/button_return" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginRight="5.0dp" local:button_type="purple" local:maintitle="@string/Msg_CLOSE" />
+        <com.metamoji.ui.common.UiButton android:gravity="center" android:layout_gravity="center|bottom" android:id="@id/button_send" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="5.0dp" local:button_type="blue" local:maintitle="@string/Caption_SendErrorInfoButton" />
+    </LinearLayout>
+</LinearLayout>

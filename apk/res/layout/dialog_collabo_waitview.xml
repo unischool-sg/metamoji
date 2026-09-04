@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:gravity="center" android:orientation="vertical" android:background="#99808080" android:layout_width="wrap_content" android:layout_height="wrap_content" android:alpha="0.9"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:local="http://schemas.android.com/apk/res-auto">
+    <LinearLayout android:gravity="center" android:orientation="vertical" android:id="@id/panel" android:background="@drawable/collabo_waitview" android:layout_width="wrap_content" android:layout_height="wrap_content">
+        <ProgressBar android:layout_gravity="center" android:id="@id/progressBar" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="100.0dp" android:layout_marginTop="15.0dp" android:layout_marginRight="100.0dp" android:layout_marginBottom="15.0dp" style="@style/UiProgressBar" />
+        <TextView android:textColor="#ffffff" android:layout_gravity="center" android:id="@id/message" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="10.0dp" android:layout_marginRight="10.0dp" android:layout_marginBottom="10.0dp" style="@style/UiDialogLabelStyle" />
+        <com.metamoji.ui.common.UiButton android:layout_gravity="center" android:id="@id/button_cancel" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="10.0dp" android:layout_marginRight="10.0dp" android:layout_marginBottom="10.0dp" android:layout_weight="1.0" local:button_type="normal" local:maintitle="@string/Button_Cancel_J" local:maintitle_gravity="center_horizontal" />
+    </LinearLayout>
+</LinearLayout>

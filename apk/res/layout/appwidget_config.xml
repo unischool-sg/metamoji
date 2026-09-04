@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout android:layout_width="match_parent" android:layout_height="match_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <include layout="@layout/control_dialog_background" />
+    <LinearLayout style="@style/UiDialogStyle">
+        <include layout="@layout/control_dialog_header" />
+        <RelativeLayout android:id="@id/body" android:clipChildren="false" android:layout_width="@dimen/LibraryViewDialogWidth" android:layout_height="match_parent" android:layout_marginLeft="@dimen/bodyPaddingLeft" android:layout_marginTop="@dimen/bodyPaddingTop" android:layout_marginRight="@dimen/bodyPaddingRight" android:layout_marginBottom="@dimen/bodyPaddingBottom">
+            <GridView android:id="@id/widget_shortcuts" android:background="@drawable/group_background_down" android:clipChildren="false" android:layout_width="match_parent" android:layout_height="match_parent" android:stretchMode="spacingWidthUniform" android:columnWidth="72.0dp" android:numColumns="auto_fit" />
+        </RelativeLayout>
+    </LinearLayout>
+</RelativeLayout>

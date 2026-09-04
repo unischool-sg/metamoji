@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout android:orientation="vertical" android:id="@id/cabinet_root" android:layout_width="match_parent" android:layout_height="match_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <LinearLayout android:orientation="vertical" android:layout_width="match_parent" android:layout_height="match_parent">
+        <include layout="@layout/cabinet_actionbar" />
+        <LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="match_parent" android:layout_marginTop="-5.0dp">
+            <FrameLayout android:id="@id/cabinet_tree_frame" android:layout_width="0.0px" android:layout_height="match_parent" android:layout_weight="2.0">
+                <fragment android:id="@id/folder_tree_view_fragmnet" android:layout_width="match_parent" android:layout_height="match_parent" class="com.metamoji.ui.cabinet.FolderTreeViewFragment" />
+            </FrameLayout>
+            <FrameLayout android:id="@id/cabinet_node_view" android:visibility="gone" android:layout_width="0.0px" android:layout_height="match_parent" android:layout_weight="5.0">
+                <com.metamoji.ui.cabinet.ScCabinetCalendarView android:id="@id/cabinet_calendar_view" android:visibility="invisible" android:layout_width="match_parent" android:layout_height="match_parent" />
+            </FrameLayout>
+        </LinearLayout>
+    </LinearLayout>
+    <FrameLayout android:layout_gravity="right|bottom" android:orientation="horizontal" android:id="@id/cabinet_paging_button" android:background="#ff666666" android:visibility="gone" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginRight="10.0dp" android:layout_marginBottom="5.0dp">
+        <LinearLayout android:layout_gravity="center_vertical" android:orientation="horizontal" android:padding="1.0dp" android:layout_width="wrap_content" android:layout_height="wrap_content">
+            <LinearLayout android:layout_width="40.0dp" android:layout_height="wrap_content">
+                <ImageButton android:layout_gravity="center_vertical" android:id="@id/cabinet_paging_prev" android:background="@drawable/cabinet_page_left_n" android:layout_width="wrap_content" android:layout_height="wrap_content" />
+            </LinearLayout>
+            <com.metamoji.ui.common.UiTextView android:textColor="@color/white" android:gravity="center" android:layout_gravity="center_vertical" android:id="@id/cabinet_paging_page_count" android:layout_width="20.0dp" android:layout_height="wrap_content" android:text="1" />
+            <LinearLayout android:layout_width="40.0dp" android:layout_height="wrap_content">
+                <ImageButton android:layout_gravity="center_vertical" android:id="@id/cabinet_paging_next" android:background="@drawable/cabinet_page_right_n" android:layout_width="wrap_content" android:layout_height="wrap_content" />
+            </LinearLayout>
+        </LinearLayout>
+    </FrameLayout>
+    <com.metamoji.ui.CustomMenuView android:id="@id/CustomMenuView" android:layout_width="match_parent" android:layout_height="match_parent" />
+    <com.metamoji.ui.CustomHelpView android:id="@id/CustomHelpView" android:visibility="invisible" android:layout_width="match_parent" android:layout_height="match_parent" />
+    <include layout="@layout/cabinet_syncstatusbar" />
+    <FrameLayout android:id="@id/LoggingView" android:background="@drawable/border_support_logging" android:visibility="gone" android:layout_width="match_parent" android:layout_height="match_parent" />
+</FrameLayout>

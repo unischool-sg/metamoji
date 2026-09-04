@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:local="http://schemas.android.com/apk/res-auto">
+    <include layout="@layout/control_dialog_background_fullscreen" />
+    <LinearLayout android:paddingTop="0.0dp" style="@style/UiDialogFullScreenStyle">
+        <include layout="@layout/control_dialog_header_fullscreen" />
+        <ScrollView android:id="@id/dialog_scrollview" android:background="#ffffff" android:layout_width="match_parent" android:layout_height="match_parent" android:layout_marginLeft="2.0dp" android:layout_marginTop="-4.0dp" android:layout_marginRight="2.0dp" android:layout_marginBottom="2.0dp">
+            <LinearLayout android:gravity="center_horizontal" android:layout_gravity="center_horizontal" android:layout_width="match_parent" style="@style/UiDialogBodyWithScrollStyle">
+                <LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="@dimen/AddOnStoreLogoTopMargin" android:layout_marginBottom="@dimen/AddOnStoreLogoBottomMargin">
+                    <ImageView android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/addon_logo" android:scaleType="fitStart" android:layout_weight="1.0" />
+                    <com.metamoji.ui.common.UiButton android:layout_gravity="center_vertical" android:id="@id/button_restore" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/controlSpace" local:maintitle="@string/InAppPurchase_Title_Restore" />
+                </LinearLayout>
+                <com.metamoji.ui.common.UiButton android:id="@id/button_clear_debug" android:visibility="gone" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/controlSpace" local:button_type="sub_pink" local:maintitle="clear downloaded dictionaries(for test)" />
+                <include layout="@layout/addon_store_goldservice" />
+                <LinearLayout android:id="@id/product_mazec" android:visibility="gone" style="@style/AddOnStoreProductGroup">
+                    <LinearLayout android:orientation="vertical" style="@style/UiDialogProductNameBackgroundStyle">
+                        <include android:id="@id/layout_mazecaddon" layout="@layout/addon_store_product_title" />
+                    </LinearLayout>
+                    <LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="-20.0dp" android:layout_marginBottom="@dimen/controlSpace">
+                        <TextView android:paddingRight="@dimen/bodyPaddingRight" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/InAppPurchase_Mazec_Comment_Short" android:layout_weight="1.0" />
+                        <ImageView android:layout_gravity="top" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/controlSpace" android:src="@drawable/catalog_mazec_en" android:scaleType="centerInside" />
+                    </LinearLayout>
+                    <LinearLayout android:gravity="center|top" android:orientation="horizontal" android:background="@drawable/addon_store_product_list_frame" android:padding="@dimen/AddOnStoreGroupPadding" android:layout_width="match_parent" android:layout_height="wrap_content">
+                        <View android:layout_width="0.0dp" android:layout_height="match_parent" android:layout_weight="1.0" />
+                        <LinearLayout android:orientation="vertical" android:layout_width="0.0dp" android:layout_height="wrap_content" android:layout_marginLeft="@dimen/AddOnStoreItemOuterMargin" android:layout_marginRight="@dimen/AddOnStoreItemInnerMargin" android:layout_weight="3.0">
+                            <LinearLayout android:orientation="vertical" android:id="@id/langpack_list_1" android:layout_width="match_parent" android:layout_height="wrap_content" />
+                        </LinearLayout>
+                        <View android:layout_width="0.0dp" android:layout_height="match_parent" android:layout_weight="1.0" />
+                        <LinearLayout android:orientation="vertical" android:layout_width="0.0dp" android:layout_height="wrap_content" android:layout_marginLeft="@dimen/AddOnStoreItemInnerMargin" android:layout_marginRight="@dimen/AddOnStoreItemOuterMargin" android:layout_weight="3.0">
+                            <LinearLayout android:orientation="vertical" android:id="@id/langpack_list_2" android:layout_width="match_parent" android:layout_height="wrap_content" />
+                        </LinearLayout>
+                        <View android:layout_width="0.0dp" android:layout_height="match_parent" android:layout_weight="1.0" />
+                    </LinearLayout>
+                </LinearLayout>
+            </LinearLayout>
+        </ScrollView>
+    </LinearLayout>
+</RelativeLayout>

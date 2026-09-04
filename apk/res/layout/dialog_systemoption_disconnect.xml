@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:local="http://schemas.android.com/apk/res-auto">
+    <include layout="@layout/control_dialog_background" />
+    <LinearLayout style="@style/UiDialogStyle">
+        <include layout="@layout/control_dialog_header" />
+        <ScrollView style="@style/UiDialogScrollViewStyle">
+            <LinearLayout style="@style/UiDialogBodyStyle">
+                <TextView android:textSize="14.0sp" android:textStyle="normal" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="10.0dp" android:layout_marginRight="10.0dp" android:text="@string/Cabinet_User_Disconnect_Message_1" />
+                <Button android:textSize="14.0sp" android:textColor="@drawable/control_button_textcolor_red" android:layout_gravity="right" android:id="@id/button_disconnect" android:background="@drawable/control_button_normal_red" android:paddingLeft="32.0dp" android:paddingTop="0.0dp" android:paddingRight="32.0dp" android:paddingBottom="0.0dp" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="30.0dp" android:minHeight="14.0dp" android:text="@string/Cabinet_User_Disconnect_Exec_Button" />
+            </LinearLayout>
+        </ScrollView>
+    </LinearLayout>
+</RelativeLayout>

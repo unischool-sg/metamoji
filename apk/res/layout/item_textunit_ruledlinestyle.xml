@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="50.0dp"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <ImageView android:layout_gravity="center_vertical" android:id="@id/check_area" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="10.0dp" android:src="@drawable/selector_list_check" />
+    <View android:layout_width="0.0dp" android:layout_height="0.0dp" android:layout_weight="1.5" />
+    <RelativeLayout android:layout_width="0.0dp" android:layout_height="wrap_content" android:layout_weight="7.0">
+        <com.metamoji.ui.dialog.TextUnitRuledLineStyleSampleView android:id="@id/sampleview" android:layout_width="match_parent" android:layout_height="50.0dp" />
+        <TextView android:textSize="14.0sp" android:id="@id/textview_for_none" android:visibility="invisible" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/TextUnitStyle_None" android:layout_centerInParent="true" />
+    </RelativeLayout>
+    <View android:layout_width="0.0dp" android:layout_height="0.0dp" android:layout_weight="1.5" />
+</LinearLayout>

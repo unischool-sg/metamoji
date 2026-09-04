@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout android:layout_width="wrap_content" android:layout_height="wrap_content"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:local="http://schemas.android.com/apk/res-auto">
+    <include layout="@layout/control_dialog_background" />
+    <LinearLayout style="@style/UiDialogStyle">
+        <include layout="@layout/control_dialog_header" />
+        <ScrollView style="@style/UiDialogScrollViewStyle">
+            <LinearLayout style="@style/UiDialogBodyWithScrollStyle">
+                <LinearLayout android:orientation="horizontal" android:id="@id/dlg_account_biz_server_group" android:layout_marginBottom="@dimen/controlSpace" style="@style/UiDialogGroupUpStyle">
+                    <com.metamoji.ui.common.UiTextView android:layout_width="wrap_content" android:layout_marginRight="@dimen/controlSpace" android:text="@string/Onpre_Url_Label" style="@style/UiDialogLabelStyle" />
+                    <com.metamoji.ui.common.UiTextView android:textStyle="normal" android:gravity="right|center" android:layout_gravity="right|center" android:id="@id/dlg_account_biz_server" android:layout_width="wrap_content" android:layout_weight="1.0" style="@style/UiDialogLabelStyle" />
+                </LinearLayout>
+                <LinearLayout android:orientation="horizontal" style="@style/UiDialogGroupUpStyleTop">
+                    <com.metamoji.ui.common.UiTextView android:layout_width="wrap_content" android:layout_marginRight="@dimen/controlSpace" android:text="@string/ForBiz_Company_Login_Id" style="@style/UiDialogLabelStyle" />
+                    <com.metamoji.ui.common.UiTextView android:textStyle="normal" android:gravity="right|center" android:layout_gravity="right|center" android:id="@id/dlg_account_biz_company_id" android:layout_width="wrap_content" android:layout_weight="1.0" style="@style/UiDialogLabelStyle" />
+                </LinearLayout>
+                <LinearLayout android:orientation="horizontal" style="@style/UiDialogGroupUpStyleMid">
+                    <com.metamoji.ui.common.UiTextView android:layout_marginRight="@dimen/controlSpace" android:text="@string/ForBiz_Login_Name" style="@style/UiDialogLabelStyle" />
+                    <com.metamoji.ui.common.UiTextView android:textStyle="normal" android:gravity="right|center" android:layout_gravity="right|center" android:id="@id/dlg_account_biz_user_id" style="@style/UiDialogLabelStyle" />
+                </LinearLayout>
+                <LinearLayout android:orientation="horizontal" android:layout_marginBottom="@dimen/controlSpaceWide" style="@style/UiDialogGroupUpStyleBottom">
+                    <com.metamoji.ui.common.UiTextView android:layout_marginRight="@dimen/controlSpace" android:text="@string/ForBiz_Account_Display_Name" style="@style/UiDialogLabelStyle" />
+                    <com.metamoji.ui.common.UiTextView android:textStyle="normal" android:gravity="right|center" android:layout_gravity="right|center" android:id="@id/dlg_account_biz_user_name" style="@style/UiDialogLabelStyle" />
+                </LinearLayout>
+                <com.metamoji.ui.common.UiButton android:id="@id/button_cabinetuser_changepassword" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/controlSpace" local:button_type="withsubmenu" local:maintitle="@string/SystemOption_CabinetUser_ChangePassword" />
+                <com.metamoji.ui.common.UiButton android:id="@id/button_cabinetuser_forcelogout" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/controlSpace" local:button_type="normal" local:maintitle="@string/Btn_Force_Logout" />
+            </LinearLayout>
+        </ScrollView>
+    </LinearLayout>
+</RelativeLayout>

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout android:layout_width="match_parent" android:layout_height="match_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:local="http://schemas.android.com/apk/res-auto">
+    <include layout="@layout/control_dialog_background" />
+    <LinearLayout style="@style/UiDialogStyle">
+        <include layout="@layout/control_dialog_header" />
+        <ScrollView style="@style/UiDialogScrollViewStyle">
+            <LinearLayout style="@style/UiDialogBodyWithScrollStyle">
+                <com.metamoji.ui.common.UiTextView android:id="@id/merged_note_title_label" android:text="@string/MMJNT_LSTR_MERGED_NOTE_TITLE" style="@style/UiDialogGroupTitleStyle" />
+                <com.metamoji.ui.common.UiEditText android:id="@id/merged_note_title" android:nextFocusLeft="@id/merged_note_title" android:nextFocusRight="@id/merged_note_title" android:nextFocusUp="@id/merged_note_title" android:nextFocusDown="@id/merged_note_title" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/controlSpaceWide" android:inputType="text" android:privateImeOptions="com.metamoji.mazecapi?stroke_input=false" android:imeOptions="actionDone" android:nextFocusForward="@id/merged_note_title" />
+                <com.metamoji.forSchool.ui.ScListView android:id="@id/listView" android:background="@drawable/collabo_bar_list_frame" android:layout_width="match_parent" android:layout_height="400.0dp" android:divider="@color/lightgray" android:dividerHeight="1.0dp" android:layout_weight="1.0" />
+                <LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="@dimen/controlSpaceWide">
+                    <com.metamoji.ui.common.UiTextView android:textColor="@color/dialog_text" android:layout_gravity="left" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/MMJNT_LSTR_TARGET_NOTE_TYPE_LABEL" />
+                    <View android:layout_width="0.0dp" android:layout_height="0.0dp" android:layout_weight="1.0" />
+                    <LinearLayout android:gravity="center" android:layout_gravity="right" android:orientation="horizontal" android:id="@id/mergeBtn" android:background="@drawable/control_button_normal_blue" android:clickable="true" android:layout_width="wrap_content" android:layout_height="wrap_content" android:minHeight="14.0dp">
+                        <TextView android:textSize="15.0dp" android:textStyle="bold" android:textColor="@drawable/control_button_textcolor_blue" android:paddingLeft="4.0dp" android:paddingRight="4.0dp" android:duplicateParentState="true" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/MMJNT_LSTR_MERGE_NOTES" />
+                    </LinearLayout>
+                </LinearLayout>
+            </LinearLayout>
+        </ScrollView>
+    </LinearLayout>
+</RelativeLayout>

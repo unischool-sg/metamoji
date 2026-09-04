@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:orientation="vertical" android:layout_width="match_parent" android:layout_height="match_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <com.metamoji.ui.common.UiTextView android:text="@string/ForBiz_Set_ServerUrl_Url" style="@style/UiDialogGroupTitleStyle" />
+    <com.metamoji.ui.common.UiEditText android:id="@id/set_serverurl_txt_url" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/controlSpaceWide" android:inputType="textUri" android:privateImeOptions="com.metamoji.mazecapi?stroke_input=false" android:imeOptions="actionDone" />
+</LinearLayout>

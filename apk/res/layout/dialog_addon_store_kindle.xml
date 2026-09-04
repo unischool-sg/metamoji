@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:local="http://schemas.android.com/apk/res-auto">
+    <include layout="@layout/control_dialog_background" />
+    <LinearLayout android:paddingTop="0.0dp" style="@style/UiDialogStyle">
+        <include layout="@layout/control_dialog_header_fullscreen" />
+        <ScrollView android:id="@id/dialog_scrollview" android:background="#ffffff" android:layout_width="match_parent" android:layout_height="match_parent" android:layout_marginLeft="2.0dp" android:layout_marginTop="-4.0dp" android:layout_marginRight="2.0dp" android:layout_marginBottom="2.0dp">
+            <LinearLayout android:gravity="center_horizontal" android:layout_gravity="center_horizontal" android:layout_width="match_parent" style="@style/UiDialogBodyWithScrollStyle">
+                <ImageView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/controlSpace" android:src="@drawable/addon_logo" android:scaleType="centerInside" />
+                <com.metamoji.ui.common.UiButton android:id="@id/button_restore" android:visibility="gone" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/controlSpace" local:button_type="sub_pink" local:maintitle="@string/InAppPurchase_Title_Restore" />
+                <com.metamoji.ui.common.UiButton android:id="@id/button_clear_debug" android:visibility="gone" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/controlSpace" local:button_type="sub_pink" local:maintitle="clear downloaded dictionaries(for test)" />
+                <include layout="@layout/addon_store_goldservice" />
+                <LinearLayout android:id="@id/product_mazec" android:visibility="gone" style="@style/AddOnStoreProductGroup">
+                    <LinearLayout android:orientation="vertical" style="@style/UiDialogProductNameBackgroundStyle">
+                        <include android:id="@id/layout_mazecaddon" layout="@layout/addon_store_product_title" />
+                    </LinearLayout>
+                    <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="-20.0dp" android:layout_marginBottom="@dimen/controlSpace" android:text="@string/InAppPurchase_Mazec_Comment_Short" />
+                    <ImageView android:layout_gravity="center" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/controlSpace" android:src="@drawable/catalog_mazec_en" android:scaleType="centerInside" />
+                    <LinearLayout android:gravity="center" android:orientation="vertical" android:background="@drawable/addon_store_product_list_frame" android:padding="@dimen/AddOnStoreGroupPadding" android:layout_width="match_parent" android:layout_height="wrap_content">
+                        <LinearLayout android:orientation="vertical" android:id="@id/langpack_list_1" android:layout_width="match_parent" android:layout_height="wrap_content" />
+                    </LinearLayout>
+                </LinearLayout>
+            </LinearLayout>
+        </ScrollView>
+    </LinearLayout>
+</RelativeLayout>

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:orientation="vertical" android:layout_width="match_parent" android:layout_height="match_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <com.metamoji.video.AmvExoVideoPlayer android:layout_gravity="center" android:id="@id/vfs_player" android:saveEnabled="false" android:layout_width="wrap_content" android:layout_height="wrap_content" app:playOnTouch="false" />
+    <FrameLayout android:layout_gravity="center" android:id="@id/vfs_sliderGroup" android:background="@color/transparent" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="16.0dp">
+        <com.metamoji.video.AmvFrameListView android:id="@id/vfs_frameList" android:background="@color/controller_bg" android:layout_width="match_parent" android:layout_height="80.0dp" android:layout_marginTop="14.0dp" />
+        <com.metamoji.video.AmvSlider android:id="@id/vfs_slider" android:layout_width="match_parent" android:layout_height="wrap_content" />
+    </FrameLayout>
+</LinearLayout>

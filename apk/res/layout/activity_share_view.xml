@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout android:orientation="vertical" android:id="@id/root" android:layout_width="match_parent" android:layout_height="match_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <fragment android:id="@id/share_view_fragment" android:layout_width="match_parent" android:layout_height="match_parent" class="com.metamoji.ui.cabinet.ShareViewFragment" />
+    <include layout="@layout/cabinet_actionbar" />
+    <com.metamoji.ui.CustomMenuView android:id="@id/CustomMenuView" android:layout_width="match_parent" android:layout_height="match_parent" />
+    <com.metamoji.ui.CustomHelpView android:id="@id/CustomHelpView" android:visibility="invisible" android:layout_width="match_parent" android:layout_height="match_parent" />
+    <include layout="@layout/cabinet_syncstatusbar" />
+</FrameLayout>

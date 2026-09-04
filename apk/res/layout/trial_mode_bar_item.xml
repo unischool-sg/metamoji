@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:orientation="vertical" android:layout_width="match_parent" android:layout_height="match_parent" android:layout_marginLeft="4.0dp" android:layout_marginTop="4.0dp" android:layout_marginRight="4.0dp"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:local="http://schemas.android.com/apk/res-auto">
+    <TextView android:id="@id/trialmodebar_item_type" android:layout_width="wrap_content" android:layout_height="wrap_content" style="@style/LibraryStoreText" />
+    <TextView android:id="@id/trialmodebar_item_name" android:layout_width="wrap_content" android:layout_height="wrap_content" style="@style/LibraryStoreText" />
+    <LinearLayout android:layout_gravity="right" android:orientation="horizontal" android:layout_width="wrap_content" android:layout_height="wrap_content">
+        <ImageView android:layout_gravity="center_vertical" android:id="@id/trialmodebar_item_cart" android:visibility="gone" android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/library_store_cart" android:contentDescription="@null" />
+        <TextView android:layout_gravity="center_vertical" android:id="@id/trialmodebar_item_price" android:layout_width="wrap_content" android:layout_height="wrap_content" style="@style/LibraryStoreText" />
+        <com.metamoji.ui.common.UiButton android:textSize="12.0sp" android:layout_gravity="center_vertical" android:id="@id/trialmodebar_item_buy" android:layout_width="wrap_content" android:layout_height="wrap_content" local:button_type="inapppurchase" local:maintitle="@string/Library_Store_PurchaseBtn" />
+    </LinearLayout>
+</LinearLayout>

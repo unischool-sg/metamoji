@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout android:layout_width="wrap_content" android:layout_height="wrap_content"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:local="http://schemas.android.com/apk/res-auto">
+    <include layout="@layout/control_dialog_background" />
+    <LinearLayout style="@style/UiDialogStyle">
+        <include layout="@layout/control_dialog_header" />
+        <ScrollView style="@style/UiDialogScrollViewStyle">
+            <LinearLayout style="@style/UiDialogBodyWithScrollStyle">
+                <com.metamoji.ui.common.UiRadioGroup android:orientation="horizontal" android:id="@id/radiogroup" android:layout_width="match_parent" android:layout_height="wrap_content" local:justify_width_withlargestchild="true">
+                    <com.metamoji.ui.common.UiRadioButton android:id="@id/button_border" android:layout_width="wrap_content" android:layout_height="wrap_content" local:maintitle="@string/TextUnitStyle_Layout" local:radiobutton_type="small_left" />
+                    <com.metamoji.ui.common.UiRadioButton android:id="@id/button_color" android:layout_width="wrap_content" android:layout_height="wrap_content" local:maintitle="@string/TextUnitStyle_Color" local:radiobutton_type="small_center" />
+                    <com.metamoji.ui.common.UiRadioButton android:id="@id/button_text" android:layout_width="wrap_content" android:layout_height="wrap_content" local:maintitle="@string/TextUnitStyle_Style" local:radiobutton_type="small_right" />
+                </com.metamoji.ui.common.UiRadioGroup>
+                <FrameLayout android:id="@id/container" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="@dimen/controlSpaceWide" />
+            </LinearLayout>
+        </ScrollView>
+    </LinearLayout>
+</RelativeLayout>

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <FrameLayout android:background="@drawable/cabinet_thumbnail_dropshadow" android:clipToPadding="false" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_centerInParent="true">
+        <ImageView android:id="@id/image_library_thumbnail" android:background="@android:color/white" android:layout_width="60.0dp" android:layout_height="60.0dp" android:scaleType="fitCenter" android:contentDescription="@null" />
+        <ImageView android:layout_gravity="right|top" android:id="@id/overlay_library_trial" android:visibility="gone" android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/library_trial" android:contentDescription="@null" />
+        <com.metamoji.ui.common.UiImageButton android:id="@id/button_library_delete" android:background="@null" android:visibility="gone" android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/library_delete" android:contentDescription="@null" android:translationX="-11.0dp" android:translationY="-11.0dp" />
+        <ImageView android:layout_gravity="left|bottom" android:id="@id/overlay_library_shortcut" android:visibility="gone" android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/library_shortcut" android:contentDescription="@null" android:translationX="-6.0dp" android:translationY="6.0dp" />
+    </FrameLayout>
+    <TextView android:textSize="11.0sp" android:textColor="@android:color/black" android:ellipsize="end" android:id="@id/label_library_title" android:layout_width="match_parent" android:layout_height="20.0dp" android:maxLines="1" android:layout_weight="20.0" />
+</merge>

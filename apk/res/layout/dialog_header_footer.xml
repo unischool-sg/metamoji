@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout android:layout_width="wrap_content" android:layout_height="wrap_content"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:local="http://schemas.android.com/apk/res-auto">
+    <include layout="@layout/control_dialog_background" />
+    <LinearLayout style="@style/UiDialogStyle">
+        <include layout="@layout/control_dialog_header" />
+        <ScrollView style="@style/UiDialogScrollViewStyle">
+            <LinearLayout style="@style/UiDialogBodyWithScrollStyle">
+                <com.metamoji.ui.common.UiRadioGroup android:orientation="vertical" android:id="@id/dlg_doc_hed_grp" android:layout_width="match_parent" android:layout_height="wrap_content">
+                    <com.metamoji.ui.common.UiRadioButton android:id="@id/dlg_doc_hed_btn_0" android:layout_width="match_parent" android:layout_height="wrap_content" local:maintitle="@string/DocSetting_NotSpecified" local:radiobutton_type="withcheckboxTop" />
+                    <com.metamoji.ui.common.UiRadioButton android:id="@id/dlg_doc_hed_btn_1" android:layout_width="match_parent" android:layout_height="wrap_content" local:radiobutton_type="withcheckboxMid" />
+                    <com.metamoji.ui.common.UiRadioButton android:id="@id/dlg_doc_hed_btn_2" android:layout_width="match_parent" android:layout_height="wrap_content" local:radiobutton_type="withcheckboxMid" />
+                    <com.metamoji.ui.common.UiRadioButton android:id="@id/dlg_doc_hed_btn_3" android:layout_width="match_parent" android:layout_height="wrap_content" local:radiobutton_type="withcheckboxMid" />
+                    <com.metamoji.ui.common.UiRadioButton android:id="@id/dlg_doc_hed_btn_4" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/controlSpaceWide" local:radiobutton_type="withcheckboxBottom" />
+                    <com.metamoji.ui.common.UiRadioButton android:id="@id/dlg_doc_hed_btn_5" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/controlSpace" local:maintitle="@string/DocumentSetting_Custmize" local:maintitle_weight="1" local:radiobutton_type="withsubmenu_and_checkbox" local:subtitle="" local:subtitle_weight="1" />
+                </com.metamoji.ui.common.UiRadioGroup>
+            </LinearLayout>
+        </ScrollView>
+    </LinearLayout>
+</RelativeLayout>

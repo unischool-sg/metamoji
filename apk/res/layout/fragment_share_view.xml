@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout android:id="@id/share_view_root" android:layout_width="match_parent" android:layout_height="match_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:local="http://schemas.android.com/apk/res-auto">
+    <View android:layout_gravity="top" android:background="#9e9f9f" android:layout_width="match_parent" android:layout_height="1.0dp" android:layout_marginTop="132.0dp" />
+    <LinearLayout android:orientation="vertical" android:layout_width="match_parent" android:layout_height="match_parent">
+        <FrameLayout android:orientation="vertical" android:id="@id/cabinet_normal_layout" android:layout_width="match_parent" android:layout_height="70.0dp" android:layout_marginLeft="10.0dp" android:layout_marginTop="64.0dp" android:layout_marginRight="10.0dp">
+            <com.metamoji.ui.common.UiRadioGroup android:layout_gravity="left|bottom" android:orientation="horizontal" android:id="@id/group_category" android:layout_width="wrap_content" android:layout_height="wrap_content" local:justify_width_withlargestchild="false">
+                <com.metamoji.ui.common.UiRadioButton android:id="@id/button1_category_opendate" android:layout_width="0.0dp" android:layout_height="wrap_content" android:layout_weight="1.0" local:force_resizable="true" local:maintitle="@string/ShareView_Tab_OpenDate" local:radiobutton_type="withpage_left" />
+                <com.metamoji.ui.common.UiRadioButton android:id="@id/button2_category_notset_opendate" android:layout_width="0.0dp" android:layout_height="wrap_content" android:layout_weight="1.0" local:force_resizable="true" local:maintitle="@string/ShareView_Tab_NotSet_OpenDate" local:radiobutton_type="withpage_center" />
+                <com.metamoji.ui.common.UiRadioButton android:id="@id/button3_category_all" android:layout_width="0.0dp" android:layout_height="wrap_content" android:layout_weight="1.0" local:force_resizable="true" local:maintitle="@string/ShareView_Tab_All" local:radiobutton_type="withpage_right" />
+            </com.metamoji.ui.common.UiRadioGroup>
+            <LinearLayout android:layout_gravity="right|top" android:orientation="horizontal" android:layout_width="wrap_content" android:layout_height="wrap_content">
+                <ImageButton android:id="@id/shareview_search_mode_button" android:background="@null" android:focusableInTouchMode="true" android:layout_width="40.0dp" android:layout_height="wrap_content" android:layout_marginRight="10.0dp" android:src="@drawable/shareview_search_mode_button" android:scaleType="fitStart" android:adjustViewBounds="true" android:contentDescription="@null" />
+                <ImageButton android:id="@id/cabinet_normal_mode_button" android:background="@null" android:focusableInTouchMode="true" android:layout_width="40.0dp" android:layout_height="wrap_content" android:src="@drawable/cabinet_normal_mode_button" android:scaleType="fitStart" android:adjustViewBounds="true" android:contentDescription="@null" />
+                <ImageButton android:id="@id/cabinet_simple_mode_button" android:background="@null" android:layout_width="40.0dp" android:layout_height="wrap_content" android:layout_marginLeft="-1.0dp" android:src="@drawable/cabinet_simple_mode_button" android:scaleType="fitStart" android:adjustViewBounds="true" android:contentDescription="@null" />
+            </LinearLayout>
+        </FrameLayout>
+        <include layout="@layout/cabinet_share_view_core" />
+    </LinearLayout>
+    <GridView android:id="@id/share_view_waiting" android:background="@android:color/darker_gray" android:visibility="gone" android:layout_width="match_parent" android:layout_height="match_parent" android:alpha="0.6" />
+    <ImageView android:layout_gravity="center_horizontal" android:id="@id/share_view_refresh_image" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="146.0dp" android:src="@drawable/shareview_update_indicator" />
+</FrameLayout>

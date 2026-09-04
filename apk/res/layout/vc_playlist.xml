@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:orientation="vertical" android:background="@drawable/vc_playlist_frame" android:layout_width="220.0dp" android:layout_height="match_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:local="http://schemas.android.com/apk/res-auto">
+    <LinearLayout android:gravity="center_vertical" android:orientation="horizontal" android:paddingLeft="7.0dp" android:paddingRight="7.0dp" android:layout_width="match_parent" android:layout_height="46.0dp">
+        <com.metamoji.ui.common.UiButton android:id="@id/vc_playlist_delete" android:visibility="gone" android:layout_width="wrap_content" android:layout_height="wrap_content" local:button_type="sub" local:maintitle="@string/DELETE_TRACK" />
+        <com.metamoji.ui.common.UiTextView android:textStyle="bold" android:textColor="#0a0a0a" android:gravity="center_vertical" android:id="@id/vc_playlist_title" android:layout_width="0.0dp" android:layout_height="wrap_content" android:text="@string/Voice_PlayList_Title" android:layout_weight="1.0" />
+        <com.metamoji.ui.common.UiButton android:id="@id/vc_playlist_edit" android:layout_width="wrap_content" android:layout_height="wrap_content" local:button_type="sub" local:maintitle="@string/Button_Edit" />
+    </LinearLayout>
+    <View android:background="@color/vc_player_border" android:layout_width="match_parent" android:layout_height="1.0dp" />
+    <FrameLayout android:id="@id/vc_playlist_listview_layer" android:background="@null" android:padding="-1.0dp" android:layout_width="match_parent" android:layout_height="0.0dp" android:layout_weight="1.0" />
+</LinearLayout>

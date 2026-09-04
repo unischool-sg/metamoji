@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout android:layout_width="match_parent" android:layout_height="match_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:local="http://schemas.android.com/apk/res-auto" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <include layout="@layout/control_dialog_background" />
+    <LinearLayout style="@style/UiDialogStyle">
+        <include layout="@layout/control_dialog_header" />
+        <RelativeLayout android:id="@id/body" android:clipChildren="false" android:layout_width="@dimen/LibraryViewDialogWidth" android:layout_height="match_parent" android:layout_marginLeft="@dimen/bodyPaddingLeft" android:layout_marginTop="@dimen/bodyPaddingTop" android:layout_marginRight="@dimen/bodyPaddingRight" android:layout_marginBottom="@dimen/bodyPaddingBottom">
+            <RelativeLayout android:id="@id/header" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/bodyPaddingTop">
+                <com.metamoji.ui.common.UiRadioGroup android:orientation="horizontal" android:id="@id/noteTemplateTabGroup" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_alignParentLeft="true" app:justify_width_withlargestchild="true">
+                    <com.metamoji.ui.common.UiRadioButton android:id="@id/sheetButton" android:layout_width="wrap_content" android:layout_height="wrap_content" app:maintitle="@string/NEW_NOTE_DLG_SHEET_TAB" app:radiobutton_type="small_left" />
+                    <com.metamoji.ui.common.UiRadioButton android:id="@id/templateButton" android:layout_width="wrap_content" android:layout_height="wrap_content" app:maintitle="@string/NEW_NOTE_DLG_TEMPLATE_TAB" app:radiobutton_type="small_right" />
+                </com.metamoji.ui.common.UiRadioGroup>
+                <com.metamoji.ui.common.UiButton android:id="@id/storeButton" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_alignParentRight="true" app:button_type="purple" app:maintitle="@string/MMJNT_LSTR_LIBRARY_DOWNLOAD_ITEM" />
+            </RelativeLayout>
+            <RelativeLayout android:id="@id/footer" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8.0dp" android:layout_alignParentBottom="true" />
+            <FrameLayout android:id="@id/tabContainer" android:layout_width="match_parent" android:layout_height="match_parent" android:layout_above="@id/footer" android:layout_below="@id/header" />
+        </RelativeLayout>
+    </LinearLayout>
+    <include android:id="@id/downloadPanel" layout="@layout/dialog_libraryview_downloadpanel" />
+    <com.metamoji.ui.CustomMenuView android:id="@id/libraryCustomMenuView" android:layout_width="match_parent" android:layout_height="match_parent" />
+</RelativeLayout>

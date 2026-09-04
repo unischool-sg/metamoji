@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:orientation="vertical" android:paddingRight="1.0dp" android:clipChildren="false" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/bodyPaddingBottom"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:local="http://schemas.android.com/apk/res-auto">
+    <com.metamoji.ui.common.UiButton android:id="@id/button_pendropper" android:visibility="gone" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/PenSettingsGroupPenNextMargin" local:button_type="normal" local:maintitle="@string/PenSettings_PenDropper" />
+    <com.metamoji.ui.common.UiTextView android:id="@id/styleName" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="5.0dp" android:text="@string/PenSettings_Style" />
+    <com.metamoji.ui.common.UiRadioGroup android:orientation="vertical" android:id="@id/radiogroup_pen_standard" android:visibility="gone" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/PenSettingsGroupPenNextMargin">
+        <com.metamoji.ui.common.UiRadioButton android:id="@id/radiobutton_pen_standard_mapping" android:layout_width="match_parent" android:layout_height="wrap_content" local:maintitle="@string/PenSettings_Standard_Mapping" local:radiobutton_type="withcheckboxTop" />
+        <com.metamoji.ui.common.UiRadioButton android:id="@id/radiobutton_pen_standard_dash" android:layout_width="match_parent" android:layout_height="wrap_content" local:maintitle="@string/PenSettings_Standard_Dash" local:radiobutton_type="withcheckboxBottom" />
+    </com.metamoji.ui.common.UiRadioGroup>
+    <com.metamoji.ui.common.UiRadioGroup android:orientation="vertical" android:id="@id/radiogroup_pen_calligraphy" android:visibility="gone" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/PenSettingsGroupPenNextMargin">
+        <com.metamoji.ui.common.UiRadioButton android:id="@id/radiobutton_pen_calligraphy_preset_A" android:layout_width="match_parent" android:layout_height="wrap_content" local:maintitle="@string/PenSettings_Calligraphy_Preset_A" local:radiobutton_type="withcheckboxTop" />
+        <com.metamoji.ui.common.UiRadioButton android:id="@id/radiobutton_pen_calligraphy_preset_B" android:layout_width="match_parent" android:layout_height="wrap_content" local:maintitle="@string/PenSettings_Calligraphy_Preset_B" local:radiobutton_type="withcheckboxMid" />
+        <com.metamoji.ui.common.UiRadioButton android:id="@id/radiobutton_pen_calligraphy_custom" android:layout_width="match_parent" android:layout_height="wrap_content" local:maintitle="@string/PenSettings_Calligraphy_Custom" local:radiobutton_type="withcheckboxBottom" />
+    </com.metamoji.ui.common.UiRadioGroup>
+    <com.metamoji.ui.common.UiRadioGroup android:orientation="vertical" android:id="@id/radiogroup_pen_calligraphy_lite" android:visibility="gone" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/PenSettingsGroupPenNextMargin">
+        <com.metamoji.ui.common.UiRadioButton android:id="@id/radiobutton_pen_calligraphy_lite_preset_A" android:layout_width="match_parent" android:layout_height="wrap_content" local:maintitle="@string/PenSettings_Calligraphy_Preset_A" local:radiobutton_type="withcheckboxTop" />
+        <com.metamoji.ui.common.UiRadioButton android:id="@id/radiobutton_pen_calligraphy_lite_preset_B" android:layout_width="match_parent" android:layout_height="wrap_content" local:maintitle="@string/PenSettings_Calligraphy_Preset_B" local:radiobutton_type="withcheckboxBottom" />
+    </com.metamoji.ui.common.UiRadioGroup>
+    <com.metamoji.ui.common.UiButton android:id="@id/button_drawshape" android:visibility="gone" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/PenSettingsGroupPenNextMargin" local:button_type="withcheckbox" local:maintitle="@string/PenSettings_DrawShape" />
+    <com.metamoji.ui.common.UiButton android:id="@id/button_inkcolor" android:layout_width="match_parent" android:layout_height="wrap_content" local:button_type="accordion_inkcolor" local:maintitle="@string/PenSettings_InkColor" />
+    <LinearLayout android:orientation="vertical" android:id="@id/style_inkcolor" android:visibility="gone" android:layout_width="match_parent" android:layout_height="wrap_content">
+        <LinearLayout android:gravity="center" android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content">
+            <FrameLayout android:id="@id/colorPaletteFrame" android:background="@drawable/group_background_down_white" android:layout_width="match_parent" android:layout_height="wrap_content">
+                <com.metamoji.ui.common.UiColorSelectionView2 android:id="@id/colorPalette" android:layout_width="match_parent" android:layout_height="250.0dp" local:cell_height="30.0dp" local:cell_horz_margin="35.0dp" local:cell_horz_spacing="25.0dp" local:cell_per_line="5" local:cell_vert_margin="8.0dp" local:cell_vert_spacing="10.0dp" local:cell_width="30.0dp" local:color_type="pen" local:transpose="true" />
+            </FrameLayout>
+        </LinearLayout>
+        <LinearLayout android:gravity="center" android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content">
+            <com.metamoji.ui.common.UiImageButton android:id="@id/paletteLeftButton" android:background="@null" android:layout_width="25.0dp" android:layout_height="30.0dp" android:src="@drawable/control_ink_page_prev" android:scaleType="fitCenter" />
+            <RelativeLayout android:gravity="center" android:layout_gravity="center" android:layout_width="wrap_content" android:layout_height="30.0dp">
+                <LinearLayout android:gravity="center" android:layout_gravity="center" android:orientation="horizontal" android:id="@id/bottlesContainer" android:layout_width="wrap_content" android:layout_height="match_parent">
+                    <com.metamoji.ui.common.UiImageRadioButton android:id="@id/bottle0" android:background="@color/transparent" android:visibility="gone" android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/dlg_ink_mark" android:scaleType="fitCenter" />
+                    <com.metamoji.ui.common.UiImageRadioButton android:id="@id/bottle1" android:background="@color/transparent" android:visibility="gone" android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/dlg_ink_mark" android:scaleType="fitCenter" />
+                    <com.metamoji.ui.common.UiImageRadioButton android:id="@id/bottle2" android:background="@color/transparent" android:visibility="gone" android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/dlg_ink_mark" android:scaleType="fitCenter" />
+                    <com.metamoji.ui.common.UiImageRadioButton android:id="@id/bottle3" android:background="@color/transparent" android:visibility="gone" android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/dlg_ink_mark" android:scaleType="fitCenter" />
+                    <com.metamoji.ui.common.UiImageRadioButton android:id="@id/bottle4" android:background="@color/transparent" android:visibility="gone" android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/dlg_ink_mark" android:scaleType="fitCenter" />
+                </LinearLayout>
+                <LinearLayout android:background="@null" android:clickable="true" android:layout_width="wrap_content" android:layout_height="match_parent" android:layout_alignLeft="@id/bottlesContainer" android:layout_alignRight="@id/bottlesContainer" />
+            </RelativeLayout>
+            <com.metamoji.ui.common.UiImageButton android:id="@id/paletteRightButton" android:background="@null" android:layout_width="25.0dp" android:layout_height="30.0dp" android:src="@drawable/control_ink_page_next" android:scaleType="fitCenter" />
+        </LinearLayout>
+    </LinearLayout>
+    <com.metamoji.ui.common.UiButton android:id="@id/button_opacity" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="@dimen/PenSettingsAccordionInterval" local:button_type="accordion" local:maintitle="@string/PenSettings_Opacity_Tab" />
+    <FrameLayout android:id="@id/style_opacity" android:background="@drawable/group_background_down" android:visibility="gone" android:clipChildren="false" android:clipToPadding="false" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="10.0dp">
+        <com.metamoji.ui.common.UiPlainSlider android:id="@id/sliderOpacity" android:clipChildren="false" android:layout_width="match_parent" android:layout_height="wrap_content" local:color0="#00000000" local:color1="#ff000000" />
+    </FrameLayout>
+    <com.metamoji.ui.common.UiButton android:id="@id/button_thickness" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="@dimen/PenSettingsAccordionInterval" local:button_type="accordion" local:maintitle="@string/PenSettings_Thickness" />
+    <LinearLayout android:orientation="vertical" android:id="@id/style_thickness" android:background="@drawable/group_background_down" android:visibility="gone" android:clipChildren="false" android:clipToPadding="false" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="5.0dp">
+        <com.metamoji.ui.common.UiPlainSlider android:id="@id/sliderWeight" android:clipChildren="false" android:layout_width="match_parent" android:layout_height="wrap_content" />
+        <LinearLayout android:gravity="fill_horizontal" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginLeft="0.0dp" android:layout_marginRight="0.0dp" android:layout_marginBottom="5.0dp">
+            <FrameLayout android:layout_width="0.0dp" android:layout_height="wrap_content" android:layout_weight="1.0" />
+            <com.metamoji.ui.common.UiButton android:id="@id/penWeight0" android:layout_width="45.0dp" android:layout_height="wrap_content" local:button_type="mini" local:maintitle="3" />
+            <FrameLayout android:layout_width="0.0dp" android:layout_height="wrap_content" android:layout_weight="1.0" />
+            <com.metamoji.ui.common.UiButton android:id="@id/penWeight1" android:layout_width="45.0dp" android:layout_height="wrap_content" local:button_type="mini" local:maintitle="5" />
+            <FrameLayout android:layout_width="0.0dp" android:layout_height="wrap_content" android:layout_weight="1.0" />
+            <com.metamoji.ui.common.UiButton android:id="@id/penWeight2" android:layout_width="45.0dp" android:layout_height="wrap_content" local:button_type="mini" local:maintitle="7" />
+            <FrameLayout android:layout_width="0.0dp" android:layout_height="wrap_content" android:layout_weight="1.0" />
+            <com.metamoji.ui.common.UiButton android:id="@id/penWeight3" android:layout_width="45.0dp" android:layout_height="wrap_content" local:button_type="mini" local:maintitle="10" />
+            <FrameLayout android:layout_width="0.0dp" android:layout_height="wrap_content" android:layout_weight="1.0" />
+            <com.metamoji.ui.common.UiButton android:id="@id/penWeight4" android:layout_width="45.0dp" android:layout_height="wrap_content" local:button_type="mini" local:maintitle="20" />
+            <FrameLayout android:layout_width="0.0dp" android:layout_height="wrap_content" android:layout_weight="1.0" />
+        </LinearLayout>
+    </LinearLayout>
+    <com.metamoji.ui.common.UiButton android:id="@id/button_penangle" android:visibility="gone" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="@dimen/PenSettingsAccordionInterval" local:button_type="accordion" local:maintitle="@string/PenSettings_PenAngle_Tab" />
+    <LinearLayout android:orientation="vertical" android:id="@id/style_penangle" android:background="@drawable/group_background_down" android:padding="5.0dp" android:visibility="gone" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="10.0dp">
+        <LinearLayout android:gravity="left|center" android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content">
+            <LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="110.0dp">
+                <com.metamoji.ui.common.UiAngleSlider android:id="@id/angleSlider" android:layout_width="0.0dp" android:layout_height="match_parent" android:layout_marginBottom="5.0dp" android:layout_weight="7.0" local:axis_margin="4.0dp" local:axis_stroke_width="3.0dp" local:ball_radius="6.0dp" local:circle_stroke_width="4.5dp" local:cirgle_margin_ratio="0.25" local:font_size="12.0" />
+                <com.metamoji.ui.common.UiTextView android:textSize="14.0dp" android:typeface="sans" android:textStyle="bold" android:gravity="right" android:layout_gravity="center" android:id="@id/angleValue" android:layout_width="0.0dp" android:layout_height="wrap_content" android:layout_marginRight="5.0dp" android:text="α=100°" android:layout_weight="3.0" />
+                <GridLayout android:layout_gravity="center_vertical" android:layout_width="0.0dp" android:layout_height="wrap_content" android:layout_weight="6.0" android:rowCount="2" android:columnCount="2" android:useDefaultMargins="false">
+                    <com.metamoji.ui.common.UiButton android:id="@id/angleDec" android:layout_width="48.0dp" android:layout_height="wrap_content" android:layout_marginRight="5.0dp" android:layout_marginBottom="5.0dp" android:layout_column="0" android:layout_row="0" local:button_type="mini" local:maintitle="-1°" />
+                    <com.metamoji.ui.common.UiButton android:id="@id/angleDec10" android:layout_width="48.0dp" android:layout_height="wrap_content" android:layout_column="1" android:layout_row="0" local:button_type="mini" local:maintitle="-10°" />
+                    <com.metamoji.ui.common.UiButton android:id="@id/angleInc" android:layout_width="48.0dp" android:layout_height="wrap_content" android:layout_column="0" android:layout_row="1" local:button_type="mini" local:maintitle="+1°" />
+                    <com.metamoji.ui.common.UiButton android:id="@id/angleInc10" android:layout_width="48.0dp" android:layout_height="wrap_content" android:layout_column="1" android:layout_row="1" local:button_type="mini" local:maintitle="+10°" />
+                </GridLayout>
+            </LinearLayout>
+        </LinearLayout>
+        <LinearLayout android:gravity="center" android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content">
+            <FrameLayout android:layout_width="0.0dp" android:layout_height="wrap_content" android:layout_weight="1.0" />
+            <com.metamoji.ui.common.UiButton android:id="@id/preAngle0" android:layout_width="45.0dp" android:layout_height="wrap_content" local:button_type="mini" local:maintitle="10°" />
+            <FrameLayout android:layout_width="0.0dp" android:layout_height="wrap_content" android:layout_weight="1.0" />
+            <com.metamoji.ui.common.UiButton android:id="@id/preAngle1" android:layout_width="45.0dp" android:layout_height="wrap_content" local:button_type="mini" local:maintitle="30°" />
+            <FrameLayout android:layout_width="0.0dp" android:layout_height="wrap_content" android:layout_weight="1.0" />
+            <com.metamoji.ui.common.UiButton android:id="@id/preAngle2" android:layout_width="45.0dp" android:layout_height="wrap_content" local:button_type="mini" local:maintitle="45°" />
+            <FrameLayout android:layout_width="0.0dp" android:layout_height="wrap_content" android:layout_weight="1.0" />
+            <com.metamoji.ui.common.UiButton android:id="@id/preAngle3" android:layout_width="45.0dp" android:layout_height="wrap_content" local:button_type="mini" local:maintitle="52°" />
+            <FrameLayout android:layout_width="0.0dp" android:layout_height="wrap_content" android:layout_weight="1.0" />
+            <com.metamoji.ui.common.UiButton android:id="@id/preAngle4" android:layout_width="45.0dp" android:layout_height="wrap_content" local:button_type="mini" local:maintitle="150°" />
+            <FrameLayout android:layout_width="0.0dp" android:layout_height="wrap_content" android:layout_weight="1.0" />
+            <com.metamoji.ui.common.UiButton android:id="@id/preAngle5" android:layout_width="45.0dp" android:layout_height="wrap_content" local:button_type="mini" local:maintitle="175°" />
+            <FrameLayout android:layout_width="0.0dp" android:layout_height="wrap_content" android:layout_weight="1.0" />
+        </LinearLayout>
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/PenSettings_Locus" />
+        <LinearLayout android:gravity="center" android:orientation="horizontal" android:background="@drawable/group_background_down" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="10.0dp">
+            <ImageView android:layout_width="90.0dp" android:layout_height="78.0dp" android:src="@drawable/pen_locus" android:scaleType="fitCenter" />
+            <ImageView android:id="@id/penLocus_Angle" android:background="#ffffffff" android:padding="3.0dp" android:layout_width="70.0dp" android:layout_height="70.0dp" android:layout_marginLeft="10.0dp" android:scaleType="fitCenter" />
+        </LinearLayout>
+    </LinearLayout>
+    <com.metamoji.ui.common.UiButton android:id="@id/button_penrate" android:visibility="gone" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="@dimen/PenSettingsAccordionInterval" local:button_type="accordion" local:maintitle="@string/PenSettings_PenRate_Tab" />
+    <LinearLayout android:orientation="vertical" android:id="@id/style_penrate" android:background="@drawable/group_background_down" android:padding="5.0dp" android:visibility="gone" android:clipChildren="false" android:clipToPadding="false" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="10.0dp">
+        <com.metamoji.ui.common.UiPlainSlider android:id="@id/sliderRatio" android:clipChildren="false" android:layout_width="match_parent" android:layout_height="wrap_content" />
+        <LinearLayout android:gravity="center_horizontal" android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content">
+            <FrameLayout android:layout_width="0.0dp" android:layout_height="wrap_content" android:layout_weight="1.0" />
+            <com.metamoji.ui.common.UiButton android:id="@id/ratio0" android:layout_width="45.0dp" android:layout_height="wrap_content" local:button_type="mini" local:maintitle="1" />
+            <FrameLayout android:layout_width="0.0dp" android:layout_height="wrap_content" android:layout_weight="1.0" />
+            <com.metamoji.ui.common.UiButton android:id="@id/ratio1" android:layout_width="45.0dp" android:layout_height="wrap_content" local:button_type="mini" local:maintitle="3" />
+            <FrameLayout android:layout_width="0.0dp" android:layout_height="wrap_content" android:layout_weight="1.0" />
+            <com.metamoji.ui.common.UiButton android:id="@id/ratio2" android:layout_width="45.0dp" android:layout_height="wrap_content" local:button_type="mini" local:maintitle="5" />
+            <FrameLayout android:layout_width="0.0dp" android:layout_height="wrap_content" android:layout_weight="1.0" />
+            <com.metamoji.ui.common.UiButton android:id="@id/ratio3" android:layout_width="45.0dp" android:layout_height="wrap_content" local:button_type="mini" local:maintitle="10" />
+            <FrameLayout android:layout_width="0.0dp" android:layout_height="wrap_content" android:layout_weight="1.0" />
+            <com.metamoji.ui.common.UiButton android:id="@id/ratio4" android:layout_width="45.0dp" android:layout_height="wrap_content" local:button_type="mini" local:maintitle="15" />
+            <FrameLayout android:layout_width="0.0dp" android:layout_height="wrap_content" android:layout_weight="1.0" />
+            <com.metamoji.ui.common.UiButton android:id="@id/ratio5" android:layout_width="45.0dp" android:layout_height="wrap_content" local:button_type="mini" local:maintitle="30" />
+            <FrameLayout android:layout_width="0.0dp" android:layout_height="wrap_content" android:layout_weight="1.0" />
+        </LinearLayout>
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/PenSettings_Locus" />
+        <LinearLayout android:gravity="center" android:orientation="horizontal" android:background="@drawable/group_background_down" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="10.0dp">
+            <ImageView android:layout_width="90.0dp" android:layout_height="78.0dp" android:src="@drawable/pen_locus" android:scaleType="fitCenter" />
+            <ImageView android:id="@id/penLocus_Rate" android:background="#ffffffff" android:padding="3.0dp" android:layout_width="70.0dp" android:layout_height="70.0dp" android:layout_marginLeft="10.0dp" android:scaleType="fitCenter" />
+        </LinearLayout>
+    </LinearLayout>
+</LinearLayout>

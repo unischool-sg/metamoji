@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:gravity="center_horizontal" android:orientation="vertical" android:id="@id/cabinetItemLinearLayout" android:background="@drawable/item_cabinet_normal_background" android:paddingLeft="@dimen/shareViewNormalHPadding" android:paddingTop="@dimen/shareViewNormalTopPadding" android:paddingRight="@dimen/shareViewNormalHPadding" android:paddingBottom="@dimen/shareViewNormalBottomPadding" android:clipChildren="false" android:layout_width="match_parent" android:layout_height="wrap_content"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <View android:layout_width="wrap_content" android:layout_height="@dimen/shareViewNormalTopPadding" />
+    <RelativeLayout android:clipChildren="false" android:layout_width="@dimen/cabinetNormalThumbnailWidth" android:layout_height="@dimen/cabinetNormalThumbnailHeight">
+        <RelativeLayout android:clipChildren="false" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_centerInParent="true">
+            <ImageView android:id="@id/thumbnail" android:layout_width="wrap_content" android:layout_height="wrap_content" android:adjustViewBounds="true" android:layout_centerInParent="true" />
+            <ImageView android:id="@id/pinnedIcon" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="@dimen/shareViewPinnedIconMarginTop" android:src="@drawable/dc_pin_flag" android:layout_alignTop="@id/thumbnail" android:layout_centerHorizontal="true" />
+            <ImageView android:id="@id/haschangeIcon" android:visibility="gone" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="@dimen/shareViewHasChangeIconMarginTop" android:layout_marginRight="@dimen/shareViewHasChangeIconMarginRight" android:src="@drawable/dc_has_change" android:layout_alignTop="@id/thumbnail" android:layout_alignRight="@id/thumbnail" />
+            <ImageView android:id="@id/cabinetshareicon" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginRight="@dimen/shareViewShareIconMarginRight" android:layout_marginBottom="@dimen/shareViewShareIconMarginBottom" android:src="@drawable/cabinet_icon_collabo" android:layout_alignRight="@id/thumbnail" android:layout_alignBottom="@id/thumbnail" />
+            <FrameLayout android:background="@drawable/item_shareview_membernum" android:layout_width="35.0dp" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/shareViewMemberNumMarginBottom" android:layout_alignBottom="@id/thumbnail" android:layout_centerHorizontal="true">
+                <TextView android:textColor="@color/text_standard" android:layout_gravity="center" android:id="@id/memberNum" android:layout_width="wrap_content" android:layout_height="wrap_content" />
+            </FrameLayout>
+        </RelativeLayout>
+    </RelativeLayout>
+    <com.metamoji.ui.cabinet.OutlineCharacterOnActivatedTextView android:id="@id/shareTitle" style="@style/CabinetNormalMainText" />
+    <com.metamoji.ui.cabinet.OutlineCharacterOnActivatedTextView android:id="@id/shareDate" style="@style/CabinetNormalSubText" />
+    <com.metamoji.ui.cabinet.OutlineCharacterOnActivatedTextView android:id="@id/shareUser" style="@style/CabinetNormalSubText" />
+</LinearLayout>

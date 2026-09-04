@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:orientation="horizontal" android:paddingLeft="2.0dp" android:paddingTop="2.0dp" android:paddingRight="2.0dp" android:paddingBottom="2.0dp" android:layout_width="match_parent" android:layout_height="wrap_content"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:local="http://schemas.android.com/apk/res-auto">
+    <CheckBox android:layout_gravity="center" android:id="@id/checkBox" android:layout_width="18.0dp" android:layout_height="18.0dp" android:layout_marginLeft="4.0dp" android:button="@drawable/cabinet_check_box" />
+    <ImageView android:layout_gravity="center" android:id="@id/roleImage" android:layout_width="20.0dp" android:layout_height="20.0dp" android:src="@drawable/school_user_student" android:scaleType="fitCenter" android:contentDescription="@null" />
+    <HorizontalScrollView android:layout_gravity="left|center" android:id="@id/scrollView" android:layout_width="0.0dp" android:layout_height="wrap_content" android:layout_marginLeft="4.0dp" android:layout_weight="1.0">
+        <LinearLayout android:layout_gravity="left|center" android:orientation="vertical" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_weight="1.0">
+            <TextView android:textSize="10.0dp" android:textColor="@color/graypush" android:gravity="left|center" android:layout_gravity="left|center" android:id="@id/loginName" android:layout_width="wrap_content" android:layout_height="match_parent" android:singleLine="true" />
+            <TextView android:textSize="14.0dp" android:gravity="left|center" android:layout_gravity="left|center" android:id="@id/name" android:layout_width="wrap_content" android:layout_height="match_parent" android:singleLine="true" />
+        </LinearLayout>
+    </HorizontalScrollView>
+    <com.metamoji.ui.common.UiRadioGroup android:layout_gravity="right|center" android:orientation="horizontal" android:id="@id/typeRadioGroup" android:layout_width="wrap_content" android:layout_height="wrap_content" local:justify_width_withlargestchild="false">
+        <com.metamoji.ui.common.UiRadioButton android:id="@id/typeRadioGroup_Admin" android:layout_width="wrap_content" android:layout_height="wrap_content" local:maintitle="@string/Cabinet_SdDriveAdmin" local:radiobutton_type="small_left" />
+        <com.metamoji.ui.common.UiRadioButton android:id="@id/typeRadioGroup_Editor" android:layout_width="wrap_content" android:layout_height="wrap_content" local:maintitle="@string/Cabinet_SdDriveEditor" local:radiobutton_type="small_right" />
+    </com.metamoji.ui.common.UiRadioGroup>
+    <TextView android:textSize="14.0dp" android:textColor="@color/graypush" android:gravity="right|center" android:layout_gravity="right|center" android:id="@id/labelType" android:layout_width="wrap_content" android:layout_height="match_parent" android:singleLine="true" />
+</LinearLayout>

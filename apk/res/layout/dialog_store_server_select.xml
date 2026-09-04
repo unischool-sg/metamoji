@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <include layout="@layout/control_dialog_background" />
+    <LinearLayout style="@style/UiDialogStyle">
+        <include layout="@layout/control_dialog_header" />
+        <LinearLayout android:layout_height="match_parent" style="@style/UiDialogBodyStyle">
+            <LinearLayout android:orientation="horizontal" style="@style/UiDialogGroupUpStyleBottom">
+                <com.metamoji.ui.common.UiTextView android:gravity="left|center" android:id="@id/switchLabel" android:layout_width="wrap_content" android:layout_height="match_parent" style="@style/UiDialogLabelStyle" />
+                <com.metamoji.ui.common.UiSwitch android:id="@id/uiSwitch" android:layout_marginLeft="@dimen/controlSpace" style="@style/UiDialogSwitchStyle" />
+            </LinearLayout>
+            <ListView android:id="@id/serverList" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="@dimen/controlSpaceWide" android:listSelector="@drawable/selector_listitem" />
+            <LinearLayout android:orientation="horizontal" android:id="@id/serverText" android:background="#ffffff" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="1.0dp" android:minHeight="50.0dp">
+                <ImageView android:layout_gravity="center_vertical" android:id="@id/check_area" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="10.0dp" android:src="@drawable/selector_list_check" android:contentDescription="@null" />
+                <com.metamoji.ui.common.UiEditText android:textSize="14.0sp" android:layout_gravity="center_vertical" android:id="@id/url_edit" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="@string/ServerSelect_Input_PlaceHolder" android:inputType="textUri" android:privateImeOptions="com.metamoji.mazecapi?stroke_input=false" />
+            </LinearLayout>
+        </LinearLayout>
+    </LinearLayout>
+</RelativeLayout>

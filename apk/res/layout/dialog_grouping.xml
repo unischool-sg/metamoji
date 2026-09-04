@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout android:layout_width="wrap_content" android:layout_height="wrap_content"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:local="http://schemas.android.com/apk/res-auto">
+    <include layout="@layout/control_dialog_background" />
+    <LinearLayout style="@style/UiDialogStyle">
+        <include layout="@layout/control_dialog_header" />
+        <ScrollView style="@style/UiDialogScrollViewStyle">
+            <LinearLayout style="@style/UiDialogBodyWithScrollStyle">
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/controlSpaceWide">
+                    <LinearLayout android:background="@drawable/spinner_style" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginRight="@dimen/controlSpaceWide">
+                        <Spinner android:id="@id/spinner_num" android:minWidth="130.0dp" style="@style/UiDialogSpinnerStyle" />
+                    </LinearLayout>
+                    <LinearLayout android:background="@drawable/spinner_style" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_weight="1.0">
+                        <Spinner android:id="@id/spinner_grouping_type" android:layout_width="match_parent" style="@style/UiDialogSpinnerStyle" />
+                    </LinearLayout>
+                </LinearLayout>
+                <com.metamoji.ui.common.UiRadioGroup android:layout_gravity="end" android:orientation="horizontal" android:id="@id/groupingStartTypeButtons" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/controlSpaceWide" local:justify_width_withlargestchild="true">
+                    <com.metamoji.ui.common.UiRadioButton android:id="@id/groupingHeadButton" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_weight="1.0" local:maintitle="@string/MMJNT_LSTR_GROUPING_HEAD" local:radiobutton_type="small_left" />
+                    <com.metamoji.ui.common.UiRadioButton android:id="@id/groupingRandomButton" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_weight="1.0" local:maintitle="@string/MMJNT_LSTR_GROUPING_RANDOM" local:radiobutton_type="small_right" />
+                </com.metamoji.ui.common.UiRadioGroup>
+                <LinearLayout android:orientation="horizontal" android:id="@id/layout_onlineOnly" android:layout_marginBottom="@dimen/controlSpaceWide" style="@style/UiDialogGroupUpStyle">
+                    <com.metamoji.ui.common.UiTextView android:id="@id/textview_onlineOnly" android:layout_marginRight="@dimen/controlSpace" android:text="@string/MMJNT_LSTR_STUDENT_ONLY_OPENED_NOTE" style="@style/UiDialogLabelStyle" />
+                    <com.metamoji.ui.common.UiSwitch android:id="@id/switch_onlineOnly" style="@style/UiDialogSwitchStyle" />
+                </LinearLayout>
+                <LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content">
+                    <LinearLayout android:gravity="center" android:layout_gravity="right" android:orientation="horizontal" android:id="@id/resetGroupingBtn" android:background="@drawable/control_button_normal_blue" android:clickable="true" android:layout_width="wrap_content" android:layout_height="wrap_content" android:minHeight="14.0dp">
+                        <TextView android:textSize="15.0dp" android:textStyle="bold" android:textColor="@drawable/control_button_textcolor_blue" android:paddingLeft="4.0dp" android:duplicateParentState="true" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/MMJNT_LSTR_RESET_GROUPING" />
+                    </LinearLayout>
+                    <View android:layout_width="0.0dp" android:layout_height="0.0dp" android:layout_weight="1.0" />
+                    <LinearLayout android:gravity="center" android:layout_gravity="right" android:orientation="horizontal" android:id="@id/groupingBtn" android:background="@drawable/control_button_normal_blue" android:clickable="true" android:layout_width="wrap_content" android:layout_height="wrap_content" android:minHeight="14.0dp">
+                        <TextView android:textSize="15.0dp" android:textStyle="bold" android:textColor="@drawable/control_button_textcolor_blue" android:paddingLeft="4.0dp" android:duplicateParentState="true" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/MMJNT_LSTR_GROUPING" />
+                    </LinearLayout>
+                </LinearLayout>
+            </LinearLayout>
+        </ScrollView>
+    </LinearLayout>
+</RelativeLayout>

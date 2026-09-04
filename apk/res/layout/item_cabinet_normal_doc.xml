@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:gravity="center_horizontal" android:orientation="vertical" android:id="@id/cabinetItemLinearLayout" android:background="@drawable/item_cabinet_normal_background" android:paddingLeft="@dimen/cabinetNormalHPadding" android:paddingTop="@dimen/cabinetNormalTopPadding" android:paddingRight="@dimen/cabinetNormalHPadding" android:paddingBottom="@dimen/cabinetNormalBottomPadding" android:layout_width="match_parent" android:layout_height="wrap_content"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <View android:layout_width="wrap_content" android:layout_height="@dimen/cabinetNormalTopPadding" />
+    <RelativeLayout android:layout_width="@dimen/cabinetNormalThumbnailWidth" android:layout_height="@dimen/cabinetNormalThumbnailHeight">
+        <RelativeLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_centerInParent="true">
+            <ImageView android:id="@id/thumbnail" android:layout_width="wrap_content" android:layout_height="wrap_content" android:adjustViewBounds="true" android:layout_centerInParent="true" />
+            <ImageView android:id="@id/cabinetSync_Waiting" android:visibility="gone" android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/cabinet_sync_wait" android:layout_centerInParent="true" />
+            <ImageView android:id="@id/cabinetSync_Syncing" android:visibility="gone" android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/cabinet_sync" android:layout_centerInParent="true" />
+            <ImageView android:id="@id/cabinetSyncWait" android:visibility="gone" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="@dimen/cabinetSyncWaitMarginTop" android:layout_marginRight="@dimen/cabinetSyncWaitMarginRight" android:src="@drawable/cabinet_note_icon_syncwait" android:layout_alignTop="@id/thumbnail" android:layout_alignRight="@id/thumbnail" />
+            <ImageView android:id="@id/cabinetMultiSelectCheck" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="@dimen/cabinetMultiSelectMarginLeft" android:layout_marginTop="@dimen/cabinetMultiSelectMarginTop" android:src="@drawable/selector_cabinet_multiselect" android:layout_alignLeft="@id/thumbnail" android:layout_alignTop="@id/thumbnail" />
+            <ImageView android:id="@id/cabinetnotetemplateicon" android:visibility="gone" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginRight="@dimen/cabinetTemplateIconMarginRight" android:layout_marginBottom="@dimen/cabinetTemplateIconMarginBottom" android:src="@drawable/cabinet_icon_notetemplate" android:layout_alignRight="@id/thumbnail" android:layout_alignBottom="@id/thumbnail" />
+            <ImageView android:id="@id/cabinetshareicon" android:visibility="gone" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginRight="@dimen/cabinetShareIconMarginRight" android:layout_marginBottom="@dimen/cabinetShareIconMarginBottom" android:src="@drawable/cabinet_icon_collabo" android:layout_alignRight="@id/thumbnail" android:layout_alignBottom="@id/thumbnail" />
+        </RelativeLayout>
+    </RelativeLayout>
+    <FrameLayout android:layout_width="wrap_content" android:layout_height="wrap_content">
+        <ImageView android:layout_gravity="center_vertical" android:id="@id/cabinetLocalCache" android:visibility="gone" android:layout_width="@dimen/cabinetLocalCacheIconWidth" android:layout_height="@dimen/cabinetLocalCacheIconWidth" android:src="@drawable/no_local_cache" />
+        <com.metamoji.ui.cabinet.OutlineCharacterOnActivatedTextView android:gravity="center" android:id="@id/mainText" style="@style/CabinetNormalMainText" />
+    </FrameLayout>
+    <FrameLayout android:layout_width="wrap_content" android:layout_height="wrap_content">
+        <ImageView android:layout_gravity="center_vertical" android:id="@id/cabinetstaricon" android:visibility="gone" android:layout_width="@dimen/cabinetNormalStarWidth" android:layout_height="@dimen/cabinetNormalStarWidth" android:src="@drawable/school_starred" />
+        <TextView android:textSize="13.0dp" android:textColor="@color/cabinet_detail_leabel" android:gravity="center" android:id="@id/subText" android:layout_width="match_parent" android:layout_height="wrap_content" />
+    </FrameLayout>
+    <com.metamoji.ui.cabinet.OutlineCharacterOnActivatedTextView android:id="@id/userText" style="@style/CabinetNormalSubText" />
+    <LinearLayout android:orientation="horizontal" android:layout_width="wrap_content" android:layout_height="wrap_content">
+        <ImageView android:id="@id/smallTag1" android:visibility="invisible" android:src="@drawable/cabinet_tag_small_pink" style="@style/CabinetDetailSmallTag" />
+        <ImageView android:id="@id/smallTag2" style="@style/CabinetDetailSmallTag" />
+        <ImageView android:id="@id/smallTag3" style="@style/CabinetDetailSmallTag" />
+        <ImageView android:id="@id/smallTag4" style="@style/CabinetDetailSmallTag" />
+        <ImageView android:id="@id/smallTag5" android:paddingRight="0.0dp" style="@style/CabinetDetailSmallTag" />
+        <ImageView android:layout_gravity="center_vertical" android:id="@id/detailSmallTagOverflow" android:visibility="gone" android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/cabinet_detail_tag_overflow" />
+    </LinearLayout>
+</LinearLayout>

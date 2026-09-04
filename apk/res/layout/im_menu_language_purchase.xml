@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.metamoji.mazec.ui.LangPurchaceButton android:gravity="right" android:orientation="horizontal" android:id="@id/im_menu_language_purchase" android:paddingTop="6.0dp" android:paddingRight="6.0dp" android:paddingBottom="6.0dp"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <LinearLayout android:gravity="right" android:layout_gravity="right" android:orientation="horizontal" android:background="@drawable/im_text_btn_bk" android:layout_width="wrap_content" android:layout_height="match_parent">
+        <ImageView android:duplicateParentState="true" android:layout_width="wrap_content" android:layout_height="match_parent" android:layout_marginLeft="4.0dp" android:layout_marginTop="6.0dp" android:layout_marginBottom="8.0dp" android:src="@drawable/im_lang_cart" android:scaleType="fitCenter" />
+        <TextView android:textSize="16.0sp" android:textColor="@drawable/im_text_btn_text_color" android:gravity="left|center" android:paddingRight="10.0dp" android:duplicateParentState="true" android:layout_width="wrap_content" android:layout_height="match_parent" android:text="@string/im_lang_purchase" />
+    </LinearLayout>
+</com.metamoji.mazec.ui.LangPurchaceButton>

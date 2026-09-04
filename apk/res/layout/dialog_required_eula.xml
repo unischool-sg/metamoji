@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:local="http://schemas.android.com/apk/res-auto">
+    <include layout="@layout/control_dialog_background" />
+    <LinearLayout style="@style/UiDialogStyle">
+        <include layout="@layout/control_dialog_header" />
+        <ScrollView style="@style/UiDialogScrollViewStyle">
+            <LinearLayout style="@style/UiDialogBodyStyle">
+                <TextView android:textSize="14.0dp" android:textStyle="normal" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="10.0dp" android:layout_marginRight="10.0dp" android:text="@string/Cabinet_SystemOption_Eula_Message1" android:layout_centerHorizontal="true" android:layout_centerVertical="true" />
+                <LinearLayout android:gravity="center" android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="20.0dp">
+                    <com.metamoji.ui.common.UiButton android:id="@id/button_policy" android:layout_width="0.0dp" android:layout_height="wrap_content" android:layout_weight="1.0" local:button_type="normal" local:maintitle="@string/Cabinet_User_Policy" local:maintitle_gravity="center_horizontal" />
+                    <com.metamoji.ui.common.UiButton android:id="@id/button_privacy" android:layout_width="0.0dp" android:layout_height="wrap_content" android:layout_marginLeft="20.0dp" android:layout_weight="1.0" local:button_type="normal" local:maintitle="@string/Cabinet_User_Privacy" local:maintitle_gravity="center_horizontal" />
+                </LinearLayout>
+                <LinearLayout android:gravity="center" android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="20.0dp">
+                    <com.metamoji.ui.common.UiButton android:layout_gravity="right" android:id="@id/button_no" android:layout_width="0.0dp" android:layout_height="wrap_content" android:layout_weight="1.0" local:button_type="normal" local:maintitle="@string/Cabinet_SystemOption_Eula_Confirm_NO" local:maintitle_gravity="center_horizontal" />
+                    <com.metamoji.ui.common.UiButton android:id="@id/button_yes" android:layout_width="0.0dp" android:layout_height="wrap_content" android:layout_marginLeft="20.0dp" android:layout_weight="1.0" local:button_type="normal" local:maintitle="@string/Cabinet_SystemOption_Eula_Confirm_YES" local:maintitle_gravity="center_horizontal" />
+                </LinearLayout>
+            </LinearLayout>
+        </ScrollView>
+    </LinearLayout>
+</RelativeLayout>

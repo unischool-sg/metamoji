@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <include layout="@layout/control_dialog_background" />
+    <LinearLayout style="@style/UiDialogStyle">
+        <include layout="@layout/control_dialog_header" />
+        <LinearLayout android:orientation="vertical" android:id="@id/base" style="@style/UiDialogBodyStyle">
+            <com.metamoji.ui.common.UiTextView android:text="キノコの種類" style="@style/UiDialogGroupTitleStyle" />
+            <ListView android:id="@id/list" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/controlSpaceWide" android:listSelector="@drawable/selector_listitem" />
+            <com.metamoji.ui.common.UiTextView android:text="有効期限（UTC）" style="@style/UiDialogGroupTitleStyle" />
+            <com.metamoji.ui.common.UiEditText android:textSize="14.0sp" android:layout_gravity="center_vertical" android:id="@id/datetime_edit" android:layout_width="match_parent" android:layout_height="wrap_content" android:inputType="datetime" android:privateImeOptions="com.metamoji.mazecapi?stroke_input=false" />
+            <CheckBox android:id="@id/for_detox" android:layout_width="wrap_content" android:layout_height="wrap_content" android:checked="false" android:text="解毒用" />
+        </LinearLayout>
+    </LinearLayout>
+</RelativeLayout>

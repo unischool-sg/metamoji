@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:local="http://schemas.android.com/apk/res-auto">
+    <include layout="@layout/control_dialog_background" />
+    <LinearLayout style="@style/UiDialogStyle">
+        <include layout="@layout/control_dialog_header" />
+        <ScrollView style="@style/UiDialogScrollViewStyle">
+            <LinearLayout android:orientation="vertical" style="@style/UiDialogBodyWithScrollStyle">
+                <TextView android:textSize="15.0dp" android:id="@id/openDateLabel" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="@dimen/controlSpaceWide" android:text="@string/MMJNT_LSTR_START_DATE_TIME" style="@style/UiDialogGroupTitleStyle" />
+                <com.metamoji.ui.common.UiRadioGroup android:orientation="vertical" android:id="@id/openDateGroup" android:layout_width="match_parent" android:layout_height="wrap_content">
+                    <com.metamoji.ui.common.UiRadioButton android:enabled="false" android:id="@id/openDateNoDateBtn" android:layout_width="match_parent" android:layout_height="wrap_content" local:maintitle="@string/RoomEditDlg_OpenDate_NotSet" local:radiobutton_type="withcheckboxTop" />
+                    <com.metamoji.ui.common.UiRadioButton android:enabled="false" android:id="@id/openDateHasDateBtn" android:layout_width="match_parent" android:layout_height="wrap_content" local:maintitle="@string/RoomEditDlg_OpenDate_Set" local:maintitle_weight="1" local:radiobutton_type="withcheckboxBottom" local:subtitle_weight="2" />
+                </com.metamoji.ui.common.UiRadioGroup>
+            </LinearLayout>
+        </ScrollView>
+    </LinearLayout>
+</RelativeLayout>

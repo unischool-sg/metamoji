@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:orientation="vertical" android:layout_width="match_parent" android:layout_height="match_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:local="http://schemas.android.com/apk/res-auto">
+    <LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content">
+        <com.metamoji.ui.common.UiButton android:gravity="center" android:id="@id/cancel" android:background="@null" android:layout_width="100.0dp" android:layout_height="wrap_content" android:scaleType="fitStart" android:contentDescription="@string/Button_Cancel_J" local:button_type="blue" local:maintitle="@string/Button_Cancel_J" />
+        <TextView android:gravity="center_horizontal" android:layout_gravity="center" android:id="@id/image_edit_title" android:layout_width="0.0dp" android:layout_height="wrap_content" android:text="@string/ContextMenu_EditImage" android:layout_weight="1.0" />
+        <com.metamoji.ui.common.UiButton android:gravity="center" android:id="@id/done" android:background="@null" android:layout_width="100.0dp" android:layout_height="wrap_content" android:scaleType="fitEnd" android:contentDescription="@string/Button_Done_J" local:button_type="purple" local:maintitle="@string/Button_Done_J" />
+    </LinearLayout>
+    <LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_margin="8.0dp">
+        <TextView android:layout_gravity="center_vertical" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/ImageEdit_Opacity_Colon" />
+        <SeekBar android:layout_gravity="right|center" android:id="@id/seek_bar" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginLeft="5.0dp" android:layout_marginRight="5.0dp" android:max="100" android:layout_weight="1.0" style="@style/UiDialogSmallSliderStyle" />
+        <TextView android:gravity="right" android:layout_gravity="center_vertical" android:id="@id/text_percent" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="100%" />
+    </LinearLayout>
+    <view android:id="@id/scrollView" android:layout_width="match_parent" android:layout_height="match_parent" android:fillViewport="false" class="com.metamoji.ui.UiScrollView" />
+</LinearLayout>

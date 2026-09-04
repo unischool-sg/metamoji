@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="recog_user_char_form_arrow_padding">30.0dp</dimen>
+    <dimen name="recog_user_char_form_guid_padding">8.0dp</dimen>
+    <dimen name="recog_user_char_form_stroke_view_size">200.0dp</dimen>
+    <dimen name="recog_user_char_list_char_list_padding_x">22.0dp</dimen>
+    <dimen name="recog_user_char_list_char_list_padding_y">20.0dp</dimen>
+    <dimen name="recog_user_char_list_checkbox_margin_x">12.0dp</dimen>
+    <dimen name="recog_user_char_list_label_margin_bottom">8.0dp</dimen>
+    <dimen name="recog_user_char_list_label_margin_top">22.0dp</dimen>
+    <dimen name="recog_user_char_list_margin_bottom">34.0dp</dimen>
+    <dimen name="recog_user_char_list_margin_top">12.0dp</dimen>
+    <dimen name="recog_user_char_list_margin_x">28.0dp</dimen>
+    <dimen name="recog_user_char_list_stroke_list_item_h">130.0dp</dimen>
+    <dimen name="recog_user_char_list_stroke_list_item_w">186.0dp</dimen>
+    <dimen name="recog_user_char_list_stroke_list_margin_bottom">14.0dp</dimen>
+    <dimen name="recog_user_char_list_stroke_list_padding_y">2.0dp</dimen>
+    <dimen name="recog_user_char_list_stroke_view_margin_x">20.0dp</dimen>
+    <dimen name="recog_user_char_list_stroke_view_margin_y">22.0dp</dimen>
+    <dimen name="recog_user_char_list_stroke_view_size">110.0dp</dimen>
+    <dimen name="recog_user_char_spacing">6.0dp</dimen>
+</resources>

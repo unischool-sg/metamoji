@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout android:id="@id/vtc_root" android:layout_width="match_parent" android:layout_height="wrap_content"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <FrameLayout android:id="@id/vtc_sliderGroup" android:layout_width="300.0dp" android:layout_height="wrap_content" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintStart_toStartOf="parent" app:layout_constraintTop_toTopOf="parent">
+        <com.metamoji.video.AmvFrameListView android:id="@id/vtc_frameList" android:layout_width="match_parent" android:layout_height="80.0dp" android:layout_marginTop="24.0dp" app:extentLeft="26.0dp" app:extentRight="26.0dp" app:trimmingMode="true" />
+        <com.metamoji.video.AmvSlider android:id="@id/vtc_slider" android:layout_width="match_parent" android:layout_height="wrap_content" app:railColor="@color/trimming_sel" app:trimmingMode="true" />
+    </FrameLayout>
+    <ImageButton android:id="@id/vtc_playButton" android:background="?android:selectableItemBackground" android:padding="2.0dp" android:clickable="false" android:layout_width="48.0dp" android:layout_height="48.0dp" android:scaleType="fitXY" android:contentDescription="@string/play" android:alpha="0.4" app:layout_constraintLeft_toLeftOf="parent" app:layout_constraintRight_toRightOf="parent" app:layout_constraintTop_toBottomOf="@id/vtc_trimmedRangeText" app:srcCompat="@drawable/ic_play" />
+    <TextView android:id="@id/vtc_trimStartText" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="8.0dp" android:layout_marginStart="26.0dp" app:layout_constraintStart_toStartOf="@id/vtc_sliderGroup" app:layout_constraintTop_toBottomOf="@id/vtc_sliderGroup" />
+    <TextView android:id="@id/vtc_trimmedRangeText" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="8.0dp" app:layout_constraintLeft_toLeftOf="parent" app:layout_constraintRight_toRightOf="parent" app:layout_constraintTop_toBottomOf="@id/vtc_sliderGroup" />
+    <TextView android:id="@id/vtc_trimEndText" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="8.0dp" android:layout_marginEnd="26.0dp" app:layout_constraintEnd_toEndOf="@id/vtc_sliderGroup" app:layout_constraintTop_toBottomOf="@id/vtc_sliderGroup" />
+</androidx.constraintlayout.widget.ConstraintLayout>

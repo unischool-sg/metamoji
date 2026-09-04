@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:orientation="horizontal" android:id="@id/cabinetItemLinearLayout" android:background="@drawable/item_cabinet_detail_background" android:layout_width="match_parent" android:layout_height="40.0dp"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <LinearLayout android:orientation="horizontal" android:layout_width="wrap_content" android:layout_height="wrap_content">
+        <FrameLayout android:layout_gravity="center_vertical" android:layout_width="wrap_content" android:layout_height="match_parent">
+            <ImageView android:layout_gravity="center_vertical" android:id="@id/cabinetMultiSelectCheck" android:visibility="invisible" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="3.0dp" android:src="@drawable/selector_cabinet_multiselect" />
+            <ImageView android:layout_gravity="center_vertical" android:id="@id/cabinetSyncWait" android:visibility="invisible" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="3.0dp" android:src="@drawable/cabinet_note_icon_syncwait" />
+        </FrameLayout>
+        <FrameLayout android:layout_gravity="center_vertical" android:layout_width="wrap_content" android:layout_height="wrap_content">
+            <ImageView android:layout_gravity="center" android:id="@id/cabinetnotetemplateicon" android:visibility="gone" android:layout_width="@dimen/SimpleModeColumnWidth_Sync" android:layout_height="wrap_content" android:src="@drawable/note_kind_template" />
+            <ImageView android:layout_gravity="center" android:id="@id/cabinetshareicon" android:visibility="gone" android:layout_width="@dimen/SimpleModeColumnWidth_Sync" android:layout_height="wrap_content" android:src="@drawable/note_kind_share" />
+            <ImageView android:layout_gravity="center" android:id="@id/cabinettempshareicon" android:visibility="gone" android:layout_width="@dimen/SimpleModeColumnWidth_Sync" android:layout_height="wrap_content" android:src="@drawable/note_kind_temp_share" />
+            <ImageView android:layout_gravity="center" android:id="@id/cabinetnoteicon" android:visibility="gone" android:layout_width="@dimen/SimpleModeColumnWidth_Sync" android:layout_height="wrap_content" android:src="@drawable/note_kind_note" />
+        </FrameLayout>
+        <ImageView android:layout_gravity="center_vertical" android:id="@id/cabinetLocalCache" android:visibility="invisible" android:layout_width="@dimen/cabinetLocalCacheIconWidth" android:layout_height="@dimen/cabinetLocalCacheIconWidth" android:src="@drawable/no_local_cache" />
+        <com.metamoji.ui.cabinet.OutlineCharacterOnActivatedTextView android:ellipsize="end" android:layout_gravity="center_vertical" android:id="@id/title" android:layout_width="wrap_content" android:layout_height="wrap_content" android:maxLines="2" style="@style/CabinetDetailText.Value" />
+        <ImageView android:layout_gravity="right|center" android:id="@id/cabinetstaricon" android:visibility="invisible" android:layout_width="@dimen/cabinetNormalStarWidth" android:layout_height="@dimen/cabinetNormalStarWidth" android:src="@drawable/school_starred" />
+        <LinearLayout android:orientation="vertical" android:layout_width="wrap_content" android:layout_height="wrap_content">
+            <com.metamoji.ui.cabinet.OutlineCharacterOnActivatedTextView android:textSize="13.0dp" android:layout_gravity="center_vertical" android:id="@id/updateDate" android:layout_width="120.0dp" android:layout_height="wrap_content" style="@style/CabinetSimpleSubText" />
+            <com.metamoji.ui.cabinet.OutlineCharacterOnActivatedTextView android:textSize="13.0dp" android:layout_gravity="center_vertical" android:id="@id/userText" android:layout_width="120.0dp" android:layout_height="wrap_content" style="@style/CabinetSimpleSubText" />
+        </LinearLayout>
+        <ImageView android:layout_gravity="center_vertical" android:id="@id/cabinetSync_Waiting" android:visibility="invisible" android:layout_width="30.0dp" android:layout_height="30.0dp" android:src="@drawable/cabinet_sync_wait" android:layout_centerInParent="true" />
+        <ImageView android:layout_gravity="center_vertical" android:id="@id/cabinetSync_Syncing" android:visibility="gone" android:layout_width="30.0dp" android:layout_height="30.0dp" android:src="@drawable/cabinet_sync" android:layout_centerInParent="true" />
+    </LinearLayout>
+</LinearLayout>

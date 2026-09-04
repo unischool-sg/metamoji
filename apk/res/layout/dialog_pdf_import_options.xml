@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout android:layout_width="wrap_content" android:layout_height="wrap_content"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:local="http://schemas.android.com/apk/res-auto">
+    <include layout="@layout/control_dialog_background" />
+    <LinearLayout style="@style/UiDialogStyle">
+        <include layout="@layout/control_dialog_header" />
+        <ScrollView style="@style/UiDialogScrollViewStyle">
+            <LinearLayout style="@style/UiDialogBodyWithScrollStyle">
+                <TextView android:text="@string/ImportPdf_Rotation_Title" style="@style/UiDialogGroupTitleStyle" />
+                <com.metamoji.ui.common.UiRadioGroup android:gravity="right" android:orientation="horizontal" android:id="@id/dlg_pdfopt_rotation" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginRight="20.0dp" android:layout_marginBottom="@dimen/controlSpaceWide">
+                    <com.metamoji.ui.common.UiRadioButton android:id="@id/dlg_pdfopt_rotation_0" android:layout_width="60.0dp" android:layout_height="wrap_content" local:maintitle="@string/ImportPdf_Rotation_Zero" local:radiobutton_type="left" />
+                    <com.metamoji.ui.common.UiRadioButton android:id="@id/dlg_pdfopt_rotation_90" android:layout_width="60.0dp" android:layout_height="wrap_content" local:maintitle="@string/ImportPdf_Rotation_Ninety" local:radiobutton_type="center" />
+                    <com.metamoji.ui.common.UiRadioButton android:id="@id/dlg_pdfopt_rotation_180" android:layout_width="60.0dp" android:layout_height="wrap_content" local:maintitle="@string/ImportPdf_Rotation_OneEighty" local:radiobutton_type="center" />
+                    <com.metamoji.ui.common.UiRadioButton android:id="@id/dlg_pdfopt_rotation_270" android:layout_width="60.0dp" android:layout_height="wrap_content" local:maintitle="@string/ImportPdf_Rotation_TwoSeventy" local:radiobutton_type="right" />
+                </com.metamoji.ui.common.UiRadioGroup>
+                <TextView android:layout_marginBottom="@dimen/controlSpace" android:text="@string/ImportPdf_Location_Title" style="@style/UiDialogGroupTitleStyle" />
+                <RadioGroup android:gravity="right" android:orientation="horizontal" android:id="@id/dlg_pdfopt_location" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginRight="20.0dp" android:layout_marginBottom="@dimen/controlSpaceWide">
+                    <RadioButton android:id="@id/dlg_pdfopt_location_c" android:background="@drawable/control_button_location_allover" android:layout_width="48.0dp" android:layout_height="wrap_content" android:button="@null" />
+                    <RadioButton android:id="@id/dlg_pdfopt_location_lt" android:background="@drawable/control_button_location_top_left" android:layout_width="48.0dp" android:layout_height="wrap_content" android:button="@null" />
+                    <RadioButton android:id="@id/dlg_pdfopt_location_rt" android:background="@drawable/control_button_location_top_right" android:layout_width="48.0dp" android:layout_height="wrap_content" android:button="@null" />
+                    <RadioButton android:id="@id/dlg_pdfopt_location_rb" android:background="@drawable/control_button_location_bottom_right" android:layout_width="48.0dp" android:layout_height="wrap_content" android:button="@null" />
+                    <RadioButton android:id="@id/dlg_pdfopt_location_lb" android:background="@drawable/control_button_location_bottom_left" android:layout_width="48.0dp" android:layout_height="wrap_content" android:button="@null" />
+                </RadioGroup>
+                <LinearLayout android:gravity="center_horizontal" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="20.0dp">
+                    <ImageView android:id="@id/dlg_pdfopt_preview" android:layout_width="250.0dp" android:layout_height="250.0dp" android:layout_marginBottom="@dimen/controlSpaceWide" />
+                </LinearLayout>
+            </LinearLayout>
+        </ScrollView>
+    </LinearLayout>
+</RelativeLayout>

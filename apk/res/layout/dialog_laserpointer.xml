@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout android:layout_width="match_parent" android:layout_height="match_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:local="http://schemas.android.com/apk/res-auto">
+    <include layout="@layout/control_dialog_background" />
+    <LinearLayout android:minHeight="300.0dp" style="@style/UiDialogStyle">
+        <include layout="@layout/control_dialog_header" />
+        <ScrollView style="@style/UiDialogScrollViewStyle">
+            <LinearLayout style="@style/UiDialogBodyWithScrollStyle">
+                <com.metamoji.ui.common.UiRadioGroup android:orientation="horizontal" android:id="@id/radiogroup" android:layout_width="match_parent" android:layout_height="wrap_content" local:justify_width_withlargestchild="true">
+                    <com.metamoji.ui.common.UiRadioButton android:id="@id/laserpointer_color" android:layout_width="wrap_content" android:layout_height="wrap_content" local:maintitle="@string/PenSettings_Color" local:radiobutton_type="small_left" />
+                    <com.metamoji.ui.common.UiRadioButton android:id="@id/laserpointer_thickness" android:layout_width="wrap_content" android:layout_height="wrap_content" local:maintitle="@string/PenSettings_Thickness" local:radiobutton_type="small_right" />
+                </com.metamoji.ui.common.UiRadioGroup>
+                <FrameLayout android:id="@id/container" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="@dimen/controlSpace" />
+            </LinearLayout>
+        </ScrollView>
+    </LinearLayout>
+</RelativeLayout>

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout android:layout_width="match_parent" android:layout_height="match_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <include layout="@layout/control_dialog_background" />
+    <LinearLayout style="@style/UiDialogStyle">
+        <include layout="@layout/control_dialog_header" />
+        <ScrollView style="@style/UiDialogScrollViewStyle">
+            <LinearLayout style="@style/UiDialogBodyWithScrollStyle">
+                <androidx.constraintlayout.widget.ConstraintLayout android:layout_width="match_parent" android:layout_height="wrap_content">
+                    <com.metamoji.video.AmvExoVideoPlayer android:id="@id/playerView" android:layout_width="360.0dp" android:layout_height="240.0dp" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintStart_toStartOf="parent" app:layout_constraintTop_toTopOf="parent" />
+                    <TextView android:textColor="@color/white" android:id="@id/messageText" android:background="@color/black" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/Library_Store_Now_Loading" app:layout_constraintBottom_toBottomOf="@id/playerView" app:layout_constraintEnd_toEndOf="@id/playerView" app:layout_constraintStart_toStartOf="@id/playerView" app:layout_constraintTop_toTopOf="@id/playerView" />
+                    <TextView android:id="@id/durationText" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4.0dp" android:layout_marginStart="8.0dp" app:layout_constraintStart_toStartOf="parent" app:layout_constraintTop_toBottomOf="@id/playerView" />
+                    <TextView android:id="@id/sizeText" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="2.0dp" android:layout_marginEnd="8.0dp" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintTop_toBottomOf="@id/playerView" />
+                    <TextView android:id="@id/creationDateText" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="2.0dp" app:layout_constraintEnd_toEndOf="@id/sizeText" app:layout_constraintTop_toBottomOf="@id/sizeText" />
+                    <TextView android:id="@id/registrationDateText" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="2.0dp" app:layout_constraintEnd_toEndOf="@id/sizeText" app:layout_constraintTop_toBottomOf="@id/creationDateText" />
+                    <ImageButton android:id="@id/playButton" android:background="?android:selectableItemBackground" android:padding="2.0dp" android:layout_width="48.0dp" android:layout_height="48.0dp" android:scaleType="fitXY" android:contentDescription="@string/play_stop" app:layout_constraintStart_toStartOf="@id/durationText" app:layout_constraintTop_toBottomOf="@id/registrationDateText" app:srcCompat="@drawable/ic_play" />
+                    <com.metamoji.video.AmvSlider android:id="@id/seekingSlider" android:layout_width="0.0dp" android:layout_height="wrap_content" android:layout_marginStart="8.0dp" app:layout_constraintBottom_toBottomOf="@id/playButton" app:layout_constraintLeft_toRightOf="@id/playButton" app:layout_constraintRight_toRightOf="@id/sizeText" app:layout_constraintTop_toTopOf="@id/playButton" />
+                    <Button android:id="@id/deleteRemoteButton" android:layout_width="0.0dp" android:layout_height="wrap_content" android:text="@string/MMJNT_LSTR_MEDIAFILES_PREVIEW_DELETE" android:textAllCaps="false" app:layout_constraintEnd_toEndOf="@id/sizeText" app:layout_constraintStart_toStartOf="@id/durationText" app:layout_constraintTop_toBottomOf="@id/playButton" />
+                    <Button android:id="@id/uploadButton" android:visibility="gone" android:layout_width="0.0dp" android:layout_height="wrap_content" android:text="@string/MMJ_LSTR_MF_UPLOAD" android:textAllCaps="false" app:layout_constraintEnd_toStartOf="@id/deleteLocalButton" app:layout_constraintStart_toStartOf="@id/durationText" app:layout_constraintTop_toBottomOf="@id/playButton" />
+                    <Button android:id="@id/deleteLocalButton" android:visibility="gone" android:layout_width="0.0dp" android:layout_height="wrap_content" android:text="@string/MMJ_LSTR_MF_DELETE" android:textAllCaps="false" app:layout_constraintEnd_toEndOf="@id/sizeText" app:layout_constraintStart_toEndOf="@id/uploadButton" app:layout_constraintTop_toBottomOf="@id/playButton" />
+                </androidx.constraintlayout.widget.ConstraintLayout>
+            </LinearLayout>
+        </ScrollView>
+    </LinearLayout>
+</RelativeLayout>

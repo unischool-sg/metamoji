@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout android:layout_width="180.0dp" android:layout_height="200.0dp"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <FrameLayout android:id="@id/itemMainView" android:background="@drawable/media_file_item_border" android:layout_width="180.0dp" android:layout_height="200.0dp">
+        <androidx.constraintlayout.widget.ConstraintLayout android:layout_gravity="center" android:id="@id/constraintView" android:layout_width="wrap_content" android:layout_height="wrap_content">
+            <TextView android:textSize="14.0sp" android:textStyle="bold" android:id="@id/dateText" android:layout_width="wrap_content" android:layout_height="20.0dp" app:layout_constraintBottom_toTopOf="@id/thumbnail" app:layout_constraintStart_toStartOf="parent" app:layout_constraintTop_toTopOf="parent" />
+            <ImageView android:id="@id/thumbnail" android:layout_width="160.0dp" android:layout_height="160.0dp" android:scaleType="fitCenter" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintStart_toStartOf="parent" app:layout_constraintTop_toBottomOf="@id/dateText" />
+            <TextView android:textColor="@color/white" android:id="@id/durationText" android:background="#60000000" android:layout_width="wrap_content" android:layout_height="wrap_content" android:paddingStart="4.0dp" android:paddingEnd="4.0dp" app:layout_constraintBottom_toBottomOf="@id/thumbnail" app:layout_constraintEnd_toEndOf="@id/thumbnail" />
+            <View android:id="@id/checkMarkView" android:background="@drawable/mf_icon_checkbox_bg" android:visibility="invisible" android:layout_width="24.0dp" android:layout_height="24.0dp" android:layout_marginTop="4.0dp" android:layout_marginStart="4.0dp" app:layout_constraintStart_toStartOf="@id/thumbnail" app:layout_constraintTop_toTopOf="@id/thumbnail" />
+            <com.metamoji.media.video.dialog.CircularProgressBar android:id="@id/uploadProgressBar" android:layout_width="45.0dp" android:layout_height="45.0dp" app:insideRingColor="@color/mf_dialog_inside_ring_color" app:layout_constraintBottom_toBottomOf="@id/thumbnail" app:layout_constraintEnd_toEndOf="@id/thumbnail" app:layout_constraintStart_toStartOf="@id/thumbnail" app:layout_constraintTop_toTopOf="@id/thumbnail" app:progressColor="@color/mf_dialog_progress_color" app:ringBaseColor="@color/mf_dialog_ring_base_color" app:textColor="@color/mf_dialog_progress_text_color" />
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </FrameLayout>
+    <ProgressBar android:layout_gravity="center" android:id="@id/progressRing" android:background="@drawable/media_file_simple_border" android:padding="8.0dp" android:visibility="gone" android:layout_width="wrap_content" android:layout_height="wrap_content" />
+</FrameLayout>

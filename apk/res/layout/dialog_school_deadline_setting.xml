@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout android:layout_width="match_parent" android:layout_height="match_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:local="http://schemas.android.com/apk/res-auto">
+    <include layout="@layout/control_dialog_background" />
+    <LinearLayout style="@style/UiDialogStyle">
+        <include layout="@layout/control_dialog_header" />
+        <ScrollView style="@style/UiDialogScrollViewStyle">
+            <LinearLayout style="@style/UiDialogBodyWithScrollStyle">
+                <androidx.appcompat.widget.AppCompatTextView android:textColor="@color/dialog_text" android:ellipsize="none" android:layout_gravity="left|center" android:id="@id/guidance1" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/MMJNT_LSTR_DEADLINESETTINGDLG_GUIDE1" android:singleLine="true" android:autoSizeTextType="uniform" android:autoSizeMinTextSize="1.0dp" android:autoSizeMaxTextSize="13.0dp" />
+                <androidx.appcompat.widget.AppCompatTextView android:textColor="@color/dialog_text" android:ellipsize="none" android:layout_gravity="left|center" android:id="@id/guidance2" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/MMJNT_LSTR_DEADLINESETTINGDLG_GUIDE2" android:singleLine="true" android:autoSizeTextType="uniform" android:autoSizeMinTextSize="1.0dp" android:autoSizeMaxTextSize="13.0dp" />
+                <com.metamoji.ui.common.UiButton android:id="@id/prevStartModeSelectBtn" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="@dimen/controlSpaceWide" local:button_type="withsubmenu" local:maintitle="@string/MMJNT_LSTR_DEADLINESETTINGDLG_PREVSTART" local:maintitle_weight="1" local:subtitle_weight="2" />
+                <LinearLayout android:orientation="vertical" android:id="@id/startDateParts" android:layout_marginTop="-1.0dp" style="@style/UiDialogGroupUpStyle">
+                    <LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/controlSpace">
+                        <com.metamoji.ui.common.UiTextView android:gravity="center_vertical" android:layout_height="match_parent" android:layout_marginRight="@dimen/controlSpace" android:text="@string/MMJNT_LSTR_DEADLINESETTINGDLG_USE_STARTTIME" style="@style/UiDialogLabelStyle" />
+                        <com.metamoji.ui.common.UiSwitch android:id="@id/useStartDateSwitch" style="@style/UiDialogSwitchStyle" />
+                    </LinearLayout>
+                    <androidx.appcompat.widget.AppCompatTextView android:textColor="@color/dialog_text" android:ellipsize="none" android:layout_gravity="left|center" android:id="@id/startDateGuidance" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/MMJNT_LSTR_DEADLINESETTINGDLG_STARTTIME_GUIDANCE" android:singleLine="true" android:autoSizeTextType="uniform" android:autoSizeMinTextSize="1.0dp" android:autoSizeMaxTextSize="13.0dp" />
+                    <com.metamoji.ui.common.UiButton android:id="@id/startDateBtn" android:layout_width="match_parent" android:layout_height="wrap_content" local:button_type="normal" local:maintitle="@string/MMJNT_LSTR_DEADLINESETTINGDLG_STARTTIME" local:maintitle_weight="1" local:subtitle_weight="1" />
+                </LinearLayout>
+                <com.metamoji.ui.common.UiButton android:id="@id/endModeSelectBtn" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="@dimen/controlSpaceWide" local:button_type="withsubmenu" local:maintitle="@string/MMJNT_LSTR_DEADLINESETTINGDLG_END" local:maintitle_weight="1" local:subtitle_weight="2" />
+                <LinearLayout android:orientation="vertical" android:id="@id/endDateParts" android:layout_marginTop="-1.0dp" style="@style/UiDialogGroupUpStyle">
+                    <LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/controlSpace">
+                        <com.metamoji.ui.common.UiTextView android:gravity="center_vertical" android:layout_height="match_parent" android:layout_marginRight="@dimen/controlSpace" android:text="@string/MMJNT_LSTR_DEADLINESETTINGDLG_USE_ENDTIME" style="@style/UiDialogLabelStyle" />
+                        <com.metamoji.ui.common.UiSwitch android:id="@id/useEndDateSwitch" style="@style/UiDialogSwitchStyle" />
+                    </LinearLayout>
+                    <androidx.appcompat.widget.AppCompatTextView android:textColor="@color/dialog_text" android:ellipsize="none" android:layout_gravity="left|center" android:id="@id/endDateGuidance" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/MMJNT_LSTR_DEADLINESETTINGDLG_ENDTIME_GUIDANCE" android:singleLine="true" android:autoSizeTextType="uniform" android:autoSizeMinTextSize="1.0dp" android:autoSizeMaxTextSize="13.0dp" />
+                    <com.metamoji.ui.common.UiButton android:id="@id/endDateBtn" android:layout_width="match_parent" android:layout_height="wrap_content" local:button_type="normal" local:maintitle="@string/MMJNT_LSTR_DEADLINESETTINGDLG_ENDTIME" local:maintitle_weight="1" local:subtitle_weight="1" />
+                </LinearLayout>
+            </LinearLayout>
+        </ScrollView>
+    </LinearLayout>
+    <com.metamoji.ui.CustomMenuView android:id="@id/CustomMenuView" android:layout_width="match_parent" android:layout_height="match_parent" />
+</RelativeLayout>

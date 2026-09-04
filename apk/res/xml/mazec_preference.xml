@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen android:key="mazec_preference_main"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <CheckBoxPreference android:title="@string/pref_title_auto_scroll_enabled" android:key="auto_scroll_enabled" android:summary="@string/pref_summary_auto_scroll_enabled" android:defaultValue="true" />
+    <com.metamoji.mazec.ui.AutoScrollSeekBarDialogPreference android:title="@string/pref_title_auto_scroll_delay" android:key="auto_scroll_delay" android:summary="@string/pref_summary_auto_scroll_delay" android:dependency="auto_scroll_enabled" android:dialogMessage="@string/pref_summary_auto_scroll_delay" android:positiveButtonText="@string/dialog_button_set" android:negativeButtonText="@string/dialog_button_cancel" />
+    <ListPreference android:entries="@array/auto_scroll_area_width_names" android:title="@string/pref_title_auto_scroll_area_width" android:key="auto_scroll_area_width" android:summary="@string/pref_summary_auto_scroll_area_width" android:dependency="auto_scroll_enabled" android:defaultValue="26" android:dialogTitle="@string/pref_title_auto_scroll_area_width" android:entryValues="@array/auto_scroll_area_width_values" />
+    <CheckBoxPreference android:title="@string/pref_title_fullscreen_enabled" android:key="fullscreen_enabled" android:summary="@string/pref_summary_fullscreen_enabled" />
+    <CheckBoxPreference android:title="@string/pref_title_auto_commit_stroke_enabled" android:key="auto_commit_enabled" android:summary="@string/pref_summary_auto_commit_stroke_enabled" android:defaultValue="false" />
+    <com.metamoji.mazec.ui.AutoCommitStrokeSeekBarDialogPreference android:title="@string/pref_title_auto_commit_stroke_delay" android:key="auto_commit_delay" android:summary="@string/pref_summary_auto_commit_stroke_delay" android:dependency="auto_commit_enabled" android:dialogMessage="@string/pref_summary_auto_commit_stroke_delay" android:positiveButtonText="@string/dialog_button_set" android:negativeButtonText="@string/dialog_button_cancel" />
+    <ListPreference android:entries="@array/jp_space_names" android:title="@string/pref_title_jp_space" android:key="jp_default_space" android:summary="@string/pref_summary_jp_space" android:defaultValue="0" android:dialogTitle="@string/pref_title_jp_space" android:entryValues="@array/jp_space_values" />
+    <ListPreference android:entries="@array/mazec_height_rank_names" android:title="@string/pref_title_mazec_height" android:key="mazec_height_rank" android:summary="@string/pref_summary_mazec_height" android:defaultValue="4" android:dialogTitle="@string/pref_title_mazec_height" android:entryValues="@array/mazec_height_rank_values" />
+    <com.metamoji.mazec.ui.WordspacingCoefSeekBarDialogPreference android:title="@string/pref_title_word_spacing" android:key="wordspacing_coef" android:summary="@string/pref_summary_word_spacing" android:shouldDisableView="true" android:dialogMessage="@string/pref_summary_word_spacing" android:positiveButtonText="@string/dialog_button_set" android:negativeButtonText="@string/dialog_button_cancel" />
+    <PreferenceCategory android:title="@string/pref_cate_title_auto_learning" android:key="category_learning">
+        <CheckBoxPreference android:title="@string/pref_title_learn_conversion" android:key="learn_conversion_enabled" android:summary="@string/pref_summary_learn_conversion" android:defaultValue="true" />
+        <com.metamoji.mazec.ui.ClearLearnDictionaryDialogPreference android:title="@string/pref_title_clear_learn_dictionary" android:key="pref_key_clear_learn_dictionary" android:summary="@string/pref_summary_clear_learn_dictionary" android:dialogMessage="@string/msg_confirm_clear_learn_dictionary" android:positiveButtonText="@string/dialog_button_clear_ok" android:negativeButtonText="@string/dialog_button_clear_cancel" />
+        <CheckBoxPreference android:title="@string/pref_title_learn_recognition" android:key="learn_recognition_enabled" android:summary="@string/pref_summary_learn_recognition" android:defaultValue="true" />
+        <com.metamoji.mazec.ui.ClearRecognitionUserDictionaryDialogPreference android:title="@string/pref_title_clear_learn_recognition" android:key="pref_key_clear_learn_recognition" android:summary="@string/pref_summary_clear_learn_recognition" android:dialogMessage="@string/msg_confirm_clear_learn_recognition" android:positiveButtonText="@string/dialog_button_clear_ok" android:negativeButtonText="@string/dialog_button_clear_cancel" />
+    </PreferenceCategory>
+    <PreferenceCategory android:title="@string/pref_cate_title_dictionary" android:key="category_dictionary">
+        <com.metamoji.mazec.ui.UserDictionaryAddWordDialogPreference android:title="@string/pref_title_add_user_dictionary_word" android:key="pref_key_add_user_word" android:summary="@string/pref_summary_add_user_dictionary_word" android:positiveButtonText="@null" android:negativeButtonText="@null" />
+        <PreferenceScreen android:title="@string/pref_title_edit_user_dictionary_word" android:key="pref_key_user_word_list" android:summary="@string/pref_summary_edit_user_dictionary_word">
+            <intent android:targetPackage="com.metamoji.mazec" android:action="android.intent.action.VIEW" android:targetClass="com.metamoji.mazec.UserDictionaryActivity" />
+        </PreferenceScreen>
+        <PreferenceScreen android:title="@string/pref_title_add_user_char_form" android:key="pref_key_add_user_char_form" android:summary="@string/pref_summary_add_user_char_form">
+            <intent android:targetPackage="com.metamoji.mazec" android:action="android.intent.action.VIEW" android:targetClass="com.metamoji.mazec.RecognizeUserDictionaryAddCharFormActivity" />
+        </PreferenceScreen>
+        <PreferenceScreen android:title="@string/pref_title_list_user_char_form" android:key="pref_key_user_char_form_list" android:summary="@string/pref_summary_list_user_char_form">
+            <intent android:targetPackage="com.metamoji.mazec" android:action="android.intent.action.VIEW" android:targetClass="com.metamoji.mazec.RecognizeUserDictionaryListActivity" />
+        </PreferenceScreen>
+        <PreferenceScreen android:title="@string/pref_title_update_dictionaries" android:key="pref_key_update_dictionaries" android:summary="@string/pref_summary_update_dictionaries" />
+    </PreferenceCategory>
+    <PreferenceCategory android:title="@string/pref_cate_title_help" android:key="category_help">
+        <PreferenceScreen android:title="@string/pref_title_help" android:key="pref_key_help" />
+        <PreferenceScreen android:title="@string/pref_title_version" android:key="pref_key_version" android:summary="X.Y.Z" />
+        <PreferenceScreen android:title="@string/pref_title_copyright" android:key="pref_key_copyright">
+            <intent android:targetPackage="com.metamoji.mazec" android:action="android.intent.action.VIEW" android:targetClass="com.metamoji.mazec.HtmlViewerActivity">
+                <extra android:name="title" android:value="@string/pref_title_copyright" />
+                <extra android:name="url" android:value="file:///android_asset/html/LegalNotices.html" />
+            </intent>
+        </PreferenceScreen>
+    </PreferenceCategory>
+    <PreferenceCategory android:title="TEST" android:key="pref_key_test_cate">
+        <PreferenceScreen android:title="ADD USER WORDS TO THE LIMIT" android:key="pref_test_add_user_words_to_the_limit" />
+        <PreferenceScreen android:title="CLEAR ALL USER WORDS" android:key="pref_test_clear_all_user_words" />
+    </PreferenceCategory>
+</PreferenceScreen>

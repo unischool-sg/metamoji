@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:local="http://schemas.android.com/apk/res-auto">
+    <include layout="@layout/control_dialog_background" />
+    <LinearLayout style="@style/UiDialogStyle">
+        <include layout="@layout/control_dialog_header" />
+        <ScrollView style="@style/UiDialogScrollViewStyle">
+            <LinearLayout style="@style/UiDialogBodyWithScrollStyle">
+                <com.metamoji.ui.common.UiRadioGroup android:orientation="vertical" android:id="@id/radiogroup_distribute" android:layout_width="match_parent" android:layout_height="wrap_content">
+                    <com.metamoji.ui.common.UiRadioButton android:id="@id/distribute_by_customApp" android:layout_width="match_parent" android:layout_height="wrap_content" local:radiobutton_type="withcheckboxTop" />
+                    <com.metamoji.ui.common.UiRadioButton android:id="@id/distribute_by_shareddrive" android:layout_width="match_parent" android:layout_height="wrap_content" local:maintitle="@string/ShareMenu_Distribute_Note_By_SharedDrive" local:radiobutton_type="withcheckboxTop" />
+                    <com.metamoji.ui.common.UiRadioButton android:id="@id/distribute_by_application" android:layout_width="match_parent" android:layout_height="wrap_content" local:maintitle="@string/SendWindow_Application" local:radiobutton_type="withcheckboxMid" />
+                    <com.metamoji.ui.common.UiRadioButton android:id="@id/distribute_url_by_application" android:layout_width="match_parent" android:layout_height="wrap_content" local:maintitle="@string/ShareMenu_Distribute_URL_By_Application" local:radiobutton_type="withcheckboxMid" />
+                    <com.metamoji.ui.common.UiRadioButton android:id="@id/distribute_by_file" android:layout_width="match_parent" android:layout_height="wrap_content" local:maintitle="@string/Share_SaveToFile" local:radiobutton_type="withcheckboxMid" />
+                    <com.metamoji.ui.common.UiRadioButton android:id="@id/distribute_cancel" android:layout_width="match_parent" android:layout_height="wrap_content" local:maintitle="@string/ShareMenu_Distribute_Note_Cancel" local:radiobutton_type="withcheckboxBottom" />
+                </com.metamoji.ui.common.UiRadioGroup>
+            </LinearLayout>
+        </ScrollView>
+    </LinearLayout>
+</RelativeLayout>

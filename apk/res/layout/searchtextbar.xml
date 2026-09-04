@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:orientation="horizontal" android:background="@drawable/searchtextbar_background" android:paddingLeft="12.0dp" android:paddingRight="12.0dp" android:layout_width="wrap_content" android:layout_height="wrap_content"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <LinearLayout android:layout_gravity="center_vertical" android:orientation="horizontal" android:paddingTop="4.0dp" android:paddingBottom="4.0dp" android:layout_width="wrap_content" android:layout_height="wrap_content">
+        <com.metamoji.ui.common.UiEditText android:layout_gravity="center_vertical" android:id="@id/stb_keyword" android:layout_width="160.0dp" android:layout_height="wrap_content" android:inputType="text" android:imeOptions="actionSearch" />
+        <ImageButton android:layout_gravity="center_vertical" android:id="@id/stb_next" android:background="@drawable/searchtextbar_next" android:layout_width="wrap_content" android:layout_height="wrap_content" />
+        <ImageButton android:layout_gravity="center_vertical" android:id="@id/stb_prev" android:background="@drawable/searchtextbar_prev" android:layout_width="wrap_content" android:layout_height="wrap_content" />
+    </LinearLayout>
+    <ImageButton android:id="@id/stb_close" android:background="@drawable/searchtextbar_close" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="2.0dp" />
+</LinearLayout>

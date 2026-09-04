@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout android:layout_width="match_parent" android:layout_height="match_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <ProgressBar android:layout_gravity="center" android:id="@id/dvs_progressRing" android:visibility="visible" android:layout_width="50.0dp" android:layout_height="50.0dp" />
+    <TextView android:gravity="center" android:layout_gravity="center" android:id="@id/dvs_errorMessage" android:visibility="invisible" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/MMJNT_LSTR_VIDEO_IS_NOT_FOUND" android:singleLine="false" />
+    <com.metamoji.video.AmvFrameSelectorView android:id="@id/videoFrameSelectorView" android:visibility="invisible" android:layout_width="match_parent" android:layout_height="match_parent" />
+</FrameLayout>

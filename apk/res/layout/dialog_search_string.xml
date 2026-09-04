@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:local="http://schemas.android.com/apk/res-auto">
+    <include layout="@layout/control_dialog_background" />
+    <LinearLayout style="@style/UiDialogStyle">
+        <include layout="@layout/control_dialog_header" />
+        <ScrollView style="@style/UiDialogScrollViewStyle">
+            <LinearLayout style="@style/UiDialogBodyStyle">
+                <com.metamoji.ui.common.UiEditText android:id="@id/SearchString_EditText" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/groupSpace" android:inputType="text" />
+                <TextView android:layout_marginBottom="@dimen/controlSpace" android:text="@string/CABINET_SEARCH_STRING_TARGET" style="@style/UiDialogGroupTitleStyle" />
+                <com.metamoji.ui.common.UiRadioGroup android:orientation="vertical" android:id="@id/radiogroup_target" android:layout_width="match_parent" android:layout_height="wrap_content">
+                    <com.metamoji.ui.common.UiRadioButton android:id="@id/target_title" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/controlSpace" local:maintitle="@string/CABINET_SEARCH_STRING_TARGET_TITLE" local:radiobutton_type="withcheckbox" />
+                    <com.metamoji.ui.common.UiRadioButton android:id="@id/target_note" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/controlSpace" local:maintitle="@string/CABINET_SEARCH_STRING_TARGET_NOTE" local:radiobutton_type="withcheckbox" />
+                    <com.metamoji.ui.common.UiRadioButton android:id="@id/target_titlenote" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/controlSpace" local:maintitle="@string/CABINET_SEARCH_STRING_TARGET_TITLENOTE" local:radiobutton_type="withcheckbox" />
+                </com.metamoji.ui.common.UiRadioGroup>
+            </LinearLayout>
+        </ScrollView>
+    </LinearLayout>
+</RelativeLayout>

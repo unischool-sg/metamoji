@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:orientation="horizontal" android:paddingLeft="2.0dp" android:paddingTop="6.0dp" android:paddingRight="2.0dp" android:paddingBottom="6.0dp" android:layout_width="match_parent" android:layout_height="wrap_content"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <ImageButton android:layout_gravity="center" android:id="@id/deleteBtn" android:background="@drawable/design1_table_delete_start" android:layout_width="17.0dp" android:layout_height="17.0dp" android:layout_marginLeft="4.0dp" android:layout_marginRight="4.0dp" />
+    <TextView android:textSize="14.0dp" android:ellipsize="middle" android:gravity="left|center" android:layout_gravity="left|center" android:id="@id/title" android:layout_width="match_parent" android:layout_height="20.0dp" android:layout_marginLeft="4.0dp" android:maxLines="1" />
+</LinearLayout>

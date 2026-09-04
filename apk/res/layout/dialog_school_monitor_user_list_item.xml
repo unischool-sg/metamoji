@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:orientation="horizontal" android:id="@id/content_view" android:paddingLeft="6.0dp" android:paddingTop="6.0dp" android:paddingRight="6.0dp" android:paddingBottom="6.0dp" android:layout_width="match_parent" android:layout_height="wrap_content"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:local="http://schemas.android.com/apk/res-auto">
+    <TextView android:textSize="14.0dp" android:gravity="left|center" android:id="@id/title_view" android:layout_width="wrap_content" android:layout_height="match_parent" android:singleLine="true" />
+    <TextView android:textSize="14.0dp" android:gravity="left|center" android:id="@id/name_view" android:visibility="gone" android:layout_width="wrap_content" android:layout_height="match_parent" android:layout_marginLeft="40.0dp" android:singleLine="true" />
+    <TextView android:textSize="14.0dp" android:gravity="right|center" android:layout_gravity="right" android:id="@id/num_view" android:layout_width="match_parent" android:layout_height="match_parent" android:layout_marginRight="26.0dp" android:singleLine="true" />
+</LinearLayout>

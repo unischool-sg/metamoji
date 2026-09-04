@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_enabled="true" android:drawable="@drawable/backspace_level_na" />
+    <item android:state_enabled="false" android:drawable="@drawable/delete_backward_na_d" />
+</selector>

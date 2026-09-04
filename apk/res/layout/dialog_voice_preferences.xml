@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout android:orientation="vertical" android:layout_width="match_parent" android:layout_height="match_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:local="http://schemas.android.com/apk/res-auto">
+    <include layout="@layout/control_dialog_background" />
+    <LinearLayout style="@style/UiDialogStyle">
+        <include layout="@layout/control_dialog_header" />
+        <LinearLayout style="@style/UiDialogBodyStyle">
+            <com.metamoji.ui.common.UiTextView android:text="@string/Voice_RecordingQuality" style="@style/UiDialogGroupTitleStyle" />
+            <com.metamoji.ui.common.UiRadioGroup android:orientation="horizontal" android:id="@id/recording_quality" android:layout_width="wrap_content" android:layout_height="wrap_content">
+                <com.metamoji.ui.common.UiRadioButton android:id="@id/recording_quality_standard" android:layout_width="0.0dp" android:layout_height="wrap_content" android:layout_weight="1.0" local:maintitle="@string/Voice_RecordingQualityStandard" local:radiobutton_type="left" />
+                <com.metamoji.ui.common.UiRadioButton android:id="@id/recording_quality_middle" android:layout_width="0.0dp" android:layout_height="wrap_content" android:layout_weight="1.0" local:maintitle="@string/Voice_RecordingQualityMiddle" local:radiobutton_type="center" />
+                <com.metamoji.ui.common.UiRadioButton android:id="@id/recording_quality_high" android:layout_width="0.0dp" android:layout_height="wrap_content" android:layout_weight="1.0" local:maintitle="@string/Voice_RecordingQualityHigh" local:radiobutton_type="right" />
+            </com.metamoji.ui.common.UiRadioGroup>
+            <Space android:layout_width="0.0dp" android:layout_height="@dimen/controlSpaceWide" />
+            <com.metamoji.ui.common.UiTextView android:text="@string/Voice_PlayList_Title" style="@style/UiDialogGroupTitleStyle" />
+            <com.metamoji.ui.common.UiButton android:id="@id/delete_all_playlist" android:layout_width="match_parent" android:layout_height="wrap_content" local:maintitle="@string/Voice_DeleteAllPlayList" />
+            <Space android:layout_width="0.0dp" android:layout_height="@dimen/controlSpaceWide" />
+            <com.metamoji.ui.common.UiTextView android:id="@id/upload_files_label" android:text="@string/SystemOption_DigitalCabinet" style="@style/UiDialogGroupTitleStyle" />
+            <com.metamoji.ui.common.UiButton android:id="@id/upload_files" android:layout_width="match_parent" android:layout_height="wrap_content" local:button_type="withsubmenu" local:maintitle="@string/Voice_UploadedFiles_Title" />
+            <Space android:id="@id/upload_files_space" android:layout_width="0.0dp" android:layout_height="@dimen/controlSpaceWide" />
+        </LinearLayout>
+    </LinearLayout>
+</RelativeLayout>

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:local="http://schemas.android.com/apk/res-auto">
+    <include layout="@layout/control_dialog_background_center" />
+    <LinearLayout style="@style/UiDialogCenterStyle">
+        <include layout="@layout/control_dialog_header" />
+        <ScrollView style="@style/UiDialogScrollViewStyle">
+            <LinearLayout android:gravity="center_horizontal" android:paddingLeft="40.0dp" android:paddingTop="10.0dp" android:paddingRight="40.0dp" android:paddingBottom="40.0dp" style="@style/UiDialogBodyWithScrollStyle">
+                <Space android:layout_width="match_parent" android:layout_height="20.0dp" />
+                <TextView android:textSize="20.0sp" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="20.0dp" android:text="@string/Promotion_Customer_Rating_Message" />
+                <com.metamoji.ui.common.UiButton android:id="@id/dlg_customer_promo_btn" android:layout_width="wrap_content" android:layout_height="wrap_content" local:button_type="sub" local:maintitle="@string/Promotion_Customer_Rating_Review" />
+                <Space android:layout_width="match_parent" android:layout_height="40.0dp" />
+                <ImageView android:layout_gravity="center" android:id="@id/promo_rating_logo_image" android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/promo_rating_logo" android:contentDescription="@null" />
+            </LinearLayout>
+        </ScrollView>
+    </LinearLayout>
+</RelativeLayout>

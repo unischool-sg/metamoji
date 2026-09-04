@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.metamoji.noteanytime.ActionBarRootLayout android:orientation="vertical" android:background="@null" android:clickable="true" android:layout_width="match_parent" android:layout_height="wrap_content"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <LinearLayout android:orientation="vertical" android:background="@color/transparent" android:layout_width="match_parent" android:layout_height="wrap_content">
+        <include layout="@layout/editor_banner" />
+        <include layout="@layout/editor_history_bar" />
+        <LinearLayout android:orientation="vertical" android:id="@id/actionbar_base" android:background="@drawable/actionbar_back_normal" android:layout_width="match_parent" android:layout_height="wrap_content">
+            <LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content">
+                <LinearLayout android:orientation="horizontal" android:id="@id/actionbar_right_sep" android:background="@drawable/actionbar_right_sep" android:layout_width="wrap_content" android:layout_height="wrap_content">
+                    <Button android:id="@id/editor_commandbar_btn_done" android:layout_width="60.0dp" android:layout_height="40.0dp" android:src="@drawable/bar_btn_done" android:scaleType="fitCenter" android:contentDescription="@null" style="@style/ActionBarButton" />
+                    <Button android:id="@id/editor_commandbar_btn_newdoc" android:src="@drawable/bar_btn_newdoc" android:contentDescription="@null" style="@style/ActionBarButton" />
+                </LinearLayout>
+                <LinearLayout android:gravity="left" android:id="@id/editor_modebar" android:layout_width="wrap_content" android:layout_height="wrap_content">
+                    <Button android:id="@id/editor_modebar_btn_view" android:background="@drawable/bar_hover_view" android:contentDescription="@null" style="@style/ActionBarButton" />
+                    <Button android:id="@id/editor_modebar_btn_laser" android:background="@drawable/bar_hover_pointer" android:contentDescription="@null" style="@style/ActionBarButton" />
+                    <Button android:id="@id/editor_modebar_btn_pen" android:background="@drawable/bar_hover_pen_std1" android:contentDescription="@null" style="@style/ActionBarButton" />
+                    <Button android:id="@id/editor_modebar_btn_eraser" android:background="@drawable/bar_hover_eraser" android:contentDescription="@null" style="@style/ActionBarButton" />
+                    <Button android:id="@id/editor_modebar_btn_select" android:background="@drawable/bar_hover_select" android:contentDescription="@null" style="@style/ActionBarButton" />
+                    <Button android:id="@id/editor_modebar_btn_text" android:background="@drawable/bar_hover_text" android:contentDescription="@null" style="@style/ActionBarButton" />
+                    <Button android:id="@id/editor_modebar_btn_arrange" android:background="@drawable/school_icon_mode_arrange" android:contentDescription="@null" style="@style/ActionBarButton" />
+                </LinearLayout>
+                <LinearLayout android:gravity="left|center" android:id="@id/editor_offline_edit_status_view" android:visibility="gone" android:layout_width="wrap_content" android:layout_height="match_parent">
+                    <TextView android:gravity="center" android:id="@id/editor_offline_edit_status_view_text" android:background="@color/transparent" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="8.0dp" />
+                </LinearLayout>
+                <LinearLayout android:gravity="left|center" android:id="@id/mode2infoview" android:visibility="gone" android:layout_width="wrap_content" android:layout_height="match_parent">
+                    <TextView android:textStyle="bold" android:textColor="@color/white" android:gravity="center" android:id="@id/mode2infotext" android:background="@color/transparent" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="8.0dp" />
+                </LinearLayout>
+                <View android:layout_width="1.0dp" android:layout_height="40.0dp" android:layout_weight="1.0" />
+                <LinearLayout android:orientation="horizontal" android:id="@id/actionbar_left_sep" android:background="@drawable/actionbar_left_sep" android:layout_width="wrap_content" android:layout_height="wrap_content" />
+            </LinearLayout>
+            <include layout="@layout/editor_attention_area" />
+        </LinearLayout>
+    </LinearLayout>
+    <FrameLayout android:id="@id/actionbar_button_layer" android:layout_width="match_parent" android:layout_height="match_parent" />
+</com.metamoji.noteanytime.ActionBarRootLayout>

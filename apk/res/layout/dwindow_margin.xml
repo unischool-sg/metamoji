@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <ImageView android:layout_gravity="center_horizontal" android:id="@id/dwindow_margin_line" android:background="@drawable/dwindow_margin_line" android:layout_width="3.0dp" android:layout_height="match_parent" android:contentDescription="@null" />
+    <ImageButton android:layout_gravity="center_horizontal" android:id="@id/dwindow_margin" android:background="@null" android:layout_width="40.0dp" android:layout_height="40.0dp" android:src="@drawable/dwindow_margin" android:contentDescription="@null" />
+</merge>

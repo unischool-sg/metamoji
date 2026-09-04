@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge android:orientation="vertical" android:clipChildren="false" android:layout_width="match_parent" android:layout_height="wrap_content"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:local="http://schemas.android.com/apk/res-auto">
+    <LinearLayout android:orientation="vertical" android:layout_width="wrap_content" android:layout_height="wrap_content">
+        <RelativeLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/controlSpaceWide">
+            <com.metamoji.ui.common.UiButton android:id="@id/fontButton" android:layout_width="match_parent" android:layout_height="wrap_content" local:button_type="withsubmenu" local:maintitle="@string/TextUnitStyle_Font" />
+            <com.metamoji.ui.dialog.FontListSampleView android:id="@id/selectedFontName" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginRight="@dimen/subTitleMarginRightWithSubMenu" android:layout_alignRight="@id/fontButton" android:layout_centerVertical="true" />
+        </RelativeLayout>
+        <TextView android:layout_marginBottom="@dimen/controlSpace" android:text="@string/TextUnitStyle_FontSize" style="@style/UiDialogGroupTitleStyle" />
+        <LinearLayout android:orientation="vertical" android:clipChildren="false" android:clipToPadding="false" style="@style/UiDialogGroupDownStyle">
+            <com.metamoji.ui.common.UiPlainSlider android:id="@id/textSize" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/controlSpace" />
+            <LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content">
+                <com.metamoji.ui.common.UiButton android:id="@id/preSize1" android:layout_width="45.0dp" android:layout_height="wrap_content" local:button_type="mini" local:maintitle="12" />
+                <View android:layout_width="0.0dp" android:layout_height="0.0dp" android:layout_weight="1.0" />
+                <com.metamoji.ui.common.UiButton android:id="@id/preSize2" android:layout_width="45.0dp" android:layout_height="wrap_content" local:button_type="mini" local:maintitle="16" />
+                <View android:layout_width="0.0dp" android:layout_height="0.0dp" android:layout_weight="1.0" />
+                <com.metamoji.ui.common.UiButton android:id="@id/preSize3" android:layout_width="45.0dp" android:layout_height="wrap_content" local:button_type="mini" local:maintitle="24" />
+                <View android:layout_width="0.0dp" android:layout_height="0.0dp" android:layout_weight="1.0" />
+                <com.metamoji.ui.common.UiButton android:id="@id/preSize4" android:layout_width="45.0dp" android:layout_height="wrap_content" local:button_type="mini" local:maintitle="32" />
+                <View android:layout_width="0.0dp" android:layout_height="0.0dp" android:layout_weight="1.0" />
+                <com.metamoji.ui.common.UiButton android:id="@id/preSize5" android:layout_width="45.0dp" android:layout_height="wrap_content" local:button_type="mini" local:maintitle="56" />
+            </LinearLayout>
+        </LinearLayout>
+    </LinearLayout>
+</merge>

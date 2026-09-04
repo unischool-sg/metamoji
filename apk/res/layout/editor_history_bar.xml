@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:orientation="horizontal" android:id="@id/historyBar" android:background="@color/historytabbar_background" android:layout_width="match_parent" android:layout_height="wrap_content"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <FrameLayout android:id="@id/historyTabBar" android:background="@color/transparent" android:clickable="true" android:layout_width="wrap_content" android:layout_height="wrap_content" />
+    <ImageButton android:layout_gravity="center_vertical" android:id="@id/historyMoreButton" android:layout_width="wrap_content" android:layout_height="25.0dp" android:layout_marginLeft="5.0dp" android:src="@drawable/htab_show_more" />
+</LinearLayout>

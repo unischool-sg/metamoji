@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:orientation="vertical" android:layout_width="match_parent" android:layout_height="wrap_content"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:local="http://schemas.android.com/apk/res-auto">
+    <com.metamoji.ui.common.UiButton android:id="@id/save_file" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="@dimen/controlSpaceWide" local:button_type="normal" local:maintitle="@string/APP_SUPPORT_LOG_SAVE_FILE" local:maintitle_gravity="center_horizontal" />
+    <com.metamoji.ui.common.UiButton android:id="@id/send_mail" android:layout_width="match_parent" android:layout_height="wrap_content" local:button_type="normal" local:maintitle="@string/APP_SUPPORT_LOG_SEND_MAIL" local:maintitle_gravity="center_horizontal" />
+</LinearLayout>
