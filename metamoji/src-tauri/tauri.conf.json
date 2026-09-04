@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "metamoji",
+  "productName": "MetaMoJi",
   "version": "0.1.0",
   "identifier": "com.unischool.metamoji",
   "build": {
@@ -12,13 +12,17 @@
   "app": {
     "windows": [
       {
-        "title": "metamoji",
-        "width": 800,
-        "height": 600
+        "title": "MetaMoJi",
+        "width": 1440,
+        "height": 900,
+        "minWidth": 1024,
+        "minHeight": 640,
+        "resizable": true,
+        "dragDropEnabled": false
       }
     ],
     "security": {
-      "csp": null
+      "csp": "default-src 'self'; img-src 'self' data: blob:; media-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; connect-src 'self' ipc: http://ipc.localhost"
     }
   },
   "bundle": {
@@ -30,6 +34,14 @@
       "icons/128x128@2x.png",
       "icons/icon.icns",
       "icons/icon.ico"
+    ],
+    "fileAssociations": [
+      {
+        "ext": ["mmnote"],
+        "name": "MetaMoJi Note",
+        "description": "MetaMoJi note document",
+        "role": "Editor"
+      }
     ]
   }
 }
