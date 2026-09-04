@@ -25,6 +25,13 @@
   フラットな構造であることも確認(`generateResourceIdOnServer`)。
   なお、ユーザーが任意の外部WebDAVサーバーに接続する`com/metamoji/ex/webdav`(`WebDAVManager`)は
   MetaMoji自身のサーバーとは無関係の別機能であり、依然未解析(Low優先度のまま)。
+- ✅ **`com/metamoji/dvm/cs` (`DvmCloudService`)** — クラス配信(`convert/DistributeClass`,
+  `convert/GetDistributeStatus`)とクラッシュログアップロード(`crashlogs/upload`)の3エンドポイント全て
+  解析済み。`CsCloudService`とは別の低レベルヘルパー`CsHttpClient`を直接利用しており、
+  `authInfo`/`convertParam`をJSON文字列化してmultipartパートに埋め込む独特の方式。
+  [distribute.tsp](./distribute.tsp)に反映。DistributeClass/GetDistributeStatusは`restHost`
+  (テナント別ホスト)、crashlogs/uploadは`rootServer`(ブートストラップホスト)を使う点に注意
+  (`misc.tsp`の`postCrashLogs`とは別系統のクラッシュログ送信経路)。
 
 ## 未解析パッケージ一覧(優先順位順)
 
@@ -33,7 +40,7 @@
 | # | パッケージ | 役割 | 既知のエンドポイント/手がかり | 認証・ホスト |
 |---|---|---|---|---|
 | ~~1~~ | ~~`com/metamoji/network` (`NwWebDAVRequest`)~~ | ✅ **解析完了**。[webdav.tsp](./webdav.tsp) と上記「完了済み」を参照。 | — | — |
-| 2 | `com/metamoji/dvm/cs` (`DvmCloudService`) | クラス配信(コンテンツ変換配布)・クラッシュログ送信のクラウドAPI。`com/metamoji/cs/CsHttpClient`(低レベルヘルパー、`CsCloudService`とは別)を利用。 | `convert/DistributeClass`, `convert/GetDistributeStatus`, `crashlogs/upload`(マルチパート) の3エンドポイント。Param/Result型(`DvmDistributeClassParams/Result`等)あり。 | 未調査(`CsHttpClient`共有の可能性が高い、要確認) |
+| ~~2~~ | ~~`com/metamoji/dvm/cs` (`DvmCloudService`)~~ | ✅ **解析完了**。[distribute.tsp](./distribute.tsp) と上記「完了済み」を参照。 | — | — |
 | 3 | `com/metamoji/lc` | **ライセンスアクティベーション専用API**。`CsCloudService`とは完全に別ホスト。 | ホスト: `https://license.metamoji.com/mmjlicense/`(検証用: `license-test.metamoji.com`)。パス: `license/activate2`, `license/getremainingdays`。 | 独自のJSON+ハッシュ(HMAC風)プロトコル(`HttpUtil.postJson`)。 |
 | 4 | `com/metamoji/ns/service` (`NsCollabo*`) | **リアルタイム授業ルーム共有("ClassShare"の名を冠する中核機能)**。ルーム作成・参加・ロール管理・設定同期。23ファイル中18ファイルが直接通信。 | `/cosmos/ModifyRole`, `/mmjcloud/ShareViewGetList`, `/mmjcloud/ShareViewGetMyRole`, `/mmjcloud/ShareViewGetRoomInfo`, `/mmjcloud/ShareViewGetRoomSetting`, `/mmjcloud/ShareViewSetRoomInfo`, `/mmjcloud/ShareViewSetRoomSetting`, `gallery/PostForShareAnytime` 等。`For{CheckRole,CreateRoom,CreateUniqueID,GetMemberList,GetRoomInfo,...}`というコマンドパターンで整理されており、TypeSpec化しやすい構造。 | `sessionID`ベース。ロール概念(`presenter`/`speaker`/`visitor`)、ルームタイプ(`casual`/`formal`/`limited`)あり。UA文字列 `"Android-Share-G-ClassRoom"`。 |
 | 5 | `com/metamoji/media/video/network` (`VfCloud`, `NwServerAccessor`等) | **動画ノート機能(録画・アップロード・再生)**。アプリの目玉機能の一つ。71ファイル中の中核は`VfCloud`(+Companion), `VfIdMappingService`, `NwUpload`, `NwServerAccessor`, `NwUserInfoUpdater`の5クラス。 | 動的に割り当てられる"Flora"メディアサーバー(`flora/api/v1/`)に対し、`getlist`/`reserve`/`getclipcount`/`getclipinfo`/`getcoinfo`/`getposterframe`/`deleteclip`/`getserverstatus`/`getuploadpoint`/`exportclipinfo`等のコマンドクエリでアクセス。 | 独自ログイン/トークン方式(`accessToken`/`refreshToken`/`loginUser`/`loginCompany`)。サーバー予約フロー(`reserveServerId`)あり。 |

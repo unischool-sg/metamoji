@@ -9,8 +9,9 @@ DigitalCabinet クラウドAPI)を [TypeSpec](https://typespec.io/) として再
 **非公式ドキュメントであり、MetaMoji社の公式仕様ではありません。** 実装の逆解析に基づく推測を含むため、
 実際の挙動と差異がある可能性があります。
 
-> ⚠️ **本ドキュメントが網羅するのは `CsCloudService` (53エンドポイント) と WebDAVデータプレーン
-> (`NwWebDAVRequest`, [webdav.tsp](./webdav.tsp)) のみです。**
+> ⚠️ **本ドキュメントが網羅するのは `CsCloudService` (53エンドポイント)、WebDAVデータプレーン
+> (`NwWebDAVRequest`, [webdav.tsp](./webdav.tsp))、クラス配信/クラッシュログ
+> (`DvmCloudService`, [distribute.tsp](./distribute.tsp)) のみです。**
 > アプリは他にも独立した通信レイヤー(リアルタイム授業ルーム共有、動画ノートのアップロード、
 > ライセンスアクティベーション、ファイル変換サービス等)を複数持っており、それらは未解析です。
 > 調査済みの範囲・優先順位は [ROADMAP.md](./ROADMAP.md) を参照してください。
@@ -63,6 +64,7 @@ DigitalCabinet クラウドAPI)を [TypeSpec](https://typespec.io/) として再
 | [main.tsp](./main.tsp) | サービス定義・全ドメインファイルのimport |
 | [common.tsp](./common.tsp) | 共通リクエスト/レスポンス基底モデル、共有の値オブジェクト |
 | [webdav.tsp](./webdav.tsp) | WebDAVデータプレーン(ノート本体のGET/PUT/DELETE/HEAD/MKCOL/MOVE/PROPFIND/PROPPATCH) |
+| [distribute.tsp](./distribute.tsp) | クラス配信(ノート変換ジョブ登録/ステータス取得)・クラッシュログアップロード(`DvmCloudService`) |
 | [auth.tsp](./auth.tsp) | 認証・アカウント管理 (login / logout / register / パスワード / EULA / SSO 等) |
 | [user.tsp](./user.tsp) | ユーザー・組織(グループ)情報 |
 | [drive.tsp](./drive.tsp) | ドライブ(共有フォルダ)・メンバー管理・共有リンク |
