@@ -49,6 +49,18 @@
   ホスト名にスキームが無い場合は平文HTTPとして扱われる点に注意(ドキュメント内に明記)。
   一部レスポンス(`getclipinfo`/`getposterframe`/`deleteclip`/`exportclipinfo`/`getcoinfo`の
   詳細フィールド)は未確認で`Record<unknown>`のまま。
+- ✅ **`com/metamoji/ns/service` (`NsCollaboURLConnection`)** — リアルタイム授業ルーム共有API。
+  16エンドポイント全て解析済み(`cosmos/*`系の旧世代APIと`mmjcloud/ShareView*`系の新世代APIが
+  混在していることを確認)。全コマンド共通で`POST`+`multipart/form-data`、各パートに
+  `application/json`のRequestBodyを詰める独特の方式。`authInfo`パートの認証JSON構造
+  (`deviceID`/`deviceCode`/`authType`/`userID`/`userPassword または qwd`/`companyID`等、
+  3バリエーション: 通常ログイン・qwdログイン・ゲスト)、ルームのロール権限体系
+  (`presenter`/`speaker`/`visitor` × `FREE`/`READONLY`)、`roomType`
+  (`casual`/`formal`/`limited`)まで再現。[collabo.tsp](./collabo.tsp)に反映。
+  `getMemberList`のみ認証JSONを含まない例外であることも発見。ルーム内のリアルタイム操作同期
+  そのものは別プロトコル(`com.metamoji.ns.NsCollaboCommand`の生ソケット通信)であり、
+  今回はスコープ外(未解析)。
+- ✅ **High優先度5件、すべて解析完了** (`network`, `dvm/cs`, `lc`, `media/video/network`, `ns/service`)。
 
 ## 未解析パッケージ一覧(優先順位順)
 
@@ -60,7 +72,7 @@
 | ~~2~~ | ~~`com/metamoji/dvm/cs` (`DvmCloudService`)~~ | ✅ **解析完了**。[distribute.tsp](./distribute.tsp) と上記「完了済み」を参照。 | — | — |
 | ~~3~~ | ~~`com/metamoji/lc`~~ | ✅ **解析完了**。[license-activation.tsp](./license-activation.tsp) と上記「完了済み」を参照。 | — | — |
 | ~~5~~ | ~~`com/metamoji/media/video/network`~~ | ✅ **解析完了**。[video.tsp](./video.tsp) と上記「完了済み」を参照。 | — | — |
-| 4 | `com/metamoji/ns/service` (`NsCollabo*`) | **リアルタイム授業ルーム共有("ClassShare"の名を冠する中核機能)**。ルーム作成・参加・ロール管理・設定同期。23ファイル中18ファイルが直接通信。 | `/cosmos/ModifyRole`, `/mmjcloud/ShareViewGetList`, `/mmjcloud/ShareViewGetMyRole`, `/mmjcloud/ShareViewGetRoomInfo`, `/mmjcloud/ShareViewGetRoomSetting`, `/mmjcloud/ShareViewSetRoomInfo`, `/mmjcloud/ShareViewSetRoomSetting`, `gallery/PostForShareAnytime` 等。`For{CheckRole,CreateRoom,CreateUniqueID,GetMemberList,GetRoomInfo,...}`というコマンドパターンで整理されており、TypeSpec化しやすい構造。 | `sessionID`ベース。ロール概念(`presenter`/`speaker`/`visitor`)、ルームタイプ(`casual`/`formal`/`limited`)あり。UA文字列 `"Android-Share-G-ClassRoom"`。 |
+| ~~4~~ | ~~`com/metamoji/ns/service` (`NsCollabo*`)~~ | ✅ **解析完了**。[collabo.tsp](./collabo.tsp) と上記「完了済み」を参照。 | — | — |
 | 6 | `com/metamoji/rc` (`RcRemoteConverter*`) | **ファイル形式変換サービス**("Remote Converter")。`CsCloudService`と同じDigitalCabinetホストを共有。 | `/convert/TentativeRegist`, `/convert/ConvertRequest`, `/convert/GetConvertedFile`。マルチパートPOST(userId/password/productName/productVersion/jobId1/jobId2/fromMime/toMime/fileEntity)。エラーコード例: `14`=ライセンスなし, `100`=変換中。 | `CsCloudService`と同じDigital Cabinetホスト(`ModelInfo$BuildOptions.DIGITAL_CABINET_URL_BASE`)。 |
 
 ### 優先度: Medium
@@ -83,16 +95,14 @@
 
 ## 次回セッションへの推奨アクション
 
-1. **`ns/service`(リアルタイム授業ルーム)** は残るHigh優先度の最後の1件。
-   For*コマンドパターンで構造化されており、これまでと同じ手法が適用できる。次点候補。
-2. ~~`network`(WebDAV)~~ ✅ 解析済み([webdav.tsp](./webdav.tsp))。
-3. ~~`lc`(ライセンス)~~ ✅ 解析済み([license-activation.tsp](./license-activation.tsp))。
-   **`rc`(変換サービス)** はエンドポイント数が少なく(3個)、ホスト・パスも既に判明しているため、
+**High優先度6件はすべて解析完了** (`network`/`dvm/cs`/`lc`/`media/video/network`/`ns/service`)。
+次に着手するなら:
+
+1. **`rc`(変換サービス)** はエンドポイント数が少なく(3個)、ホスト・パスも既に判明しているため、
    着手コストが低い「クイックウィン」。
-4. ~~`media/video/network`(動画ノート)~~ ✅ 解析済み([video.tsp](./video.tsp))。
-4. `sd/cs` は `CsCloudService` のドライブ機能との重複・世代関係が未確認。着手前に
+2. `sd/cs` は `CsCloudService` のドライブ機能との重複・世代関係が未確認。着手前に
    どちらが実際にこのバージョン(3.15.1.0)で使われているか実装呼び出し元を確認すると無駄がない。
-5. Low優先度の4パッケージは、必要になったタイミングで着手すれば十分。
+3. Low優先度の4パッケージは、必要になったタイミングで着手すれば十分。
 
 ## 調査方法メモ(次回セッション用)
 

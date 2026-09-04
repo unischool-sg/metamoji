@@ -13,9 +13,9 @@ DigitalCabinet クラウドAPI)を [TypeSpec](https://typespec.io/) として再
 > (`NwWebDAVRequest`, [webdav.tsp](./webdav.tsp))、クラス配信/クラッシュログ
 > (`DvmCloudService`, [distribute.tsp](./distribute.tsp))、ライセンスアクティベーション
 > (`LicenseUtil`, [license-activation.tsp](./license-activation.tsp))、動画ノート機能
-> (`NwServerAccessor`/`NwUpload`, [video.tsp](./video.tsp)) のみです。**
-> アプリは他にも独立した通信レイヤー(リアルタイム授業ルーム共有、ファイル変換サービス等)を
-> 複数持っており、それらは未解析です。
+> (`NwServerAccessor`/`NwUpload`, [video.tsp](./video.tsp))、リアルタイム授業ルーム共有
+> (`NsCollaboURLConnection`, [collabo.tsp](./collabo.tsp)) のみです。**
+> アプリには他にファイル変換サービス等の独立した通信レイヤーもあり、それらは未解析です。
 > 調査済みの範囲・優先順位は [ROADMAP.md](./ROADMAP.md) を参照してください。
 
 ## 解析範囲・手法
@@ -69,6 +69,7 @@ DigitalCabinet クラウドAPI)を [TypeSpec](https://typespec.io/) として再
 | [distribute.tsp](./distribute.tsp) | クラス配信(ノート変換ジョブ登録/ステータス取得)・クラッシュログアップロード(`DvmCloudService`) |
 | [license-activation.tsp](./license-activation.tsp) | ライセンスキーのオンラインアクティベーション/残日数照会(`LicenseUtil`、別ホスト`license.metamoji.com`) |
 | [video.tsp](./video.tsp) | 動画ノート機能(クリップ一覧/詳細/削除/アップロード。動的な「Flora」サーバーを使用) |
+| [collabo.tsp](./collabo.tsp) | リアルタイム授業ルーム共有(ルーム作成/ログイン/ロール管理/設定同期/ギャラリー投稿) |
 | [auth.tsp](./auth.tsp) | 認証・アカウント管理 (login / logout / register / パスワード / EULA / SSO 等) |
 | [user.tsp](./user.tsp) | ユーザー・組織(グループ)情報 |
 | [drive.tsp](./drive.tsp) | ドライブ(共有フォルダ)・メンバー管理・共有リンク |
