@@ -1,0 +1,80 @@
+/*
+ * Design tokens.
+ *
+ * The accent and chrome colours are taken from docs/09 §5, which catalogues the
+ * original's palette. Dark mode is new — docs/09 §5 notes the original is
+ * effectively light-only — and is authored here from the start because
+ * retrofitting theme variables later is far more work than defining them now.
+ */
+
+:root {
+  --color-accent: #32a5ff;
+  --color-accent-strong: #0b84e6;
+  --color-accent-soft: rgba(50, 165, 255, 0.14);
+
+  --color-bg: #f4f5f7;
+  --color-surface: #ffffff;
+  --color-surface-alt: #e8e9eb;
+  --color-surface-sunken: #dfe1e5;
+  --color-chrome: #323a45;
+  --color-chrome-text: #f2f4f7;
+  --color-workspace: #3a3f4b;
+
+  --color-text: #1f2430;
+  --color-text-muted: #6b7280;
+  --color-text-inverse: #ffffff;
+  --color-title: #334488;
+
+  --color-border: #d7dae0;
+  --color-border-strong: #b9bec7;
+
+  --color-danger: #d93025;
+  --color-warning: #f29900;
+  --color-success: #188038;
+
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 14px;
+
+  --shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.08);
+  --shadow-md: 0 4px 14px rgba(16, 24, 40, 0.12);
+  --shadow-lg: 0 12px 32px rgba(16, 24, 40, 0.2);
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+
+  --toolbar-width: 60px;
+  --topbar-height: 48px;
+  --statusbar-height: 30px;
+
+  --font-ui: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Noto Sans JP",
+    "Yu Gothic UI", system-ui, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg: #1b1e24;
+    --color-surface: #242830;
+    --color-surface-alt: #2c313a;
+    --color-surface-sunken: #1a1d22;
+    --color-chrome: #171a1f;
+    --color-chrome-text: #e6e9ee;
+    --color-workspace: #14161a;
+
+    --color-text: #e6e9ee;
+    --color-text-muted: #9aa2b1;
+    --color-title: #8fb0ff;
+
+    --color-border: #363c46;
+    --color-border-strong: #4a515d;
+
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.45);
+    --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.55);
+  }
+}

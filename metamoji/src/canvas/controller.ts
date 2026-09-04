@@ -1,0 +1,897 @@
+/**
+ * The canvas controller — all imperative drawing and input lives here.
+ *
+ * Two stacked canvases:
+ *
+ *   scene   opaque, holds the paper and every committed unit. Repainted when the
+ *           document or the viewport changes, which is at most once per gesture.
+ *   overlay transparent and `desynchronized`, holds the stroke currently under
+ *           the pen plus selection handles. Repainted per pointer frame, but it
+ *           only ever draws one stroke.
+ *
+ * This is docs/10's "live bitmap" layer strategy reduced to the part that earns
+ * its keep. What it buys: a pointer move never touches React and never repaints
+ * committed ink, so stroke latency is independent of how full the page is.
+ */
+
+import { PEN_PRESETS } from "../editor/tools";
+import type { EditSession } from "../editor/session";
+import { newStrokeId } from "../model/ids";
+import { createDrawUnit } from "../model/factory";
+import { distanceToStroke, rectContainsPoint, simplify, strokeBounds } from "../model/stroke";
+import type {
+  InkPoint,
+  ModelId,
+  NoteDocument,
+  Page,
+  PenAttributes,
+  Point,
+  Rect,
+  Stroke,
+  Unit,
+} from "../model/types";
+import { currentLayer } from "../model/types";
+import {
+  HANDLE_CURSORS,
+  HANDLE_SIZE,
+  ROTATE_OFFSET,
+  handlePositions,
+  hitTestHandle,
+  hitTestUnit,
+  normalizeRect,
+  resizeUnit,
+  toUnitLocal,
+  unitsInRect,
+  type HandleType,
+} from "../render/hitTest";
+import { drawStroke, renderPage, type AssetResolver } from "../render/renderer";
+import {
+  fitRect,
+  panBy,
+  screenToWorld,
+  zoomAbout,
+  type Viewport,
+  IDENTITY_VIEWPORT,
+} from "../render/viewport";
+import { PointFilter } from "./oneEuro";
+
+export type ToolMode =
+  | "pen"
+  | "eraser"
+  | "select"
+  | "pan"
+  | "text"
+  | "sticky"
+  | "image";
+
+export interface ControllerCallbacks {
+  onSelectionChange: (ids: ModelId[]) => void;
+  onViewportChange: (viewport: Viewport) => void;
+  /** A tap with a placement tool active, in world coordinates. */
+  onPlace: (tool: ToolMode, world: Point) => void;
+  onEditText: (unitId: ModelId) => void;
+}
+
+interface Gesture {
+  kind: "ink" | "erase" | "pan" | "marquee" | "move" | "transform";
+  pointerId: number;
+  startScreen: Point;
+  startWorld: Point;
+  lastScreen: Point;
+  handle?: HandleType;
+  /** Geometry of the units being transformed, captured at gesture start. */
+  originals?: Map<ModelId, Pick<Unit, "x" | "y" | "width" | "height" | "rotation">>;
+  marquee?: Rect;
+  erased?: Set<string>;
+}
+
+/** Devices without a pressure sensor report 0 or a constant 0.5. */
+const NO_PRESSURE = 0.5;
+
+export class CanvasController {
+  private scene: HTMLCanvasElement | null = null;
+  private overlay: HTMLCanvasElement | null = null;
+  private sceneCtx: CanvasRenderingContext2D | null = null;
+  private overlayCtx: CanvasRenderingContext2D | null = null;
+
+  private dpr = 1;
+  private viewport: Viewport = IDENTITY_VIEWPORT;
+  private doc: NoteDocument | null = null;
+  private pageIndex = 0;
+  private session: EditSession | null = null;
+
+  private tool: ToolMode = "pen";
+  private pen: PenAttributes = PEN_PRESETS[0];
+  private eraserSize = 16;
+  private selection: ModelId[] = [];
+
+  private gesture: Gesture | null = null;
+  private wetPoints: InkPoint[] = [];
+  private wetFilter = new PointFilter();
+  private strokeStart = 0;
+  /** Timestamp of the last pen event, used to reject palm touches. */
+  private lastPenAt = 0;
+
+  private assets: AssetResolver = { getImage: () => undefined };
+  private frame = 0;
+  private sceneDirty = true;
+  private overlayDirty = true;
+
+  constructor(private callbacks: ControllerCallbacks) {}
+
+  // -- lifecycle -----------------------------------------------------------
+
+  attach(scene: HTMLCanvasElement, overlay: HTMLCanvasElement): void {
+    this.scene = scene;
+    this.overlay = overlay;
+    // Opaque scene compositing is measurably cheaper, and we always paint paper.
+    this.sceneCtx = scene.getContext("2d", { alpha: false });
+    this.overlayCtx = overlay.getContext("2d", {
+      alpha: true,
+      desynchronized: true,
+    } as CanvasRenderingContext2DSettings);
+
+    overlay.style.touchAction = "none";
+    overlay.addEventListener("pointerdown", this.onPointerDown);
+    overlay.addEventListener("pointermove", this.onPointerMove);
+    overlay.addEventListener("pointerup", this.onPointerUp);
+    overlay.addEventListener("pointercancel", this.onPointerCancel);
+    overlay.addEventListener("wheel", this.onWheel, { passive: false });
+    overlay.addEventListener("dblclick", this.onDoubleClick);
+
+    this.resize();
+    this.startLoop();
+  }
+
+  dispose(): void {
+    const overlay = this.overlay;
+    if (overlay) {
+      overlay.removeEventListener("pointerdown", this.onPointerDown);
+      overlay.removeEventListener("pointermove", this.onPointerMove);
+      overlay.removeEventListener("pointerup", this.onPointerUp);
+      overlay.removeEventListener("pointercancel", this.onPointerCancel);
+      overlay.removeEventListener("wheel", this.onWheel);
+      overlay.removeEventListener("dblclick", this.onDoubleClick);
+    }
+    if (this.frame) cancelAnimationFrame(this.frame);
+    this.frame = 0;
+    this.scene = null;
+    this.overlay = null;
+    this.sceneCtx = null;
+    this.overlayCtx = null;
+  }
+
+  private startLoop(): void {
+    const tick = () => {
+      if (this.sceneDirty) this.paintScene();
+      if (this.overlayDirty) this.paintOverlay();
+      this.frame = requestAnimationFrame(tick);
+    };
+    this.frame = requestAnimationFrame(tick);
+  }
+
+  resize(): void {
+    const { scene, overlay } = this;
+    if (!scene || !overlay) return;
+    const rect = scene.parentElement?.getBoundingClientRect();
+    if (!rect || rect.width === 0 || rect.height === 0) return;
+
+    // Capping DPR at 2 keeps the backing store sane on 5K displays, where the
+    // real ratio can make each canvas tens of megabytes.
+    this.dpr = Math.min(window.devicePixelRatio || 1, 2);
+    for (const canvas of [scene, overlay]) {
+      canvas.width = Math.round(rect.width * this.dpr);
+      canvas.height = Math.round(rect.height * this.dpr);
+      canvas.style.width = `${rect.width}px`;
+      canvas.style.height = `${rect.height}px`;
+    }
+    this.invalidateAll();
+  }
+
+  // -- state in -------------------------------------------------------------
+
+  setDocument(doc: NoteDocument | null, pageIndex: number, session: EditSession | null): void {
+    const pageChanged = this.pageIndex !== pageIndex;
+    const docChanged = this.doc !== doc;
+    this.doc = doc;
+    this.pageIndex = pageIndex;
+    this.session = session;
+    if (docChanged || pageChanged) this.invalidateAll();
+  }
+
+  setTool(tool: ToolMode): void {
+    this.tool = tool;
+    if (this.overlay) this.overlay.style.cursor = cursorForTool(tool);
+    this.overlayDirty = true;
+  }
+
+  setPen(pen: PenAttributes): void {
+    this.pen = pen;
+  }
+
+  setEraserSize(size: number): void {
+    this.eraserSize = size;
+  }
+
+  setSelection(ids: ModelId[]): void {
+    this.selection = ids;
+    this.overlayDirty = true;
+  }
+
+  setAssets(assets: AssetResolver): void {
+    this.assets = assets;
+    this.invalidateAll();
+  }
+
+  invalidateAll(): void {
+    this.sceneDirty = true;
+    this.overlayDirty = true;
+  }
+
+  getViewport(): Viewport {
+    return this.viewport;
+  }
+
+  setViewport(viewport: Viewport): void {
+    this.viewport = viewport;
+    this.callbacks.onViewportChange(viewport);
+    this.invalidateAll();
+  }
+
+  fitPage(): void {
+    const page = this.page();
+    const scene = this.scene;
+    if (!page || !scene) return;
+    const rect: Rect = {
+      x: 0,
+      y: 0,
+      width: page.paperWidth,
+      height: page.paperHeight,
+    };
+    this.setViewport(fitRect(rect, scene.clientWidth, scene.clientHeight, 32));
+  }
+
+  zoomBy(factor: number): void {
+    const scene = this.scene;
+    if (!scene) return;
+    this.setViewport(
+      zoomAbout(this.viewport, scene.clientWidth / 2, scene.clientHeight / 2, factor),
+    );
+  }
+
+  /**
+   * Aborts whatever gesture is in flight.
+   *
+   * docs/15 §5 notes the original cancels an in-progress gesture around undo,
+   * via `IUndoOrRedoEventHandler`. Same reason here: undoing mid-stroke would
+   * otherwise commit a stroke onto a document that has already moved.
+   */
+  cancelGesture(): void {
+    if (!this.gesture) return;
+    this.gesture = null;
+    this.wetPoints = [];
+    this.wetFilter.reset();
+    this.overlayDirty = true;
+  }
+
+  // -- painting -------------------------------------------------------------
+
+  private page(): Page | null {
+    return this.doc?.pages[this.pageIndex] ?? null;
+  }
+
+  private paintScene(): void {
+    const ctx = this.sceneCtx;
+    const scene = this.scene;
+    if (!ctx || !scene) return;
+    this.sceneDirty = false;
+
+    ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
+    ctx.fillStyle = "#3a3f4b";
+    ctx.fillRect(0, 0, scene.clientWidth, scene.clientHeight);
+
+    const page = this.page();
+    if (!page) return;
+
+    // A drop shadow behind the paper is what makes the page read as a sheet
+    // rather than as the window background.
+    ctx.save();
+    ctx.translate(this.viewport.tx, this.viewport.ty);
+    ctx.scale(this.viewport.scale, this.viewport.scale);
+    ctx.shadowColor = "rgba(0,0,0,0.35)";
+    ctx.shadowBlur = 24 / this.viewport.scale;
+    ctx.shadowOffsetY = 6 / this.viewport.scale;
+    ctx.fillStyle = page.paperColor;
+    ctx.fillRect(0, 0, page.paperWidth, page.paperHeight);
+    ctx.restore();
+
+    renderPage(ctx, page, {
+      viewport: this.viewport,
+      viewWidth: scene.clientWidth,
+      viewHeight: scene.clientHeight,
+      assets: this.assets,
+    });
+  }
+
+  private paintOverlay(): void {
+    const ctx = this.overlayCtx;
+    const overlay = this.overlay;
+    if (!ctx || !overlay) return;
+    this.overlayDirty = false;
+
+    ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
+    ctx.clearRect(0, 0, overlay.clientWidth, overlay.clientHeight);
+
+    ctx.save();
+    ctx.translate(this.viewport.tx, this.viewport.ty);
+    ctx.scale(this.viewport.scale, this.viewport.scale);
+
+    // The stroke under the pen, drawn alone.
+    if (this.wetPoints.length > 0) {
+      drawStroke(ctx, {
+        id: "wet",
+        points: this.wetPoints,
+        pen: this.pen,
+        bounds: strokeBounds(this.wetPoints, this.pen.width),
+      });
+    }
+
+    if (this.gesture?.kind === "marquee" && this.gesture.marquee) {
+      const r = normalizeRect(this.gesture.marquee);
+      ctx.strokeStyle = "#32a5ff";
+      ctx.lineWidth = 1 / this.viewport.scale;
+      ctx.setLineDash([6 / this.viewport.scale, 4 / this.viewport.scale]);
+      ctx.strokeRect(r.x, r.y, r.width, r.height);
+      ctx.setLineDash([]);
+      ctx.fillStyle = "rgba(50, 165, 255, 0.10)";
+      ctx.fillRect(r.x, r.y, r.width, r.height);
+    }
+
+    ctx.restore();
+
+    this.paintSelectionHandles(ctx);
+    this.paintEraserCursor(ctx);
+  }
+
+  /**
+   * Handles are drawn in screen space so they stay a constant size at any zoom.
+   * Their positions come from world space; only the glyphs are screen-sized.
+   */
+  private paintSelectionHandles(ctx: CanvasRenderingContext2D): void {
+    const page = this.page();
+    if (!page || this.selection.length === 0 || this.tool !== "select") return;
+
+    const units = page.layers
+      .flatMap((l) => l.units)
+      .filter((u) => this.selection.includes(u.id));
+    if (units.length === 0) return;
+
+    for (const unit of units) {
+      ctx.save();
+      ctx.translate(this.viewport.tx, this.viewport.ty);
+      ctx.scale(this.viewport.scale, this.viewport.scale);
+      if (unit.rotation !== 0) {
+        const cx = unit.x + unit.width / 2;
+        const cy = unit.y + unit.height / 2;
+        ctx.translate(cx, cy);
+        ctx.rotate(unit.rotation);
+        ctx.translate(-cx, -cy);
+      }
+
+      ctx.strokeStyle = "#32a5ff";
+      ctx.lineWidth = 1.5 / this.viewport.scale;
+      ctx.strokeRect(unit.x, unit.y, unit.width, unit.height);
+
+      if (units.length === 1) {
+        const positions = handlePositions(unit);
+        const size = HANDLE_SIZE / this.viewport.scale;
+        ctx.fillStyle = "#ffffff";
+        for (const [name, p] of Object.entries(positions)) {
+          if (name === "move") continue;
+          if (name === "rotate") {
+            const ry = p.y - ROTATE_OFFSET / this.viewport.scale;
+            ctx.beginPath();
+            ctx.moveTo(p.x, p.y);
+            ctx.lineTo(p.x, ry);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.arc(p.x, ry, size / 2, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            continue;
+          }
+          ctx.fillRect(p.x - size / 2, p.y - size / 2, size, size);
+          ctx.strokeRect(p.x - size / 2, p.y - size / 2, size, size);
+        }
+      }
+      ctx.restore();
+    }
+  }
+
+  private paintEraserCursor(ctx: CanvasRenderingContext2D): void {
+    if (this.tool !== "eraser" || !this.gesture || this.gesture.kind !== "erase") return;
+    const screen = this.gesture.lastScreen;
+    ctx.save();
+    ctx.strokeStyle = "rgba(30,30,30,0.65)";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.arc(screen.x, screen.y, (this.eraserSize / 2) * this.viewport.scale, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // -- input ---------------------------------------------------------------
+
+  private localPoint(e: PointerEvent): Point {
+    const rect = this.overlay!.getBoundingClientRect();
+    return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+  }
+
+  /**
+   * Rejects palm contact: once a pen has been seen, touch input is treated as
+   * the hand resting on the screen rather than as a second cursor.
+   */
+  private shouldIgnore(e: PointerEvent): boolean {
+    if (e.pointerType === "pen") {
+      this.lastPenAt = e.timeStamp;
+      return false;
+    }
+    if (e.pointerType === "touch" && e.timeStamp - this.lastPenAt < 700) return true;
+    return false;
+  }
+
+  private normalizedPressure(e: PointerEvent): number {
+    if (e.pointerType === "mouse") return NO_PRESSURE;
+    if (e.pressure <= 0) return NO_PRESSURE;
+    return e.pressure;
+  }
+
+  private onPointerDown = (e: PointerEvent): void => {
+    if (this.shouldIgnore(e) || !this.overlay) return;
+    if (e.button !== 0 && e.button !== 1) return;
+
+    const screen = this.localPoint(e);
+    const world = screenToWorld(this.viewport, screen.x, screen.y);
+    this.overlay.setPointerCapture(e.pointerId);
+
+    const base = {
+      pointerId: e.pointerId,
+      startScreen: screen,
+      startWorld: world,
+      lastScreen: screen,
+    };
+
+    // Middle-drag and space-drag always pan, whatever tool is active.
+    if (e.button === 1 || this.tool === "pan") {
+      this.gesture = { ...base, kind: "pan" };
+      return;
+    }
+
+    switch (this.tool) {
+      case "pen": {
+        this.gesture = { ...base, kind: "ink" };
+        this.strokeStart = e.timeStamp;
+        this.wetFilter.reset();
+        this.wetPoints = [];
+        this.pushInkSample(world.x, world.y, this.normalizedPressure(e), 0);
+        break;
+      }
+
+      case "eraser":
+        this.gesture = { ...base, kind: "erase", erased: new Set() };
+        this.eraseAt(world);
+        break;
+
+      case "select":
+        this.beginSelectGesture(base, world, e.shiftKey);
+        break;
+
+      case "text":
+      case "sticky":
+      case "image":
+        this.callbacks.onPlace(this.tool, world);
+        break;
+    }
+    this.overlayDirty = true;
+  };
+
+  private beginSelectGesture(
+    base: Omit<Gesture, "kind">,
+    world: Point,
+    additive: boolean,
+  ): void {
+    const page = this.page();
+    if (!page) return;
+
+    // A handle on an already-selected unit wins over anything underneath it.
+    if (this.selection.length === 1) {
+      const unit = page.layers
+        .flatMap((l) => l.units)
+        .find((u) => u.id === this.selection[0]);
+      if (unit) {
+        const handle = hitTestHandle(unit, world.x, world.y, this.viewport.scale);
+        if (handle && handle !== "move") {
+          this.gesture = {
+            ...base,
+            kind: "transform",
+            handle,
+            originals: this.captureGeometry(page, this.selection),
+          };
+          return;
+        }
+      }
+    }
+
+    const hit = hitTestUnit(page, world.x, world.y);
+    if (hit) {
+      const already = this.selection.includes(hit.unit.id);
+      const next = additive
+        ? already
+          ? this.selection.filter((id) => id !== hit.unit.id)
+          : [...this.selection, hit.unit.id]
+        : already
+          ? this.selection
+          : [hit.unit.id];
+      this.selection = next;
+      this.callbacks.onSelectionChange(next);
+      this.gesture = {
+        ...base,
+        kind: "move",
+        originals: this.captureGeometry(page, next),
+      };
+      return;
+    }
+
+    if (!additive) {
+      this.selection = [];
+      this.callbacks.onSelectionChange([]);
+    }
+    this.gesture = {
+      ...base,
+      kind: "marquee",
+      marquee: { x: world.x, y: world.y, width: 0, height: 0 },
+    };
+  }
+
+  private captureGeometry(page: Page, ids: ModelId[]) {
+    const map = new Map<ModelId, Pick<Unit, "x" | "y" | "width" | "height" | "rotation">>();
+    for (const layer of page.layers) {
+      for (const unit of layer.units) {
+        if (!ids.includes(unit.id)) continue;
+        map.set(unit.id, {
+          x: unit.x,
+          y: unit.y,
+          width: unit.width,
+          height: unit.height,
+          rotation: unit.rotation,
+        });
+      }
+    }
+    return map;
+  }
+
+  private onPointerMove = (e: PointerEvent): void => {
+    const gesture = this.gesture;
+    if (!gesture || e.pointerId !== gesture.pointerId) return;
+
+    const screen = this.localPoint(e);
+    const world = screenToWorld(this.viewport, screen.x, screen.y);
+
+    switch (gesture.kind) {
+      case "ink": {
+        // Consuming coalesced events is the difference between a smooth curve
+        // and a polygon: at speed the browser batches several samples into one
+        // pointermove and reports only the last.
+        const coalesced =
+          typeof e.getCoalescedEvents === "function" ? e.getCoalescedEvents() : [];
+        const samples = coalesced.length > 0 ? coalesced : [e];
+        const rect = this.overlay!.getBoundingClientRect();
+        for (const sample of samples) {
+          const p = screenToWorld(
+            this.viewport,
+            sample.clientX - rect.left,
+            sample.clientY - rect.top,
+          );
+          this.pushInkSample(
+            p.x,
+            p.y,
+            this.normalizedPressure(sample),
+            sample.timeStamp - this.strokeStart,
+          );
+        }
+        break;
+      }
+
+      case "erase":
+        this.eraseAt(world);
+        break;
+
+      case "pan":
+        this.setViewport(
+          panBy(this.viewport, screen.x - gesture.lastScreen.x, screen.y - gesture.lastScreen.y),
+        );
+        break;
+
+      case "marquee":
+        gesture.marquee = {
+          x: gesture.startWorld.x,
+          y: gesture.startWorld.y,
+          width: world.x - gesture.startWorld.x,
+          height: world.y - gesture.startWorld.y,
+        };
+        break;
+
+      case "move":
+      case "transform":
+        this.applyLiveTransform(gesture, world, e.shiftKey);
+        break;
+    }
+
+    gesture.lastScreen = screen;
+    this.overlayDirty = true;
+  };
+
+  private pushInkSample(x: number, y: number, pressure: number, t: number): void {
+    const f = this.wetFilter.filter(x, y, pressure, t);
+    const last = this.wetPoints[this.wetPoints.length - 1];
+    // Drop samples the pen barely moved for; they bloat the document and make
+    // the outline self-intersect.
+    if (last && Math.hypot(f.x - last.x, f.y - last.y) < 0.35) return;
+    this.wetPoints.push({ x: f.x, y: f.y, p: f.p, t });
+  }
+
+  /**
+   * Moves or resizes live during the drag, without recording an undo entry —
+   * the whole gesture becomes one entry when the pointer lifts.
+   */
+  private applyLiveTransform(gesture: Gesture, world: Point, keepAspect: boolean): void {
+    const { session, doc } = this;
+    const page = this.page();
+    if (!session || !doc || !page || !gesture.originals) return;
+
+    const dx = world.x - gesture.startWorld.x;
+    const dy = world.y - gesture.startWorld.y;
+
+    session.beginEdit(gesture.kind === "move" ? "移動" : "変形");
+    for (const [unitId, original] of gesture.originals) {
+      const located = locate(page, unitId);
+      if (!located) continue;
+
+      let after: Partial<Unit>;
+      if (gesture.kind === "move") {
+        after = { x: original.x + dx, y: original.y + dy };
+      } else if (gesture.handle === "rotate") {
+        const cx = original.x + original.width / 2;
+        const cy = original.y + original.height / 2;
+        after = { rotation: Math.atan2(world.y - cy, world.x - cx) + Math.PI / 2 };
+      } else if (gesture.handle) {
+        after = resizeUnit({ ...located.unit, ...original }, gesture.handle, dx, dy, keepAspect);
+      } else {
+        continue;
+      }
+
+      session.record({
+        kind: "unit.update",
+        pageId: page.id,
+        layerId: located.layerId,
+        unitId,
+        before: original,
+        after,
+      });
+    }
+    session.endEdit();
+    this.sceneDirty = true;
+  }
+
+  private eraseAt(world: Point): void {
+    const { session } = this;
+    const page = this.page();
+    const gesture = this.gesture;
+    if (!session || !page || !gesture?.erased) return;
+
+    const radius = this.eraserSize / 2;
+
+    for (const layer of page.layers) {
+      if (!layer.visible || layer.locked) continue;
+      for (const unit of layer.units) {
+        if (unit.type !== "$draw") continue;
+        const local = toUnitLocal(unit, world.x, world.y);
+
+        for (let i = unit.strokes.length - 1; i >= 0; i--) {
+          const stroke = unit.strokes[i];
+          if (gesture.erased.has(stroke.id)) continue;
+          if (!rectContainsPoint(inflate(stroke.bounds, radius), local.x, local.y)) continue;
+          if (distanceToStroke(stroke, local.x, local.y) > radius + stroke.pen.width / 2) continue;
+
+          gesture.erased.add(stroke.id);
+          // Every erase in one drag folds into a single undo entry, so undo
+          // restores the whole sweep rather than one stroke at a time.
+          session.beginEdit("消しゴム");
+          session.record({
+            kind: "stroke.remove",
+            pageId: page.id,
+            layerId: layer.id,
+            unitId: unit.id,
+            index: i,
+            stroke,
+          });
+          session.endEdit();
+          this.sceneDirty = true;
+        }
+      }
+    }
+  }
+
+  private onPointerUp = (e: PointerEvent): void => {
+    const gesture = this.gesture;
+    if (!gesture || e.pointerId !== gesture.pointerId) return;
+    this.overlay?.releasePointerCapture(e.pointerId);
+
+    if (gesture.kind === "ink") this.commitStroke();
+    if (gesture.kind === "marquee" && gesture.marquee) {
+      const page = this.page();
+      if (page) {
+        const ids = unitsInRect(page, gesture.marquee).map((u) => u.id);
+        this.selection = ids;
+        this.callbacks.onSelectionChange(ids);
+      }
+    }
+
+    this.gesture = null;
+    this.overlayDirty = true;
+  };
+
+  private onPointerCancel = (): void => {
+    this.cancelGesture();
+  };
+
+  /**
+   * Turns the wet stroke into a committed one.
+   *
+   * Ordering matters: the document is updated and the scene repainted in the
+   * same frame that clears the overlay, so the stroke is never absent from both
+   * canvases at once — that gap is what shows up as a flicker at pointer-up.
+   */
+  private commitStroke(): void {
+    const { session, doc } = this;
+    const page = this.page();
+    if (!session || !doc || !page || this.wetPoints.length === 0) {
+      this.wetPoints = [];
+      return;
+    }
+
+    const points = simplify(this.wetPoints, 0.6);
+    const stroke: Stroke = {
+      id: newStrokeId(),
+      points,
+      pen: { ...this.pen },
+      bounds: strokeBounds(points, this.pen.width),
+    };
+
+    const layer = currentLayer(page);
+    if (!layer) {
+      this.wetPoints = [];
+      return;
+    }
+
+    // New ink goes into the layer's ink unit, creating one on first use rather
+    // than making every note carry an empty one.
+    let inkUnit = layer.units.find((u) => u.type === "$draw");
+
+    session.transact("ペン", () => {
+      if (!inkUnit) {
+        const created = createDrawUnit();
+        created.width = page.paperWidth;
+        created.height = page.paperHeight;
+        session.record({
+          kind: "unit.add",
+          pageId: page.id,
+          layerId: layer.id,
+          index: layer.units.length,
+          unit: created,
+        });
+        inkUnit = created;
+      }
+      session.record({
+        kind: "stroke.add",
+        pageId: page.id,
+        layerId: layer.id,
+        unitId: inkUnit.id,
+        index: inkUnit.type === "$draw" ? inkUnit.strokes.length : 0,
+        stroke,
+      });
+    });
+
+    this.wetPoints = [];
+    this.wetFilter.reset();
+    this.sceneDirty = true;
+    this.paintScene();
+  }
+
+  private onWheel = (e: WheelEvent): void => {
+    e.preventDefault();
+    const rect = this.overlay!.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    // Both Chromium and WebKit deliver trackpad pinch as wheel + ctrlKey.
+    if (e.ctrlKey || e.metaKey) {
+      this.setViewport(zoomAbout(this.viewport, x, y, Math.exp(-e.deltaY * 0.01)));
+    } else {
+      this.setViewport(panBy(this.viewport, -e.deltaX, -e.deltaY));
+    }
+  };
+
+  private onDoubleClick = (e: MouseEvent): void => {
+    const page = this.page();
+    if (!page || !this.overlay) return;
+    const rect = this.overlay.getBoundingClientRect();
+    const world = screenToWorld(this.viewport, e.clientX - rect.left, e.clientY - rect.top);
+    const hit = hitTestUnit(page, world.x, world.y);
+    if (hit && (hit.unit.type === "$text" || hit.unit.type === "$flipunit")) {
+      this.callbacks.onEditText(hit.unit.id);
+    }
+  };
+
+  /** Renders the current page to a PNG data URL, for library thumbnails. */
+  renderThumbnail(maxWidth = 320): string | null {
+    const page = this.page();
+    if (!page) return null;
+
+    const scale = maxWidth / page.paperWidth;
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(page.paperWidth * scale);
+    canvas.height = Math.round(page.paperHeight * scale);
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return null;
+
+    ctx.fillStyle = page.paperColor;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    renderPage(ctx, page, {
+      viewport: { scale, tx: 0, ty: 0 },
+      viewWidth: canvas.width,
+      viewHeight: canvas.height,
+      assets: this.assets,
+    });
+    return canvas.toDataURL("image/png");
+  }
+}
+
+// ---------------------------------------------------------------------------
+
+function locate(page: Page, unitId: ModelId): { layerId: ModelId; unit: Unit } | null {
+  for (const layer of page.layers) {
+    const unit = layer.units.find((u) => u.id === unitId);
+    if (unit) return { layerId: layer.id, unit };
+  }
+  return null;
+}
+
+function inflate(rect: Rect, by: number): Rect {
+  return {
+    x: rect.x - by,
+    y: rect.y - by,
+    width: rect.width + by * 2,
+    height: rect.height + by * 2,
+  };
+}
+
+function cursorForTool(tool: ToolMode): string {
+  switch (tool) {
+    case "pen":
+      return "crosshair";
+    case "eraser":
+      return "cell";
+    case "pan":
+      return "grab";
+    case "text":
+      return "text";
+    case "sticky":
+    case "image":
+      return "copy";
+    default:
+      return "default";
+  }
+}
+
+export { HANDLE_CURSORS };

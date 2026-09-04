@@ -30,6 +30,7 @@ export interface ImportReport {
   formatVersion: number;
   modelCount: number;
   pageCount: number;
+  strokeCount: number;
   unitCounts: Record<string, number>;
   undecodedModels: number;
   warnings: string[];
