@@ -30,6 +30,10 @@ namespace MetamojiClassShare;
 // **絶対URL全体**が渡されます(`NwWebDAVRequest`自身はホストを保持しない)。TypeSpecの制約上
 // パスパラメータとして表現していますが、実際は `{ホームコレクションURL}{リソースID}` のような
 // 絶対URLがそのまま `url()` に渡されます。
+//
+// この`NwWebDAVRequest`クライアントは、ユーザーが設定する任意の外部WebDAVサーバー機能
+// (`com.metamoji.ex.webdav.WebDAVManager`、設定は端末ローカルの`SharedPreferences`にのみ保存)
+// からも素通しで再利用されており、サーバー側コンポーネントやプロトコル差分は存在しない。
 
 /** すべてのWebDAVレスポンスに共通するステータス情報 (`NwWebDAVResult`)。 */
 model WebDavResultBase {
