@@ -12,6 +12,7 @@ import { useNavigate } from "react-router";
 import { open } from "@tauri-apps/plugin-dialog";
 
 import { ImportReportDialog } from "../components/ImportReportDialog";
+import { useTranslation } from "../i18n/useTranslation";
 import { Menu } from "../components/Menu";
 import * as api from "../ipc/api";
 import type { Folder, ImportReport, ListQuery, NoteSort, NoteSummary, Tag } from "../ipc/api";
@@ -25,6 +26,7 @@ type View = { kind: "all" } | { kind: "folder"; id: string } | { kind: "tag"; id
 
 export function LibraryScreen() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const [notes, setNotes] = useState<NoteSummary[]>([]);
   const [folders, setFolders] = useState<Folder[]>([]);
@@ -51,14 +53,14 @@ export function LibraryScreen() {
 
   const refresh = useCallback(async () => {
     try {
-      const [n, f, t] = await Promise.all([
+      const [nextNotes, nextFolders, nextTags] = await Promise.all([
         api.libraryList(query),
         api.folderList(),
         api.tagList(),
       ]);
-      setNotes(n);
-      setFolders(f);
-      setTags(t);
+      setNotes(nextNotes);
+      setFolders(nextFolders);
+      setTags(nextTags);
       setError(null);
     } catch (err) {
       setError(String(err));
@@ -77,7 +79,7 @@ export function LibraryScreen() {
 
   const createNote = async () => {
     try {
-      const doc = createDocument(`ノート ${notes.length + 1}`);
+      const doc = createDocument(t("ノート {n}", { n: notes.length + 1 }));
       const summary = await api.libraryCreate(toGeneric(doc), doc.meta.title);
       if (view.kind === "folder") await api.librarySetFolder(summary.id, view.id);
       navigate(`/note/${summary.id}`);
@@ -101,7 +103,7 @@ export function LibraryScreen() {
     try {
       const noteId = newNoteId();
       const result = await api.atdocImport(selected, noteId);
-      const title = selected.split("/").pop()?.replace(/\.[^.]+$/, "") ?? "取り込んだノート";
+      const title = selected.split("/").pop()?.replace(/\.[^.]+$/, "") ?? t("取り込んだノート");
       await api.libraryCreate(result.tree, title);
       await refresh();
       setReport(result.report);
@@ -122,7 +124,7 @@ export function LibraryScreen() {
   };
 
   const duplicate = (note: NoteSummary) =>
-    act(() => api.libraryDuplicate(note.id, newNoteId(), `${note.title} のコピー`));
+    act(() => api.libraryDuplicate(note.id, newNoteId(), t("{title} のコピー", { title: note.title })));
 
   const rename = (id: string, title: string) => {
     setRenaming(null);
@@ -132,12 +134,12 @@ export function LibraryScreen() {
   // -- folders and tags -----------------------------------------------------
 
   const addFolder = () => {
-    const name = window.prompt("フォルダ名");
+    const name = window.prompt(t("フォルダ名"));
     if (name?.trim()) void act(() => api.folderCreate(newId("folder"), name.trim(), null));
   };
 
   const addTag = () => {
-    const name = window.prompt("タグ名");
+    const name = window.prompt(t("タグ名"));
     if (!name?.trim()) return;
     const color = TAG_COLORS[tags.length % TAG_COLORS.length];
     void act(() => api.tagCreate(newId("tag"), name.trim(), color));
@@ -145,12 +147,12 @@ export function LibraryScreen() {
 
   const viewTitle =
     view.kind === "trash"
-      ? "ゴミ箱"
+      ? t("ゴミ箱")
       : view.kind === "folder"
-        ? (folders.find((f) => f.id === view.id)?.name ?? "フォルダ")
+        ? (folders.find((f) => f.id === view.id)?.name ?? t("フォルダ"))
         : view.kind === "tag"
-          ? (tags.find((t) => t.id === view.id)?.name ?? "タグ")
-          : "すべてのノート";
+          ? (tags.find((tag) => tag.id === view.id)?.name ?? t("タグ"))
+          : t("すべてのノート");
 
   return (
     <div className="app">
@@ -160,44 +162,47 @@ export function LibraryScreen() {
         <input
           className="search-box"
           type="search"
-          placeholder="ノートを検索"
+          placeholder={t("ノートを検索")}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
         <Menu
-          label="並び順"
+          label={t("並び順")}
           items={[
-            { id: "updated", label: "更新日時", onSelect: () => setSort("updated") },
-            { id: "created", label: "作成日時", onSelect: () => setSort("created") },
-            { id: "title", label: "名前", onSelect: () => setSort("title") },
+            { id: "updated", label: t("更新日時"), onSelect: () => setSort("updated") },
+            { id: "created", label: t("作成日時"), onSelect: () => setSort("created") },
+            { id: "title", label: t("名前"), onSelect: () => setSort("title") },
           ]}
         />
         <button type="button" onClick={importAtdoc} disabled={importing}>
-          {importing ? "取り込み中…" : "取り込む"}
+          {importing ? t("取り込み中…") : t("取り込む")}
         </button>
         <button type="button" onClick={createNote}>
-          + 新規ノート
+          {t("+ 新規ノート")}
+        </button>
+        <button type="button" onClick={() => navigate("/settings")} title={t("設定")}>
+          ⚙
         </button>
       </header>
 
       <div className="library-body">
-        <nav className="library-sidebar" aria-label="ライブラリ">
+        <nav className="library-sidebar" aria-label={t("ライブラリ")}>
           <button
             type="button"
             className="sidebar-item"
             aria-current={view.kind === "all"}
             onClick={() => setView({ kind: "all" })}
           >
-            すべてのノート
+            {t("すべてのノート")}
           </button>
 
           <div className="sidebar-heading">
-            <span>フォルダ</span>
-            <button type="button" onClick={addFolder} title="フォルダを追加">
+            <span>{t("フォルダ")}</span>
+            <button type="button" onClick={addFolder} title={t("フォルダを追加")}>
               +
             </button>
           </div>
-          {folders.length === 0 && <p className="sidebar-empty">まだありません</p>}
+          {folders.length === 0 && <p className="sidebar-empty">{t("まだありません")}</p>}
           {folders.map((folder) => (
             <div key={folder.id} className="sidebar-row">
               <button
@@ -218,7 +223,7 @@ export function LibraryScreen() {
               <button
                 type="button"
                 className="sidebar-action"
-                title="フォルダを削除"
+                title={t("フォルダを削除")}
                 onClick={() => void act(() => api.folderDelete(folder.id))}
               >
                 ✕
@@ -227,12 +232,12 @@ export function LibraryScreen() {
           ))}
 
           <div className="sidebar-heading">
-            <span>タグ</span>
-            <button type="button" onClick={addTag} title="タグを追加">
+            <span>{t("タグ")}</span>
+            <button type="button" onClick={addTag} title={t("タグを追加")}>
               +
             </button>
           </div>
-          {tags.length === 0 && <p className="sidebar-empty">まだありません</p>}
+          {tags.length === 0 && <p className="sidebar-empty">{t("まだありません")}</p>}
           {tags.map((tag) => (
             <div key={tag.id} className="sidebar-row">
               <button
@@ -247,7 +252,7 @@ export function LibraryScreen() {
               <button
                 type="button"
                 className="sidebar-action"
-                title="タグを削除"
+                title={t("タグを削除")}
                 onClick={() => void act(() => api.tagDelete(tag.id))}
               >
                 ✕
@@ -256,7 +261,7 @@ export function LibraryScreen() {
           ))}
 
           <div className="sidebar-heading">
-            <span>その他</span>
+            <span>{t("その他")}</span>
           </div>
           <button
             type="button"
@@ -264,7 +269,7 @@ export function LibraryScreen() {
             aria-current={view.kind === "trash"}
             onClick={() => setView({ kind: "trash" })}
           >
-            ゴミ箱
+            {t("ゴミ箱")}
           </button>
         </nav>
 
@@ -272,7 +277,7 @@ export function LibraryScreen() {
           <div className="library__header">
             <h1>{viewTitle}</h1>
             <span style={{ color: "var(--color-text-muted)", fontSize: 13 }}>
-              {notes.length} 件
+              {t("{count} 件", { count: notes.length })}
             </span>
           </div>
 
@@ -283,18 +288,18 @@ export function LibraryScreen() {
           )}
 
           {loading ? (
-            <div className="library__empty">読み込み中…</div>
+            <div className="library__empty">{t("読み込み中…")}</div>
           ) : notes.length === 0 ? (
             <div className="library__empty">
               {search ? (
-                <p>「{search}」に一致するノートはありません。</p>
+                <p>{t("「{search}」に一致するノートはありません。", { search })}</p>
               ) : view.kind === "trash" ? (
-                <p>ゴミ箱は空です。</p>
+                <p>{t("ゴミ箱は空です。")}</p>
               ) : (
                 <>
-                  <p>まだノートがありません。</p>
+                  <p>{t("まだノートがありません。")}</p>
                   <button type="button" className="btn btn--primary" onClick={createNote}>
-                    最初のノートを作成
+                    {t("最初のノートを作成")}
                   </button>
                 </>
               )}
@@ -315,7 +320,7 @@ export function LibraryScreen() {
                   onTrash={() => void act(() => api.librarySetTrashed(note.id, true))}
                   onRestore={() => void act(() => api.librarySetTrashed(note.id, false))}
                   onDelete={() => {
-                    if (window.confirm(`「${note.title}」を完全に削除しますか?`)) {
+                    if (window.confirm(t("「{title}」を完全に削除しますか?", { title: note.title }))) {
                       void act(() => api.libraryDelete(note.id));
                     }
                   }}
@@ -366,6 +371,7 @@ function NoteCard({
   onToggleTag,
   onRemoveFromFolder,
 }: CardProps) {
+  const { t } = useTranslation();
   const noteTagIds = new Set(note.tags.map((t) => t.id));
 
   return (
@@ -406,7 +412,7 @@ function NoteCard({
         )}
 
         <div className="note-card__meta">
-          {note.pageCount} ページ · {formatDate(note.updatedAt)}
+          {t("{count} ページ", { count: note.pageCount })} · {formatDate(note.updatedAt)}
         </div>
 
         {note.tags.length > 0 && (
@@ -423,28 +429,28 @@ function NoteCard({
       <div className="note-card__footer">
         <Menu
           label="⋯"
-          title="操作"
+          title={t("操作")}
           align="left"
           items={
             inTrash
               ? [
-                  { id: "restore", label: "元に戻す", onSelect: onRestore },
+                  { id: "restore", label: t("元に戻す操作"), onSelect: onRestore },
                   {
                     id: "delete",
-                    label: "完全に削除",
+                    label: t("完全に削除"),
                     danger: true,
                     separatorBefore: true,
                     onSelect: onDelete,
                   },
                 ]
               : [
-                  { id: "rename", label: "名前を変更", onSelect: onStartRename },
-                  { id: "duplicate", label: "複製", onSelect: onDuplicate },
+                  { id: "rename", label: t("名前を変更"), onSelect: onStartRename },
+                  { id: "duplicate", label: t("複製"), onSelect: onDuplicate },
                   ...(note.folderId
                     ? [
                         {
                           id: "unfile",
-                          label: "フォルダから出す",
+                          label: t("フォルダから出す"),
                           onSelect: onRemoveFromFolder,
                         },
                       ]
@@ -457,7 +463,7 @@ function NoteCard({
                   })),
                   {
                     id: "trash",
-                    label: "ゴミ箱へ",
+                    label: t("ゴミ箱へ"),
                     danger: true,
                     separatorBefore: true,
                     onSelect: onTrash,

@@ -15,6 +15,7 @@ import { CanvasHost } from "../components/CanvasHost";
 import { Inspector } from "../components/Inspector";
 import { TextEditOverlay } from "../components/TextEditOverlay";
 import { Menu } from "../components/Menu";
+import { useTranslation } from "../i18n/useTranslation";
 import { PageStrip } from "../components/PageStrip";
 import { Toolbar } from "../components/Toolbar";
 import { TOOLS } from "../editor/tools";
@@ -48,12 +49,13 @@ import { EXPORT_DPI, renderPagesForExport, renderPageToDataUrl } from "../io/pag
 import { parsePageRange, readPdfInfo, renderPdfPages } from "../io/pdf";
 import { useAssetCache } from "../hooks/useAssetCache";
 import { useEditorStore } from "../store/editorStore";
+import { usePrefsStore } from "../store/prefsStore";
 
-const AUTOSAVE_DELAY_MS = 1200;
 
 export function EditorScreen() {
   const { noteId } = useParams<{ noteId: string }>();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const controllerRef = useRef<CanvasController | null>(null);
 
   const doc = useEditorStore((s) => s.doc);
@@ -152,11 +154,13 @@ export function EditorScreen() {
     }
   }, [markSaved, setSaveState]);
 
+  const autosaveSeconds = usePrefsStore((s) => s.autosaveSeconds);
+
   useEffect(() => {
     if (saveState !== "dirty") return;
-    const timer = setTimeout(() => void save(), AUTOSAVE_DELAY_MS);
+    const timer = setTimeout(() => void save(), autosaveSeconds * 1000);
     return () => clearTimeout(timer);
-  }, [saveState, save, doc]);
+  }, [saveState, save, doc, autosaveSeconds]);
 
   // -- keyboard -----------------------------------------------------------
 
@@ -412,12 +416,12 @@ export function EditorScreen() {
     });
     if (!path) return;
 
-    setBusy("PDF を書き出しています…");
+    setBusy(t("PDF を書き出しています…"));
     try {
       const pages = renderPagesForExport(state.doc, assets, EXPORT_DPI.print);
       await api.exportPdf(path, state.doc.meta.title, pages);
     } catch (err) {
-      setLoadError(`PDF の書き出しに失敗しました: ${err}`);
+      setLoadError(t("PDF の書き出しに失敗しました: {error}", { error: String(err) }));
     } finally {
       setBusy(null);
     }
@@ -433,7 +437,7 @@ export function EditorScreen() {
     });
     if (!path) return;
 
-    setBusy("画像を書き出しています…");
+    setBusy(t("画像を書き出しています…"));
     try {
       const dataUrl = renderPageToDataUrl(p, {
         assets,
@@ -441,7 +445,7 @@ export function EditorScreen() {
       });
       await api.fileWriteBytes(path, dataUrl);
     } catch (err) {
-      setLoadError(`画像の書き出しに失敗しました: ${err}`);
+      setLoadError(t("画像の書き出しに失敗しました: {error}", { error: String(err) }));
     } finally {
       setBusy(null);
     }
@@ -466,7 +470,7 @@ export function EditorScreen() {
     });
     if (typeof selected !== "string") return;
 
-    setBusy("PDF を読み込んでいます…");
+    setBusy(t("PDF を読み込んでいます…"));
     try {
       const dataUrl = await api.fileReadDataUrl(selected);
       const info = await readPdfInfo(dataUrl);
@@ -474,7 +478,7 @@ export function EditorScreen() {
       const paperWidth = d.pages[state.pageIndex]?.paperWidth ?? 1240;
 
       const images = await renderPdfPages(dataUrl, paperWidth, numbers, (done, total) =>
-        setBusy(`PDF を読み込んでいます… ${done} / ${total}`),
+        setBusy(t("PDF を読み込んでいます… {done} / {total}", { done, total })),
       );
 
       const insertAt = state.pageIndex + 1;
@@ -496,7 +500,7 @@ export function EditorScreen() {
 
       state.setPageIndex(insertAt);
     } catch (err) {
-      setLoadError(`PDF の取り込みに失敗しました: ${err}`);
+      setLoadError(t("PDF の取り込みに失敗しました: {error}", { error: String(err) }));
     } finally {
       setBusy(null);
     }
@@ -509,11 +513,11 @@ export function EditorScreen() {
       <div className="app">
         <header className="topbar">
           <button type="button" onClick={() => navigate("/")}>
-            ← ノート一覧
+            {t("← 一覧")}
           </button>
         </header>
         <div className="loading">
-          <div className="notice">ノートを開けませんでした: {loadError}</div>
+          <div className="notice">{t("ノートを開けませんでした: {error}", { error: loadError })}</div>
         </div>
       </div>
     );
@@ -523,9 +527,9 @@ export function EditorScreen() {
     return (
       <div className="app">
         <header className="topbar">
-          <span className="topbar__title">読み込み中…</span>
+          <span className="topbar__title">{t("読み込み中…")}</span>
         </header>
-        <div className="loading">読み込み中…</div>
+        <div className="loading">{t("読み込み中…")}</div>
       </div>
     );
   }
@@ -533,38 +537,38 @@ export function EditorScreen() {
   return (
     <div className="app">
       <header className="topbar">
-        <button type="button" onClick={() => navigate("/")} title="ノート一覧に戻る">
-          ← 一覧
+        <button type="button" onClick={() => navigate("/")} title={t("ノート一覧に戻る")}>
+          {t("← 一覧")}
         </button>
         <span className="topbar__title">{doc.meta.title}</span>
         <span className="save-chip" data-state={saveState}>
-          {saveLabel(saveState)}
+          {t(saveLabel(saveState))}
         </span>
         {busy && <span className="save-chip">{busy}</span>}
         <div className="topbar__spacer" />
 
         <Menu
-          label="ファイル"
+          label={t("ファイル")}
           items={[
             {
               id: "import-pdf",
-              label: "PDF を取り込む…",
+              label: t("PDF を取り込む…"),
               onSelect: () => void importPdf(),
             },
             {
               id: "export-pdf",
-              label: "PDF で書き出す…",
+              label: t("PDF で書き出す…"),
               separatorBefore: true,
               onSelect: () => void exportPdf(),
             },
             {
               id: "export-png",
-              label: "このページを画像で書き出す…",
+              label: t("このページを画像で書き出す…"),
               onSelect: () => void exportPng(),
             },
             {
               id: "save",
-              label: "保存",
+              label: t("保存"),
               shortcut: "⌘S",
               separatorBefore: true,
               onSelect: () => void save(),
@@ -576,9 +580,9 @@ export function EditorScreen() {
           type="button"
           onClick={() => setShowPages((v) => !v)}
           aria-pressed={showPages}
-          title="ページ一覧"
+          title={t("ページ一覧")}
         >
-          ページ
+          {t("ページ")}
         </button>
 
         <button
@@ -588,9 +592,9 @@ export function EditorScreen() {
             undo();
           }}
           disabled={!canUndo}
-          title="元に戻す (Cmd+Z)"
+          title={`${t("元に戻す")} (Cmd+Z)`}
         >
-          ↺ 元に戻す
+          ↺ {t("元に戻す")}
         </button>
         <button
           type="button"
@@ -599,9 +603,9 @@ export function EditorScreen() {
             redo();
           }}
           disabled={!canRedo}
-          title="やり直す (Cmd+Shift+Z)"
+          title={`${t("やり直す")} (Cmd+Shift+Z)`}
         >
-          ↻ やり直す
+          ↻ {t("やり直す")}
         </button>
       </header>
 
@@ -662,7 +666,7 @@ export function EditorScreen() {
           ›
         </button>
         <button type="button" onClick={addPage}>
-          + ページ
+          {t("+ ページ")}
         </button>
 
         <div className="statusbar__spacer" />
@@ -671,7 +675,7 @@ export function EditorScreen() {
           −
         </button>
         <button type="button" onClick={() => controllerRef.current?.fitPage()}>
-          全体表示
+          {t("全体表示")}
         </button>
         <button type="button" onClick={() => controllerRef.current?.zoomBy(1.25)}>
           ＋

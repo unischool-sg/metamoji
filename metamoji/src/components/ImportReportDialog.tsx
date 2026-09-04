@@ -7,6 +7,7 @@
  * than handing back a note that looks subtly wrong with no explanation.
  */
 
+import { useTranslation } from "../i18n/useTranslation";
 import type { ImportReport } from "../ipc/api";
 
 interface Props {
@@ -15,26 +16,27 @@ interface Props {
 }
 
 export function ImportReportDialog({ report, onClose }: Props) {
+  const { t } = useTranslation();
   const kinds = Object.entries(report.unitCounts)
     .filter(([type]) => type.startsWith("$"))
     .sort((a, b) => b[1] - a[1]);
 
   return (
-    <div className="dialog-backdrop" role="dialog" aria-modal="true" aria-label="取り込み結果">
+    <div className="dialog-backdrop" role="dialog" aria-modal="true" aria-label={t("取り込みが完了しました")}>
       <div className="dialog">
-        <h2>取り込みが完了しました</h2>
+        <h2>{t("取り込みが完了しました")}</h2>
 
         <div className="report-stats">
-          <Stat value={report.pageCount} label="ページ" />
-          <Stat value={report.strokeCount} label="ストローク" />
-          <Stat value={report.modelCount} label="モデル" />
-          <Stat value={`v${report.formatVersion}`} label="形式バージョン" />
+          <Stat value={report.pageCount} label={t("ページ")} />
+          <Stat value={report.strokeCount} label={t("ストローク")} />
+          <Stat value={report.modelCount} label={t("モデル")} />
+          <Stat value={`v${report.formatVersion}`} label={t("形式バージョン")} />
         </div>
 
         {kinds.length > 0 && (
           <>
             <h3 style={{ fontSize: 12, color: "var(--color-text-muted)", margin: "0 0 6px" }}>
-              取り込んだ要素
+              {t("取り込んだ要素")}
             </h3>
             <ul className="report-list">
               {kinds.map(([type, count]) => (
@@ -58,7 +60,7 @@ export function ImportReportDialog({ report, onClose }: Props) {
 
         <div className="dialog__actions">
           <button type="button" className="btn btn--primary" onClick={onClose}>
-            閉じる
+            {t("閉じる")}
           </button>
         </div>
       </div>

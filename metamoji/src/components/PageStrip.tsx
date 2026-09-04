@@ -12,6 +12,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 
+import { useTranslation } from "../i18n/useTranslation";
 import { renderPageToDataUrl, thumbnailScale } from "../io/pageRender";
 import type { AssetResolver } from "../render/renderer";
 import type { NoteDocument } from "../model/types";
@@ -41,6 +42,7 @@ export function PageStrip({
   onDelete,
   onAdd,
 }: Props) {
+  const { t } = useTranslation();
   const [thumbs, setThumbs] = useState<Record<string, string>>({});
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [dropIndex, setDropIndex] = useState<number | null>(null);
@@ -73,7 +75,7 @@ export function PageStrip({
   }, [doc, doc.revision, pageIds, assets]);
 
   return (
-    <aside className="page-strip" aria-label="ページ一覧">
+    <aside className="page-strip" aria-label={t("ページ一覧")}>
       {doc.pages.map((page, index) => (
         <div
           key={page.id}
@@ -113,12 +115,12 @@ export function PageStrip({
           <div className="page-strip__footer">
             <span>{index + 1}</span>
             <span className="page-strip__actions">
-              <button type="button" title="このページを複製" onClick={() => onDuplicate(index)}>
+              <button type="button" title={t("このページを複製")} onClick={() => onDuplicate(index)}>
                 ⧉
               </button>
               <button
                 type="button"
-                title="このページを削除"
+                title={t("このページを削除")}
                 onClick={() => onDelete(index)}
                 disabled={doc.pages.length <= 1}
               >
@@ -130,7 +132,7 @@ export function PageStrip({
       ))}
 
       <button type="button" className="page-strip__add" onClick={onAdd}>
-        + ページ
+        {t("+ ページ")}
       </button>
     </aside>
   );

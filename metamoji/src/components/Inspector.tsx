@@ -9,6 +9,8 @@
 
 import { useState } from "react";
 
+import { useTranslation } from "../i18n/useTranslation";
+
 import { ERASER_SIZES, PEN_COLORS, PEN_PRESETS, PEN_WIDTHS } from "../editor/tools";
 import {
   clipboardUnits,
@@ -52,6 +54,7 @@ export function Inspector() {
 }
 
 function PenSection() {
+  const { t } = useTranslation();
   const penPresetId = useEditorStore((s) => s.penPresetId);
   const penSettings = useEditorStore((s) => s.penSettings);
   const setPenPreset = useEditorStore((s) => s.setPenPreset);
@@ -64,7 +67,7 @@ function PenSection() {
 
   return (
     <>
-      <h2>ペンの種類</h2>
+      <h2>{t("ペンの種類")}</h2>
       <div className="pen-list">
         {PEN_PRESETS.map((preset) => (
           <button
@@ -84,12 +87,12 @@ function PenSection() {
                 opacity: preset.opacity,
               }}
             />
-            {preset.label}
+            {t(preset.label)}
           </button>
         ))}
       </div>
 
-      <h2>色</h2>
+      <h2>{t("色")}</h2>
       <div className="swatches">
         {PEN_COLORS.map((color) => (
           <button
@@ -104,7 +107,7 @@ function PenSection() {
         ))}
       </div>
 
-      <h2>太さ</h2>
+      <h2>{t("太さ")}</h2>
       <div className="width-row">
         {PEN_WIDTHS.map((width) => (
           <button
@@ -127,12 +130,13 @@ function PenSection() {
 }
 
 function EraserSection() {
+  const { t } = useTranslation();
   const eraserSize = useEditorStore((s) => s.eraserSize);
   const setEraserSize = useEditorStore((s) => s.setEraserSize);
 
   return (
     <>
-      <h2>消しゴムの大きさ</h2>
+      <h2>{t("消しゴムの大きさ")}</h2>
       <div className="width-row">
         {ERASER_SIZES.map((size) => (
           <button
@@ -154,6 +158,7 @@ function EraserSection() {
 }
 
 function SelectionSection() {
+  const { t } = useTranslation();
   const selection = useEditorStore((s) => s.selection);
   const doc = useEditorStore((s) => s.doc);
   const pageIndex = useEditorStore((s) => s.pageIndex);
@@ -170,13 +175,13 @@ function SelectionSection() {
 
   return (
     <>
-      <h2>選択</h2>
+      <h2>{t("選択")}</h2>
       {!has ? (
         <p style={{ fontSize: 12, color: "var(--color-text-muted)", lineHeight: 1.6 }}>
           オブジェクトをクリック、または範囲をドラッグして選択します。
         </p>
       ) : (
-        <p style={{ fontSize: 13, marginTop: 0 }}>{selection.length} 個を選択中</p>
+        <p style={{ fontSize: 13, marginTop: 0 }}>{t("{count} 個を選択中", { count: selection.length })}</p>
       )}
 
       <div className="button-grid">
@@ -219,7 +224,7 @@ function SelectionSection() {
         </button>
       </div>
 
-      <h2>重ね順</h2>
+      <h2>{t("重ね順")}</h2>
       <div className="button-grid">
         <button
           type="button"
@@ -259,12 +264,13 @@ function SelectionSection() {
 }
 
 function LassoSection() {
+  const { t } = useTranslation();
   const lassoMode = useEditorStore((s) => s.lassoMode);
   const setLassoMode = useEditorStore((s) => s.setLassoMode);
 
   return (
     <>
-      <h2>なげなわの範囲</h2>
+      <h2>{t("なげなわの範囲")}</h2>
       <div className="pen-list">
         <button
           type="button"
@@ -298,6 +304,7 @@ const SHAPES: { id: ShapeKind; label: string; glyph: string }[] = [
 ];
 
 function ShapeSection() {
+  const { t } = useTranslation();
   const shapeKind = useEditorStore((s) => s.shapeKind);
   const strokeColor = useEditorStore((s) => s.shapeStrokeColor);
   const fillColor = useEditorStore((s) => s.shapeFillColor);
@@ -307,7 +314,7 @@ function ShapeSection() {
 
   return (
     <>
-      <h2>図形</h2>
+      <h2>{t("図形")}</h2>
       <div className="shape-grid">
         {SHAPES.map((shape) => (
           <button
@@ -315,16 +322,16 @@ function ShapeSection() {
             type="button"
             className="shape-btn"
             aria-pressed={shapeKind === shape.id}
-            title={shape.label}
+            title={t(shape.label)}
             onClick={() => setShapeKind(shape.id)}
           >
             <span aria-hidden>{shape.glyph}</span>
-            <span className="sr-only">{shape.label}</span>
+            <span className="sr-only">{t(shape.label)}</span>
           </button>
         ))}
       </div>
 
-      <h2>線の色</h2>
+      <h2>{t("線の色")}</h2>
       <div className="swatches">
         {PEN_COLORS.map((color) => (
           <button
@@ -339,13 +346,13 @@ function ShapeSection() {
         ))}
       </div>
 
-      <h2>塗り</h2>
+      <h2>{t("塗り")}</h2>
       <div className="swatches">
         <button
           type="button"
           className="swatch swatch--none"
           aria-pressed={fillColor === ""}
-          aria-label="塗りなし"
+          aria-label={t("塗りなし")}
           onClick={() => setFill("")}
         />
         {PEN_COLORS.slice(0, 7).map((color) => (
@@ -375,12 +382,13 @@ const FORMS: { id: FormKind; label: string }[] = [
 ];
 
 function FormSection() {
+  const { t } = useTranslation();
   const formKind = useEditorStore((s) => s.formKind);
   const setFormKind = useEditorStore((s) => s.setFormKind);
 
   return (
     <>
-      <h2>表・罫線</h2>
+      <h2>{t("表・罫線")}</h2>
       <div className="pen-list">
         {FORMS.map((form) => (
           <button
@@ -390,7 +398,7 @@ function FormSection() {
             aria-pressed={formKind === form.id}
             onClick={() => setFormKind(form.id)}
           >
-            {form.label}
+            {t(form.label)}
           </button>
         ))}
       </div>
@@ -402,9 +410,10 @@ function FormSection() {
 }
 
 function LaserSection() {
+  const { t } = useTranslation();
   return (
     <>
-      <h2>レーザーポインタ</h2>
+      <h2>{t("レーザーポインタ")}</h2>
       <p style={{ fontSize: 12, color: "var(--color-text-muted)", lineHeight: 1.6 }}>
         軌跡は少し経つと消え、ノートには保存されません。
       </p>
@@ -413,9 +422,10 @@ function LaserSection() {
 }
 
 function StickySection() {
+  const { t } = useTranslation();
   return (
     <>
-      <h2>付箋</h2>
+      <h2>{t("付箋")}</h2>
       <div className="swatches">
         {STICKY_COLORS.map((color) => (
           <span key={color} className="swatch" style={{ background: color }} />
@@ -438,6 +448,7 @@ const PAPER_SIZES: { label: string; width: number; height: number }[] = [
 ];
 
 function PaperSection() {
+  const { t } = useTranslation();
   const doc = useEditorStore((s) => s.doc);
   const pageIndex = useEditorStore((s) => s.pageIndex);
   const setPaperStyle = useEditorStore((s) => s.setPaperStyle);
@@ -449,7 +460,7 @@ function PaperSection() {
 
   return (
     <>
-      <h2>用紙</h2>
+      <h2>{t("用紙")}</h2>
       <div className="pen-list">
         {PAPER_STYLES.map((style) => (
           <button
@@ -459,12 +470,12 @@ function PaperSection() {
             aria-pressed={page.paperStyle === style.id}
             onClick={() => setPaperStyle(style.id)}
           >
-            {style.label}
+            {t(style.label)}
           </button>
         ))}
       </div>
 
-      <h2>用紙の色</h2>
+      <h2>{t("用紙の色")}</h2>
       <div className="swatches">
         {PAPER_COLORS.map((color) => (
           <button
@@ -479,17 +490,17 @@ function PaperSection() {
         ))}
       </div>
 
-      <h2>サイズ</h2>
+      <h2>{t("サイズ")}</h2>
       <div className="pen-list">
         {PAPER_SIZES.map((size) => (
           <button
-            key={size.label}
+            key={t(size.label)}
             type="button"
             className="pen-row"
             aria-pressed={page.paperWidth === size.width && page.paperHeight === size.height}
             onClick={() => setPaperSize(size.width, size.height)}
           >
-            {size.label}
+            {t(size.label)}
           </button>
         ))}
       </div>
@@ -498,6 +509,7 @@ function PaperSection() {
 }
 
 function LayerSection() {
+  const { t } = useTranslation();
   const doc = useEditorStore((s) => s.doc);
   const pageIndex = useEditorStore((s) => s.pageIndex);
   const addLayer = useEditorStore((s) => s.addLayer);
@@ -514,7 +526,7 @@ function LayerSection() {
 
   return (
     <>
-      <h2>レイヤー</h2>
+      <h2>{t("レイヤー")}</h2>
       <div className="layer-list">
         {/* Topmost first, matching what the eye sees on the page. */}
         {[...page.layers].reverse().map((layer, reverseIndex) => {
@@ -560,7 +572,7 @@ function LayerSection() {
                   className="layer-row__name"
                   onClick={() => setActiveLayer(layer.id)}
                   onDoubleClick={() => setEditingId(layer.id)}
-                  title="クリックで編集対象に、ダブルクリックで名前を変更"
+                  title={t("クリックで編集対象に、ダブルクリックで名前を変更")}
                 >
                   {layer.name}
                 </button>
@@ -569,7 +581,7 @@ function LayerSection() {
               <button
                 type="button"
                 className="layer-row__toggle"
-                title="上へ"
+                title={t("上へ")}
                 disabled={index === page.layers.length - 1}
                 onClick={() => reorderLayer(index, index + 1)}
               >
@@ -578,7 +590,7 @@ function LayerSection() {
               <button
                 type="button"
                 className="layer-row__toggle"
-                title="下へ"
+                title={t("下へ")}
                 disabled={index === 0}
                 onClick={() => reorderLayer(index, index - 1)}
               >
@@ -587,7 +599,7 @@ function LayerSection() {
               <button
                 type="button"
                 className="layer-row__toggle"
-                title="削除"
+                title={t("削除")}
                 disabled={page.layers.length <= 1}
                 onClick={() => deleteLayer(layer.id)}
               >

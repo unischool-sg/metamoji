@@ -2,6 +2,7 @@ import { createHashRouter, RouterProvider } from "react-router";
 
 import { EditorScreen } from "./screens/EditorScreen";
 import { LibraryScreen } from "./screens/LibraryScreen";
+import { SettingsScreen } from "./screens/SettingsScreen";
 
 /**
  * Hash routing, not browser history.
@@ -13,6 +14,7 @@ import { LibraryScreen } from "./screens/LibraryScreen";
 const router = createHashRouter([
   { path: "/", element: <LibraryScreen /> },
   { path: "/note/:noteId", element: <EditorScreen /> },
+  { path: "/settings", element: <SettingsScreen /> },
 ]);
 
 export default function App() {
