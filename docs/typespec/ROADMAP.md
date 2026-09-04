@@ -1,16 +1,9 @@
-# API解析ロードマップ (未完了分)
+# API解析ロードマップ
 
 このファイルは `com.metamoji.share_classroom` APK (`apk/`) 内に存在する通信レイヤーの
-全体像を把握するための調査結果と、TypeSpecドキュメント化の優先順位をまとめたものです。
-1セッションでは全てを解析しきれないため、次回以降のセッションが迷わず続きから着手できるよう、
-**現状把握した事実(何が/どこにあるか)** と **優先順位の根拠** を記録します。
+全体像を把握するための調査結果と、TypeSpecドキュメント化の状況をまとめたものです。
 
-> 個々のフィールド/リクエスト・レスポンス構造の網羅的な抽出はまだ行っていません。
-> 以下は「このパッケージにどんなAPIがありそうか」という一次調査(smaliのgrep調査)の結果です。
-> 実際にTypeSpecへ落とし込む際は、[auth.tsp](./auth.tsp) 等で行ったのと同様に、
-> Param/Responseクラスのフィールド抽出・パス/HTTPメソッドの突き合わせが必要です。
-
-## 完了済み
+## 完了済み(12系統・116エンドポイント)
 
 - ✅ **`com.metamoji.cs.dc.CsCloudService`** — DigitalCabinet/ClassShareクラウドAPI(JSON-RPC風)。
   53メソッド全て解析済み。[auth.tsp](./auth.tsp) / [user.tsp](./user.tsp) / [drive.tsp](./drive.tsp) /
@@ -22,9 +15,10 @@
   カスタムdead property(`create`/`lastSyncedRevision`/`syncUpdate`、名前空間
   `http://xmlns.metamoji.com/digitalcabinet/tinydotnote/1.0/`)まで解析済み。[webdav.tsp](./webdav.tsp)に反映。
   呼び出し元 `DmDigitalCabinetAccessUtils` がホームコレクション直下にランダムIDでリソースを配置する
-  フラットな構造であることも確認(`generateResourceIdOnServer`)。
-  なお、ユーザーが任意の外部WebDAVサーバーに接続する`com/metamoji/ex/webdav`(`WebDAVManager`)は
-  MetaMoji自身のサーバーとは無関係の別機能であり、依然未解析(Low優先度のまま)。
+  フラットな構造であることも確認(`generateResourceIdOnServer`)。ユーザーが任意の外部WebDAVサーバーに
+  接続する`com/metamoji/ex/webdav`(`WebDAVManager`)も、同じ`NwWebDAVRequest`クライアントを
+  素通しで再利用しているだけで、MetaMoji側の別コンポーネント/プロトコル差分は無いことを確認済み
+  (=新規ドキュメント不要と結論)。
 - ✅ **`com/metamoji/dvm/cs` (`DvmCloudService`)** — クラス配信(`convert/DistributeClass`,
   `convert/GetDistributeStatus`)とクラッシュログアップロード(`crashlogs/upload`)の3エンドポイント全て
   解析済み。`CsCloudService`とは別の低レベルヘルパー`CsHttpClient`を直接利用しており、
@@ -60,54 +54,61 @@
   `getMemberList`のみ認証JSONを含まない例外であることも発見。ルーム内のリアルタイム操作同期
   そのものは別プロトコル(`com.metamoji.ns.NsCollaboCommand`の生ソケット通信)であり、
   今回はスコープ外(未解析)。
-- ✅ **High優先度5件、すべて解析完了** (`network`, `dvm/cs`, `lc`, `media/video/network`, `ns/service`)。
+- ✅ **`com/metamoji/sd/cs` (`SdCloudService`)** — ドライブ/ドキュメント同期の新世代REST API。
+  15エンドポイント全て解析済み。**重要な発見**: v3.15.1.0には、`CsCloudService`+WebDAVの
+  旧来スタックと、この`SdCloudService`(+`dvm.DvmDriveManager`)の新世代RESTスタックが
+  **並行して稼働**している(呼び出し元 `SdDriveSyncProcess`/`SdPrivateDriveSyncProcess`/
+  `DvmDriveManager`等から実証)。ベースホストは`SdCloudServiceContext.getHomeDir()`由来で動的、
+  セッションは`CsCloudService`とは別のCookieJarで管理。GET/DELETEはボディなし、
+  JSON内のbooleanは文字列`"true"`/`"false"`で送信される独自仕様。[sync-drive.tsp](./sync-drive.tsp)に反映。
+  正確な機能分担(個人ノート vs 共有ドライブ等)は未確定として明記。
+- ✅ **`com/metamoji/media/service` (`Media*`)** — ギャラリーメディア(音声・写真添付)API。
+  8エンドポイント全て解析済み。`NsCollaboURLConnection`を継承するが認証は`NsAuthInfo`(JSON)ではなく
+  `userId`+`password`/`qwd`のフラットなmultipartフィールド。レスポンス形式も2系統あり
+  (`GetMediaList`/`GetMediaStatus`はJSON、他はプレーンテキストの行区切り応答)。
+  [gallery-media.tsp](./gallery-media.tsp)に反映。削除パスは`gallery/DeleteMediaFile`が正しい
+  (以前の一次調査メモの`gallery/DeleteMedia`は誤り)。
+- ✅ **`com/metamoji/lb`** — レガシーコンテンツストアAPI。4エンドポイント解析済み。
+  **重要な訂正**: 「カタログ初期化」(`init/library/*.product`)はネットワーク通信ではなく
+  APKアセットからのローカル読み込み(`CmUtils.copyFileFromAsset`)。一方、見落とされていた
+  `store/Login`→`store/GetAllPages`→ページURL→商品情報という実在の旧世代ストアAPI
+  (呼び出し元 `LibraryURLConnectionFor*` ← `LibraryViewDialog` ← `EditorActivity`)を発見し記載。
+  ベースホストは`CsCloudService`ログイン後の`restHost`(固定`cdn-test.metamoji.com`という
+  以前の推測は誤りで、実際は無関係の別パッケージ`mazec/purchase`の話だった)。
+  `purchaseURL()`/`/mmjeditor2`はAPK全体を検索しても呼び出し元が無く、デッドコードと確認。
+  [library-store.tsp](./library-store.tsp)に反映。
+- ✅ **`com/metamoji/nt/notify` (`NtSysInfoManager`)** — アプリ設定マニフェスト取得API。
+  1エンドポイント、20フィールドすべて解析済み。URL形式`"%ssysinfo_%s.json?last=%s"`、
+  ホスト切り替え条件(`isOnPremise`→`getRootServer()`、それ以外→`https://cdn.metamoji.com/`)、
+  `userType != 4`の場合はリクエスト自体を行わない仕様まで確認。[sysinfo.tsp](./sysinfo.tsp)に反映。
+- ✅ **`com/metamoji/forSchool/service`** — 成績表・テストログAPI。4エンドポイント解析済み
+  (`GetScoreList`/`GetTestingLogList`/`SetReport`/`SetScore`)。`NsCollaboURLConnection`継承で
+  認証は`NsAuthInfo`を共用。`ForUpdateDeadlineInfo`は`cosmos/UpdateRoomInfo`
+  (=`collabo.tsp`の`updateRoomInfo`と同一パス)を叩くことを確認し、重複作成を回避。
+  [gradebook.tsp](./gradebook.tsp)に反映。
+- ✅ **`com/metamoji/mazec/purchase`** — 調査の結果「部分的にデッドコード」と判明。
+  課金・ストアログイン機能(`PurchaseManager`)は`BuildConfig.SUPPORT_IN_APP_BILLING = false`
+  (`PURCHASED_MAZEC = true`により反転)で完全に無効化されており確実にデッドコード。
+  一方、**Mazec手書き辞書の更新チェック機能(`checkUpdateInfo`)は生きている**
+  (`MazecView.onWindowVisibilityChanged`から24時間おきに自動実行)。
+  `https://cdn-test.metamoji.com/`(本番ホールドオーバーなし)への1エンドポイントのみ
+  [mazec-purchase.tsp](./mazec-purchase.tsp)に反映。
+- ✅ **`com/metamoji/nt/dl`** — 調査の結果、独自のワイヤレベル契約は無いことを確認
+  (ヘッダ・認証・リトライ/チェックサムプロトコルなし、URLは`nt/notify`マニフェスト由来の単純GET)。
+  新規ドキュメントは作成せず。
 
-## 未解析パッケージ一覧(優先順位順)
-
-### 優先度: High
+## 未解析(残り1件)
 
 | # | パッケージ | 役割 | 既知のエンドポイント/手がかり | 認証・ホスト |
 |---|---|---|---|---|
-| ~~1~~ | ~~`com/metamoji/network` (`NwWebDAVRequest`)~~ | ✅ **解析完了**。[webdav.tsp](./webdav.tsp) と上記「完了済み」を参照。 | — | — |
-| ~~2~~ | ~~`com/metamoji/dvm/cs` (`DvmCloudService`)~~ | ✅ **解析完了**。[distribute.tsp](./distribute.tsp) と上記「完了済み」を参照。 | — | — |
-| ~~3~~ | ~~`com/metamoji/lc`~~ | ✅ **解析完了**。[license-activation.tsp](./license-activation.tsp) と上記「完了済み」を参照。 | — | — |
-| ~~5~~ | ~~`com/metamoji/media/video/network`~~ | ✅ **解析完了**。[video.tsp](./video.tsp) と上記「完了済み」を参照。 | — | — |
-| ~~4~~ | ~~`com/metamoji/ns/service` (`NsCollabo*`)~~ | ✅ **解析完了**。[collabo.tsp](./collabo.tsp) と上記「完了済み」を参照。 | — | — |
-| 6 | `com/metamoji/rc` (`RcRemoteConverter*`) | **ファイル形式変換サービス**("Remote Converter")。`CsCloudService`と同じDigitalCabinetホストを共有。 | `/convert/TentativeRegist`, `/convert/ConvertRequest`, `/convert/GetConvertedFile`。マルチパートPOST(userId/password/productName/productVersion/jobId1/jobId2/fromMime/toMime/fileEntity)。エラーコード例: `14`=ライセンスなし, `100`=変換中。 | `CsCloudService`と同じDigital Cabinetホスト(`ModelInfo$BuildOptions.DIGITAL_CABINET_URL_BASE`)。 |
+| 1 | `com/metamoji/rc` (`RcRemoteConverter*`) | **ファイル形式変換サービス**("Remote Converter")。`CsCloudService`と同じDigitalCabinetホストを共有。 | `/convert/TentativeRegist`, `/convert/ConvertRequest`, `/convert/GetConvertedFile`。マルチパートPOST(userId/password/productName/productVersion/jobId1/jobId2/fromMime/toMime/fileEntity)。エラーコード例: `14`=ライセンスなし, `100`=変換中。 | `CsCloudService`と同じDigital Cabinetホスト(`ModelInfo$BuildOptions.DIGITAL_CABINET_URL_BASE`)。 |
 
-### 優先度: Medium
+エンドポイント数が少なく(3個)、ホスト・パスも既に判明しているため、着手コストが低い
+「クイックウィン」。これが完了すれば、一次調査で洗い出した通信レイヤーは全て解析完了となる。
 
-| # | パッケージ | 役割 | 既知のエンドポイント/手がかり |
-|---|---|---|---|
-| 7 | `com/metamoji/sd/cs` (`SdCloudService`) | ドライブ/ドキュメント同期のREST API。`CsCloudService`のドライブ機能と重複/後継の可能性がある新世代API(46ファイル)。ログイン状態は`CsDCUserInfoSettings`と共有するが通信自体は独立。 | `/rest/users/login`, `/rest/drives/%s/data`, `/rest/drives/%s/data?lastsyncrev=%s`, `/rest/drives/%s/lastupdaterevision`, `/rest/drives/%s/properties`, `/rest/drives/%s/syncstart`, `/rest/drives/%s/documents/%s/{meta,data,searchdata,thumbnail,editflag/turnon,editflag/turnoff}` |
-| 8 | `com/metamoji/media/service` (`Media*`, `MediaBgTaskFor*`) | 旧世代の「ギャラリー」添付メディア(写真・音声)API。`NsCollaboURLConnection`を継承。34ファイル。 | `gallery/GetMediaFile`, `gallery/GetMediaList`, `gallery/LoginMedia`, `gallery/GetMediaStatus`, `gallery/DeleteMedia`(POST), `gallery/SetMediaTitle`(POST), `gallery/TentativeRegistMedia`(POST), `gallery/UploadMedia`(POST, マルチパート) |
-| 9 | `com/metamoji/lb` | ライブラリ(テンプレート/背景画像等)カタログの初期化・ストアログイン/購入。 | カタログ初期化: `init/library/com.metamoji.classroom.item.system001.product` 等(製品ラインごと)。ストア: `storeURL("/Login")`, `baseURL("/mmjeditor2")`。 |
-| 10 | `com/metamoji/nt/notify` (`NtSysInfoManager`) | アプリのシステム情報マニフェスト(EULA/バージョン/ヘルプリンク/ダウンロードURL)取得。Firebase/FCMではない。 | `%ssysinfo_%s.json?last=%s`(ホストは`CsCloudServiceContext.getRootServer()`またはデフォルト`https://cdn.metamoji.com/`)。1エンドポイントのみ。 |
+## 調査方法メモ
 
-### 優先度: Low(新規に文書化する価値が低い)
-
-| # | パッケージ | 理由 |
-|---|---|---|
-| 11 | `com/metamoji/forSchool/service` | 成績表/テストログ機能。5エンドポイント(`/cosmos/GetScoreList`, `/cosmos/GetTestingLogList`, `/cosmos/SetReport`, `/cosmos/SetScore`, `cosmos/UpdateRoomInfo`)と小規模。実装は単純なCRUD。 |
-| 12 | `com/metamoji/nt/dl` | フォント/Mazec辞書のダウンローダー。URLは`nt/notify`のマニフェストや他APIレスポンスから供給されるラッパーで、独自のAPI契約を持たない。 |
-| 13 | `com/metamoji/mazec/purchase` | Mazec手書き辞書アドオンの旧ストア機能。`-test`ステージングホスト(`cabinet-test.7knowledge.com`等)を指しており、`share_classroom`では実質デッドコードの可能性が高い(`PurchaseManager`のフラグで無効化されている形跡)。 |
-| 14 | `com/metamoji/ex/webdav`(`WebDAVManager`) | ユーザーが任意の外部WebDAVサーバー(NAS/ownCloud等)に接続するオプション機能。MetaMoji独自サーバーとの通信ではない。 |
-
-## 次回セッションへの推奨アクション
-
-**High優先度6件はすべて解析完了** (`network`/`dvm/cs`/`lc`/`media/video/network`/`ns/service`)。
-次に着手するなら:
-
-1. **`rc`(変換サービス)** はエンドポイント数が少なく(3個)、ホスト・パスも既に判明しているため、
-   着手コストが低い「クイックウィン」。
-2. `sd/cs` は `CsCloudService` のドライブ機能との重複・世代関係が未確認。着手前に
-   どちらが実際にこのバージョン(3.15.1.0)で使われているか実装呼び出し元を確認すると無駄がない。
-3. Low優先度の4パッケージは、必要になったタイミングで着手すれば十分。
-
-## 調査方法メモ(次回セッション用)
-
-今回の一次調査は以下のようなgrepベースの手法で行いました(詳細は各パッケージのファイル数把握と
-`Lokhttp3/`参照・`const-string ".../"`パスリテラルの抽出が中心):
+以下のようなgrepベースの一次調査 → 精読という2段階の手法で行いました:
 
 ```bash
 # パッケージ内でokhttp3を直接利用しているファイルを特定
@@ -119,4 +120,7 @@ grep -rhoE 'const-string v[0-9]+, "(/[a-zA-Z0-9_/%.]+)"' apk/smali_classes*/com/
 
 その後、[CsCloudService解析](./README.md)で用いたのと同じ手順
 (`execute*WithParams`のようなpublicメソッド一覧化 → Param/Responseクラスのフィールド抽出 →
-HTTPメソッド/パスの突き合わせ → TypeSpecモデル/operation生成)を各パッケージに適用してください。
+HTTPメソッド/パスの突き合わせ → TypeSpecモデル/operation生成)を各パッケージに適用します。
+一次調査だけでは「本当に到達可能か」「別パッケージとの取り違え」を見誤ることがあるため
+(`lb`のカタログinit誤認、`mazec/purchase`のホスト取り違え等)、精読段階でAPK全体を対象に
+呼び出し元を検索して裏取りすることを推奨します。

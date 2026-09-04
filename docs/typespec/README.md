@@ -9,14 +9,9 @@ DigitalCabinet クラウドAPI)を [TypeSpec](https://typespec.io/) として再
 **非公式ドキュメントであり、MetaMoji社の公式仕様ではありません。** 実装の逆解析に基づく推測を含むため、
 実際の挙動と差異がある可能性があります。
 
-> ⚠️ **本ドキュメントが網羅するのは `CsCloudService` (53エンドポイント)、WebDAVデータプレーン
-> (`NwWebDAVRequest`, [webdav.tsp](./webdav.tsp))、クラス配信/クラッシュログ
-> (`DvmCloudService`, [distribute.tsp](./distribute.tsp))、ライセンスアクティベーション
-> (`LicenseUtil`, [license-activation.tsp](./license-activation.tsp))、動画ノート機能
-> (`NwServerAccessor`/`NwUpload`, [video.tsp](./video.tsp))、リアルタイム授業ルーム共有
-> (`NsCollaboURLConnection`, [collabo.tsp](./collabo.tsp)) のみです。**
-> アプリには他にファイル変換サービス等の独立した通信レイヤーもあり、それらは未解析です。
-> 調査済みの範囲・優先順位は [ROADMAP.md](./ROADMAP.md) を参照してください。
+> ⚠️ **アプリは1つの統一APIではなく、少なくとも13系統の独立した通信レイヤーを持っています。**
+> 本ドキュメントはそのうち12系統(116エンドポイント)を解析済みです。詳細は下記「ファイル構成」表、
+> 調査優先順位・未解析分の判定根拠は [ROADMAP.md](./ROADMAP.md) を参照してください。
 
 ## 解析範囲・手法
 
@@ -70,6 +65,12 @@ DigitalCabinet クラウドAPI)を [TypeSpec](https://typespec.io/) として再
 | [license-activation.tsp](./license-activation.tsp) | ライセンスキーのオンラインアクティベーション/残日数照会(`LicenseUtil`、別ホスト`license.metamoji.com`) |
 | [video.tsp](./video.tsp) | 動画ノート機能(クリップ一覧/詳細/削除/アップロード。動的な「Flora」サーバーを使用) |
 | [collabo.tsp](./collabo.tsp) | リアルタイム授業ルーム共有(ルーム作成/ログイン/ロール管理/設定同期/ギャラリー投稿) |
+| [sync-drive.tsp](./sync-drive.tsp) | ドライブ/ドキュメント同期の新世代REST API(`SdCloudService`。WebDAV経路と並行して稼働) |
+| [gallery-media.tsp](./gallery-media.tsp) | ギャラリーメディア(音声・写真添付)のアップロード/一覧/削除(`Media*`) |
+| [library-store.tsp](./library-store.tsp) | レガシーコンテンツストア(ゲストログイン/ページ一覧/商品情報、`com.metamoji.lb`) |
+| [sysinfo.tsp](./sysinfo.tsp) | アプリ設定マニフェスト(EULA/バージョン/ヘルプリンク/ダウンロードURL、`NtSysInfoManager`) |
+| [gradebook.tsp](./gradebook.tsp) | 成績表・テストログ(小テスト実施ログ・採点・レポート提出状況、`forSchool.service`) |
+| [mazec-purchase.tsp](./mazec-purchase.tsp) | Mazec手書き辞書アドオンの更新チェック(課金機能自体はデッドコードと確認) |
 | [auth.tsp](./auth.tsp) | 認証・アカウント管理 (login / logout / register / パスワード / EULA / SSO 等) |
 | [user.tsp](./user.tsp) | ユーザー・組織(グループ)情報 |
 | [drive.tsp](./drive.tsp) | ドライブ(共有フォルダ)・メンバー管理・共有リンク |
