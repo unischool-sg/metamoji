@@ -4,12 +4,27 @@
 
 ## ドキュメント構成
 
+### 概要レベル
+
 1. [01-architecture-analysis.md](01-architecture-analysis.md) — アーキテクチャ・設計分析
    ノート/ドキュメントのデータモデル、描画エンジン、手書き認識(mazec)、ローカルDB、メディア処理、クラウド/ネットワーク通信、認証まわりの内部設計をまとめたもの。
 2. [02-feature-analysis.md](02-feature-analysis.md) — 機能分析
    画面(Activity)一覧、権限、ユーザーが実際に使える機能をカテゴリ別に整理したもの。
 3. [03-tauri-migration-notes.md](03-tauri-migration-notes.md) — Tauri移植に向けた方針・論点
    何がそのまま設計を流用できて、何を作り直す必要があるか、スコープ・技術選定の論点整理(この段階ではまだ実装しない)。
+
+### 詳細レベル(深掘り調査)
+
+4. [04-atdoc-format-spec.md](04-atdoc-format-spec.md) — `.atdoc`バイナリフォーマットのバイト単位仕様(マジックナンバー、ヘッダレイアウト、ブロックアロケータ、モデルテーブル、Undoテーブル、V1〜V3の差分)
+5. [05-unit-property-schema.md](05-unit-property-schema.md) — 各Unit(テキスト/画像/PDF/動画/音声/アンケート/付箋/フォーム系等)の実プロパティキー・型の一覧
+6. [06-classroom-protocol-spec.md](06-classroom-protocol-spec.md) — 教室協働("Collabo")のREST API・ソケットワイヤプロトコル・Direction(操作)データモデルの詳細仕様
+7. [07-local-db-schema.md](07-local-db-schema.md) — ローカルDB(ORMLite "Dm"/"Sd"、レガシーSQL "ctold")の完全スキーマ
+8. [08-mazec-native-interface.md](08-mazec-native-interface.md) — mazec手書き認識エンジンのネイティブ(JNI)インターフェース、対応言語、辞書構造
+9. [09-strings-and-assets-catalog.md](09-strings-and-assets-catalog.md) — UI文字列・アイコン・カラー/フォント等アセットの網羅カタログ
+
+### 関連リソース(別セッションによる並行調査)
+
+- [typespec/](typespec/) — `com.metamoji.cs.dc.CsCloudService`(DigitalCabinet/ClassShareクラウドAPI, 53エンドポイント)とWebDAVデータプレーンをTypeSpecとして再構築したもの。本ドキュメント群(特に[06-classroom-protocol-spec.md](06-classroom-protocol-spec.md))とは別の通信レイヤー(`CsCloudService`)を対象にしており、相互に補完関係にある。未解析領域は[typespec/ROADMAP.md](typespec/ROADMAP.md)を参照。
 
 ## 解析方法・注意事項
 
