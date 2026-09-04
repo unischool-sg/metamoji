@@ -2,6 +2,7 @@ import "@typespec/http";
 
 import "./common.tsp";
 import "./webdav.tsp";
+import "./distribute.tsp";
 import "./auth.tsp";
 import "./user.tsp";
 import "./drive.tsp";
