@@ -7,6 +7,8 @@
  * dialog hides the very thing you are adjusting.
  */
 
+import { useState } from "react";
+
 import { ERASER_SIZES, PEN_COLORS, PEN_PRESETS, PEN_WIDTHS } from "../editor/tools";
 import {
   clipboardUnits,
@@ -426,24 +428,24 @@ function StickySection() {
   );
 }
 
+const PAPER_COLORS = ["#ffffff", "#fffdf5", "#f4f7ff", "#f6fff4", "#1f2430"];
+
+const PAPER_SIZES: { label: string; width: number; height: number }[] = [
+  { label: "A4 縦", width: 1240, height: 1754 },
+  { label: "A4 横", width: 1754, height: 1240 },
+  { label: "A5 縦", width: 874, height: 1240 },
+  { label: "16:9", width: 1920, height: 1080 },
+];
+
 function PaperSection() {
   const doc = useEditorStore((s) => s.doc);
   const pageIndex = useEditorStore((s) => s.pageIndex);
-  const session = useEditorStore((s) => s.session);
+  const setPaperStyle = useEditorStore((s) => s.setPaperStyle);
+  const setPaperColor = useEditorStore((s) => s.setPaperColor);
+  const setPaperSize = useEditorStore((s) => s.setPaperSize);
   const page = doc?.pages[pageIndex];
 
-  if (!page || !session) return null;
-
-  const setStyle = (paperStyle: PaperStyle) => {
-    session.transact("用紙を変更", () => {
-      session.record({
-        kind: "page.update",
-        pageId: page.id,
-        before: { paperStyle: page.paperStyle },
-        after: { paperStyle },
-      });
-    });
-  };
+  if (!page) return null;
 
   return (
     <>
@@ -455,9 +457,39 @@ function PaperSection() {
             type="button"
             className="pen-row"
             aria-pressed={page.paperStyle === style.id}
-            onClick={() => setStyle(style.id)}
+            onClick={() => setPaperStyle(style.id)}
           >
             {style.label}
+          </button>
+        ))}
+      </div>
+
+      <h2>用紙の色</h2>
+      <div className="swatches">
+        {PAPER_COLORS.map((color) => (
+          <button
+            key={color}
+            type="button"
+            className="swatch"
+            aria-pressed={page.paperColor === color}
+            aria-label={`用紙 ${color}`}
+            style={{ background: color }}
+            onClick={() => setPaperColor(color)}
+          />
+        ))}
+      </div>
+
+      <h2>サイズ</h2>
+      <div className="pen-list">
+        {PAPER_SIZES.map((size) => (
+          <button
+            key={size.label}
+            type="button"
+            className="pen-row"
+            aria-pressed={page.paperWidth === size.width && page.paperHeight === size.height}
+            onClick={() => setPaperSize(size.width, size.height)}
+          >
+            {size.label}
           </button>
         ))}
       </div>
@@ -468,41 +500,107 @@ function PaperSection() {
 function LayerSection() {
   const doc = useEditorStore((s) => s.doc);
   const pageIndex = useEditorStore((s) => s.pageIndex);
-  const session = useEditorStore((s) => s.session);
+  const addLayer = useEditorStore((s) => s.addLayer);
+  const deleteLayer = useEditorStore((s) => s.deleteLayer);
+  const renameLayer = useEditorStore((s) => s.renameLayer);
+  const setLayerVisible = useEditorStore((s) => s.setLayerVisible);
+  const setLayerLocked = useEditorStore((s) => s.setLayerLocked);
+  const setActiveLayer = useEditorStore((s) => s.setActiveLayer);
+  const reorderLayer = useEditorStore((s) => s.reorderLayer);
+  const [editingId, setEditingId] = useState<string | null>(null);
+
   const page = doc?.pages[pageIndex];
-
-  if (!page || !session) return null;
-
-  const toggle = (layerId: string, visible: boolean) => {
-    session.transact("レイヤーの表示を切り替え", () => {
-      session.record({
-        kind: "layer.update",
-        pageId: page.id,
-        layerId,
-        before: { visible },
-        after: { visible: !visible },
-      });
-    });
-  };
+  if (!page) return null;
 
   return (
     <>
       <h2>レイヤー</h2>
-      <div className="pen-list">
-        {page.layers.map((layer) => (
-          <div key={layer.id} className="pen-row" style={{ justifyContent: "space-between" }}>
-            <span>{layer.name}</span>
-            <button
-              type="button"
-              onClick={() => toggle(layer.id, layer.visible)}
-              title={layer.visible ? "非表示にする" : "表示する"}
-              style={{ opacity: layer.visible ? 1 : 0.4 }}
-            >
-              {layer.visible ? "◉" : "◎"}
-            </button>
-          </div>
-        ))}
+      <div className="layer-list">
+        {/* Topmost first, matching what the eye sees on the page. */}
+        {[...page.layers].reverse().map((layer, reverseIndex) => {
+          const index = page.layers.length - 1 - reverseIndex;
+          const active = page.currentLayerId === layer.id;
+
+          return (
+            <div key={layer.id} className="layer-row" data-active={active ? "true" : undefined}>
+              <button
+                type="button"
+                className="layer-row__toggle"
+                title={layer.visible ? "非表示にする" : "表示する"}
+                onClick={() => setLayerVisible(layer.id, !layer.visible)}
+              >
+                {layer.visible ? "◉" : "◎"}
+              </button>
+              <button
+                type="button"
+                className="layer-row__toggle"
+                title={layer.locked ? "ロックを解除" : "ロックする"}
+                onClick={() => setLayerLocked(layer.id, !layer.locked)}
+              >
+                {layer.locked ? "🔒" : "🔓"}
+              </button>
+
+              {editingId === layer.id ? (
+                <input
+                  className="layer-row__name"
+                  autoFocus
+                  defaultValue={layer.name}
+                  onBlur={(e) => {
+                    renameLayer(layer.id, e.target.value.trim() || layer.name);
+                    setEditingId(null);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") e.currentTarget.blur();
+                    if (e.key === "Escape") setEditingId(null);
+                  }}
+                />
+              ) : (
+                <button
+                  type="button"
+                  className="layer-row__name"
+                  onClick={() => setActiveLayer(layer.id)}
+                  onDoubleClick={() => setEditingId(layer.id)}
+                  title="クリックで編集対象に、ダブルクリックで名前を変更"
+                >
+                  {layer.name}
+                </button>
+              )}
+
+              <button
+                type="button"
+                className="layer-row__toggle"
+                title="上へ"
+                disabled={index === page.layers.length - 1}
+                onClick={() => reorderLayer(index, index + 1)}
+              >
+                ↑
+              </button>
+              <button
+                type="button"
+                className="layer-row__toggle"
+                title="下へ"
+                disabled={index === 0}
+                onClick={() => reorderLayer(index, index - 1)}
+              >
+                ↓
+              </button>
+              <button
+                type="button"
+                className="layer-row__toggle"
+                title="削除"
+                disabled={page.layers.length <= 1}
+                onClick={() => deleteLayer(layer.id)}
+              >
+                ✕
+              </button>
+            </div>
+          );
+        })}
       </div>
+
+      <button type="button" className="btn" style={{ width: "100%" }} onClick={addLayer}>
+        + レイヤーを追加
+      </button>
     </>
   );
 }

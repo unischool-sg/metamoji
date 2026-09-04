@@ -605,3 +605,229 @@ button {
       ),
     var(--color-surface);
 }
+
+/* --- menu --------------------------------------------------------------- */
+
+.menu {
+  position: relative;
+}
+
+.menu__list {
+  position: absolute;
+  top: calc(100% + 4px);
+  min-width: 220px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  padding: var(--space-1);
+  z-index: 50;
+}
+
+.menu__list[data-align="right"] {
+  right: 0;
+}
+
+.menu__list[data-align="left"] {
+  left: 0;
+}
+
+.menu__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  width: 100%;
+  padding: 7px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  text-align: left;
+  color: var(--color-text);
+}
+
+.menu__item:hover:not(:disabled) {
+  background: var(--color-accent-soft);
+  color: var(--color-accent-strong);
+}
+
+.menu__item:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.menu__item[data-danger="true"] {
+  color: var(--color-danger);
+}
+
+.menu__item kbd {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
+
+.menu__separator {
+  height: 1px;
+  background: var(--color-border);
+  margin: var(--space-1) 0;
+}
+
+/* --- page strip --------------------------------------------------------- */
+
+.page-strip {
+  flex: 0 0 170px;
+  background: var(--color-surface);
+  border-right: 1px solid var(--color-border);
+  overflow-y: auto;
+  padding: var(--space-2);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.page-strip__item {
+  border: 2px solid transparent;
+  border-radius: var(--radius-md);
+  padding: 2px;
+}
+
+.page-strip__item[data-active="true"] {
+  border-color: var(--color-accent);
+}
+
+.page-strip__item[data-drop="true"] {
+  border-color: var(--color-warning);
+  border-style: dashed;
+}
+
+.page-strip__thumb {
+  display: block;
+  width: 100%;
+  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.page-strip__thumb img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.page-strip__placeholder {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1 / 1.414;
+  background: repeating-linear-gradient(
+    45deg,
+    var(--color-surface-alt),
+    var(--color-surface-alt) 6px,
+    var(--color-surface) 6px,
+    var(--color-surface) 12px
+  );
+}
+
+.page-strip__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--color-text-muted);
+  padding: 2px 4px 0;
+}
+
+.page-strip__actions {
+  display: flex;
+  gap: 2px;
+}
+
+.page-strip__actions button {
+  padding: 1px 4px;
+  border-radius: var(--radius-sm);
+  font-size: 11px;
+}
+
+.page-strip__actions button:hover:not(:disabled) {
+  background: var(--color-surface-alt);
+}
+
+.page-strip__actions button:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.page-strip__add {
+  padding: 8px;
+  border: 1px dashed var(--color-border-strong);
+  border-radius: var(--radius-md);
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.page-strip__add:hover {
+  background: var(--color-surface-alt);
+  color: var(--color-text);
+}
+
+/* --- layer list --------------------------------------------------------- */
+
+.layer-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: var(--space-2);
+}
+
+.layer-row {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px 4px;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+}
+
+.layer-row[data-active="true"] {
+  background: var(--color-accent-soft);
+  border-color: var(--color-accent);
+}
+
+.layer-row__toggle {
+  width: 20px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+  border-radius: var(--radius-sm);
+  flex: 0 0 auto;
+}
+
+.layer-row__toggle:hover:not(:disabled) {
+  background: var(--color-surface-alt);
+}
+
+.layer-row__toggle:disabled {
+  opacity: 0.25;
+  cursor: default;
+}
+
+.layer-row__name {
+  flex: 1;
+  min-width: 0;
+  font-size: 12px;
+  text-align: left;
+  padding: 2px 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  background: none;
+  color: inherit;
+}
+
+input.layer-row__name {
+  border-color: var(--color-accent);
+  background: var(--color-surface);
+}

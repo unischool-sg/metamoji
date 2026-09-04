@@ -2,6 +2,7 @@
 
 import { newLayerId, newNoteId, newPageId, newUnitId } from "./ids";
 import type {
+  BgImageUnit,
   FlipUnit,
   FormKind,
   FormUnit,
@@ -191,5 +192,31 @@ export function createFormUnit(
     lineWidth: 1,
     backgroundColor: "",
     backgroundOpacity: 1,
+  };
+}
+
+/**
+ * A background image filling the page — how an imported PDF page is carried, so
+ * the user can annotate over it with the ordinary tools.
+ */
+export function createBgImageUnit(
+  width: number,
+  height: number,
+  imageTicket: string,
+): BgImageUnit {
+  return {
+    id: newUnitId(),
+    type: "$bgimage",
+    x: 0,
+    y: 0,
+    width,
+    height,
+    rotation: 0,
+    contentScale: 1,
+    imageTicket,
+    bgStyle: 1,
+    bgColor: "#ffffff",
+    colorOpacity: 1,
+    opacity: 1,
   };
 }

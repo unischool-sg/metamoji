@@ -8,20 +8,24 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router";
-import { open } from "@tauri-apps/plugin-dialog";
+import { open, save as saveDialog } from "@tauri-apps/plugin-dialog";
 
 import type { CanvasController, ToolMode } from "../canvas/controller";
 import { CanvasHost } from "../components/CanvasHost";
 import { Inspector } from "../components/Inspector";
 import { TextEditOverlay } from "../components/TextEditOverlay";
+import { Menu } from "../components/Menu";
+import { PageStrip } from "../components/PageStrip";
 import { Toolbar } from "../components/Toolbar";
 import { TOOLS } from "../editor/tools";
 import * as api from "../ipc/api";
 import { fromGeneric, toGeneric } from "../model/converter";
 import {
+  createBgImageUnit,
   createFlipUnit,
   createFormUnit,
   createImageUnit,
+  createPage,
   createShapeUnit,
   createTextUnit,
 } from "../model/factory";
@@ -40,6 +44,8 @@ import {
 } from "../editor/operations";
 import { currentLayer } from "../model/types";
 import { IDENTITY_VIEWPORT, type Viewport } from "../render/viewport";
+import { EXPORT_DPI, renderPagesForExport, renderPageToDataUrl } from "../io/pageRender";
+import { parsePageRange, readPdfInfo, renderPdfPages } from "../io/pdf";
 import { useAssetCache } from "../hooks/useAssetCache";
 import { useEditorStore } from "../store/editorStore";
 
@@ -60,12 +66,17 @@ export function EditorScreen() {
   const closeDocument = useEditorStore((s) => s.closeDocument);
   const setPageIndex = useEditorStore((s) => s.setPageIndex);
   const addPage = useEditorStore((s) => s.addPage);
+  const duplicatePage = useEditorStore((s) => s.duplicatePage);
+  const deletePage = useEditorStore((s) => s.deletePage);
+  const reorderPage = useEditorStore((s) => s.reorderPage);
   const undo = useEditorStore((s) => s.undo);
   const redo = useEditorStore((s) => s.redo);
   const setSaveState = useEditorStore((s) => s.setSaveState);
   const markSaved = useEditorStore((s) => s.markSaved);
 
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [showPages, setShowPages] = useState(false);
+  const [busy, setBusy] = useState<string | null>(null);
   const [editingUnitId, setEditingUnitId] = useState<ModelId | null>(null);
   // The live viewport is kept in a ref so panning and zooming never re-render
   // the editor. It is mirrored into state only while a text box is open, since
@@ -389,6 +400,107 @@ export function EditorScreen() {
     state.setSelection([unit.id]);
   }, []);
 
+  // -- export / import ----------------------------------------------------
+
+  const exportPdf = useCallback(async () => {
+    const state = useEditorStore.getState();
+    if (!state.doc) return;
+    const path = await saveDialog({
+      defaultPath: `${state.doc.meta.title}.pdf`,
+      filters: [{ name: "PDF", extensions: ["pdf"] }],
+    });
+    if (!path) return;
+
+    setBusy("PDF を書き出しています…");
+    try {
+      const pages = renderPagesForExport(state.doc, assets, EXPORT_DPI.print);
+      await api.exportPdf(path, state.doc.meta.title, pages);
+    } catch (err) {
+      setLoadError(`PDF の書き出しに失敗しました: ${err}`);
+    } finally {
+      setBusy(null);
+    }
+  }, [assets]);
+
+  const exportPng = useCallback(async () => {
+    const state = useEditorStore.getState();
+    const p = state.doc?.pages[state.pageIndex];
+    if (!state.doc || !p) return;
+    const path = await saveDialog({
+      defaultPath: `${state.doc.meta.title}-${state.pageIndex + 1}.png`,
+      filters: [{ name: "PNG", extensions: ["png"] }],
+    });
+    if (!path) return;
+
+    setBusy("画像を書き出しています…");
+    try {
+      const dataUrl = renderPageToDataUrl(p, {
+        assets,
+        scale: EXPORT_DPI.print / 150,
+      });
+      await api.fileWriteBytes(path, dataUrl);
+    } catch (err) {
+      setLoadError(`画像の書き出しに失敗しました: ${err}`);
+    } finally {
+      setBusy(null);
+    }
+  }, [assets]);
+
+  /**
+   * Imports PDF pages as note pages.
+   *
+   * Each PDF page becomes a background image on its own note page, so the user
+   * can annotate on top of it with every normal tool. Keeping the PDF as a live
+   * embedded object instead would mean re-rendering it on every repaint for no
+   * benefit the user can see.
+   */
+  const importPdf = useCallback(async () => {
+    const state = useEditorStore.getState();
+    const { session: s, doc: d, noteId: nid } = state;
+    if (!s || !d || !nid) return;
+
+    const selected = await open({
+      multiple: false,
+      filters: [{ name: "PDF", extensions: ["pdf"] }],
+    });
+    if (typeof selected !== "string") return;
+
+    setBusy("PDF を読み込んでいます…");
+    try {
+      const dataUrl = await api.fileReadDataUrl(selected);
+      const info = await readPdfInfo(dataUrl);
+      const numbers = parsePageRange("", info.pageCount);
+      const paperWidth = d.pages[state.pageIndex]?.paperWidth ?? 1240;
+
+      const images = await renderPdfPages(dataUrl, paperWidth, numbers, (done, total) =>
+        setBusy(`PDF を読み込んでいます… ${done} / ${total}`),
+      );
+
+      const insertAt = state.pageIndex + 1;
+      s.beginEdit("PDF を取り込み");
+      for (const [i, image] of images.entries()) {
+        const ticket = newTicket();
+        await api.assetPut(nid, ticket, image.dataUrl);
+
+        const newPage = createPage("blank");
+        newPage.paperWidth = paperWidth;
+        newPage.paperHeight = (image.height / image.width) * paperWidth;
+
+        const bg = createBgImageUnit(newPage.paperWidth, newPage.paperHeight, ticket);
+        newPage.layers[0].units.push(bg);
+
+        s.record({ kind: "page.add", index: insertAt + i, page: newPage });
+      }
+      s.endEdit();
+
+      state.setPageIndex(insertAt);
+    } catch (err) {
+      setLoadError(`PDF の取り込みに失敗しました: ${err}`);
+    } finally {
+      setBusy(null);
+    }
+  }, []);
+
   const page = doc?.pages[pageIndex];
 
   if (loadError) {
@@ -427,7 +539,47 @@ export function EditorScreen() {
         <span className="save-chip" data-state={saveState}>
           {saveLabel(saveState)}
         </span>
+        {busy && <span className="save-chip">{busy}</span>}
         <div className="topbar__spacer" />
+
+        <Menu
+          label="ファイル"
+          items={[
+            {
+              id: "import-pdf",
+              label: "PDF を取り込む…",
+              onSelect: () => void importPdf(),
+            },
+            {
+              id: "export-pdf",
+              label: "PDF で書き出す…",
+              separatorBefore: true,
+              onSelect: () => void exportPdf(),
+            },
+            {
+              id: "export-png",
+              label: "このページを画像で書き出す…",
+              onSelect: () => void exportPng(),
+            },
+            {
+              id: "save",
+              label: "保存",
+              shortcut: "⌘S",
+              separatorBefore: true,
+              onSelect: () => void save(),
+            },
+          ]}
+        />
+
+        <button
+          type="button"
+          onClick={() => setShowPages((v) => !v)}
+          aria-pressed={showPages}
+          title="ページ一覧"
+        >
+          ページ
+        </button>
+
         <button
           type="button"
           onClick={() => {
@@ -454,6 +606,18 @@ export function EditorScreen() {
 
       <div className="editor">
         <Toolbar />
+        {showPages && (
+          <PageStrip
+            doc={doc}
+            pageIndex={pageIndex}
+            assets={assets}
+            onSelect={setPageIndex}
+            onReorder={reorderPage}
+            onDuplicate={duplicatePage}
+            onDelete={deletePage}
+            onAdd={addPage}
+          />
+        )}
         <CanvasHost
           controllerRef={controllerRef}
           assets={assets}

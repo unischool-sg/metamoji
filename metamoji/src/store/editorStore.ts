@@ -18,11 +18,15 @@ import {
   type PenSlotSettings,
   type ToolId,
 } from "../editor/tools";
-import { createDocument, createPage } from "../model/factory";
+import { cloneUnit } from "./../editor/operations";
+import { createDocument, createLayer, createPage } from "../model/factory";
+import { newLayerId, newPageId } from "../model/ids";
 import type {
   FormKind,
   ModelId,
   NoteDocument,
+  Page,
+  PaperStyle,
   PenAttributes,
   ShapeKind,
   Unit,
@@ -77,7 +81,21 @@ interface EditorState {
   // -- pages --------------------------------------------------------------
   setPageIndex: (index: number) => void;
   addPage: () => void;
+  duplicatePage: (index: number) => void;
   deletePage: (index: number) => void;
+  reorderPage: (from: number, to: number) => void;
+  setPaperStyle: (style: PaperStyle) => void;
+  setPaperColor: (color: string) => void;
+  setPaperSize: (width: number, height: number) => void;
+
+  // -- layers -------------------------------------------------------------
+  addLayer: () => void;
+  deleteLayer: (layerId: ModelId) => void;
+  renameLayer: (layerId: ModelId, name: string) => void;
+  setLayerVisible: (layerId: ModelId, visible: boolean) => void;
+  setLayerLocked: (layerId: ModelId, locked: boolean) => void;
+  setActiveLayer: (layerId: ModelId) => void;
+  reorderLayer: (from: number, to: number) => void;
 
   // -- selection ----------------------------------------------------------
   setSelection: (ids: ModelId[]) => void;
@@ -210,6 +228,213 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       session.record({ kind: "page.add", index: pageIndex + 1, page });
     });
     set({ pageIndex: pageIndex + 1, selection: [] });
+  },
+
+  duplicatePage: (index) => {
+    const { session, doc } = get();
+    if (!session || !doc) return;
+    const source = doc.pages[index];
+    if (!source) return;
+
+    // Everything gets a fresh id: two pages sharing a layer or unit id would
+    // make every id-addressed delta ambiguous.
+    const copy: Page = {
+      ...source,
+      id: newPageId(),
+      layers: source.layers.map((layer) => ({
+        ...layer,
+        id: newLayerId(),
+        units: layer.units.map((u) => cloneUnit(u)),
+      })),
+      currentLayerId: "",
+    };
+    copy.currentLayerId = copy.layers[0]?.id ?? "";
+
+    session.transact("ページを複製", () => {
+      session.record({ kind: "page.add", index: index + 1, page: copy });
+    });
+    set({ pageIndex: index + 1, selection: [] });
+  },
+
+  reorderPage: (from, to) => {
+    const { session, doc } = get();
+    if (!session || !doc) return;
+    const page = doc.pages[from];
+    if (!page || from === to) return;
+
+    session.transact("ページを並べ替え", () => {
+      session.record({ kind: "page.remove", index: from, page });
+      session.record({ kind: "page.add", index: to, page });
+    });
+    set({ pageIndex: to, selection: [] });
+  },
+
+  setPaperStyle: (paperStyle) => {
+    const { session, doc, pageIndex } = get();
+    const page = doc?.pages[pageIndex];
+    if (!session || !page) return;
+    session.transact("用紙を変更", () => {
+      session.record({
+        kind: "page.update",
+        pageId: page.id,
+        before: { paperStyle: page.paperStyle },
+        after: { paperStyle },
+      });
+    });
+  },
+
+  setPaperColor: (paperColor) => {
+    const { session, doc, pageIndex } = get();
+    const page = doc?.pages[pageIndex];
+    if (!session || !page) return;
+    session.transact("用紙の色を変更", () => {
+      session.record({
+        kind: "page.update",
+        pageId: page.id,
+        before: { paperColor: page.paperColor },
+        after: { paperColor },
+      });
+    });
+  },
+
+  setPaperSize: (paperWidth, paperHeight) => {
+    const { session, doc, pageIndex } = get();
+    const page = doc?.pages[pageIndex];
+    if (!session || !page) return;
+    session.transact("用紙サイズを変更", () => {
+      session.record({
+        kind: "page.update",
+        pageId: page.id,
+        before: { paperWidth: page.paperWidth, paperHeight: page.paperHeight },
+        after: { paperWidth, paperHeight },
+      });
+    });
+  },
+
+  // -- layers ---------------------------------------------------------------
+
+  addLayer: () => {
+    const { session, doc, pageIndex } = get();
+    const page = doc?.pages[pageIndex];
+    if (!session || !page) return;
+    const layer = createLayer(`レイヤー ${page.layers.length + 1}`);
+    session.transact("レイヤーを追加", () => {
+      session.record({
+        kind: "layer.add",
+        pageId: page.id,
+        index: page.layers.length,
+        layer,
+      });
+      session.record({
+        kind: "page.update",
+        pageId: page.id,
+        before: { currentLayerId: page.currentLayerId },
+        after: { currentLayerId: layer.id },
+      });
+    });
+  },
+
+  deleteLayer: (layerId) => {
+    const { session, doc, pageIndex } = get();
+    const page = doc?.pages[pageIndex];
+    if (!session || !page) return;
+    // A page always keeps one layer; without it there is nowhere to draw.
+    if (page.layers.length <= 1) return;
+
+    const index = page.layers.findIndex((l) => l.id === layerId);
+    if (index < 0) return;
+    const layer = page.layers[index];
+    const fallback = page.layers[index === 0 ? 1 : index - 1];
+
+    session.transact("レイヤーを削除", () => {
+      session.record({ kind: "layer.remove", pageId: page.id, index, layer });
+      if (page.currentLayerId === layerId) {
+        session.record({
+          kind: "page.update",
+          pageId: page.id,
+          before: { currentLayerId: page.currentLayerId },
+          after: { currentLayerId: fallback.id },
+        });
+      }
+    });
+    set({ selection: [] });
+  },
+
+  renameLayer: (layerId, name) => {
+    const { session, doc, pageIndex } = get();
+    const page = doc?.pages[pageIndex];
+    const layer = page?.layers.find((l) => l.id === layerId);
+    if (!session || !page || !layer) return;
+    session.transact("レイヤー名を変更", () => {
+      session.record({
+        kind: "layer.update",
+        pageId: page.id,
+        layerId,
+        before: { name: layer.name },
+        after: { name },
+      });
+    });
+  },
+
+  setLayerVisible: (layerId, visible) => {
+    const { session, doc, pageIndex } = get();
+    const page = doc?.pages[pageIndex];
+    const layer = page?.layers.find((l) => l.id === layerId);
+    if (!session || !page || !layer) return;
+    session.transact("レイヤーの表示を切り替え", () => {
+      session.record({
+        kind: "layer.update",
+        pageId: page.id,
+        layerId,
+        before: { visible: layer.visible },
+        after: { visible },
+      });
+    });
+  },
+
+  setLayerLocked: (layerId, locked) => {
+    const { session, doc, pageIndex } = get();
+    const page = doc?.pages[pageIndex];
+    const layer = page?.layers.find((l) => l.id === layerId);
+    if (!session || !page || !layer) return;
+    session.transact("レイヤーのロックを切り替え", () => {
+      session.record({
+        kind: "layer.update",
+        pageId: page.id,
+        layerId,
+        before: { locked: layer.locked },
+        after: { locked },
+      });
+    });
+    set({ selection: [] });
+  },
+
+  setActiveLayer: (layerId) => {
+    const { session, doc, pageIndex } = get();
+    const page = doc?.pages[pageIndex];
+    if (!session || !page) return;
+    session.transact("編集レイヤーを変更", () => {
+      session.record({
+        kind: "page.update",
+        pageId: page.id,
+        before: { currentLayerId: page.currentLayerId },
+        after: { currentLayerId: layerId },
+      });
+    });
+    set({ selection: [] });
+  },
+
+  reorderLayer: (from, to) => {
+    const { session, doc, pageIndex } = get();
+    const page = doc?.pages[pageIndex];
+    if (!session || !page) return;
+    const layer = page.layers[from];
+    if (!layer || from === to) return;
+
+    session.transact("レイヤーを並べ替え", () => {
+      session.record({ kind: "layer.remove", pageId: page.id, index: from, layer });
+      session.record({ kind: "layer.add", pageId: page.id, index: to, layer });
+    });
   },
 
   deletePage: (index) => {
