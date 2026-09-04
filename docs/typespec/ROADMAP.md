@@ -16,6 +16,15 @@
   53メソッド全て解析済み。[auth.tsp](./auth.tsp) / [user.tsp](./user.tsp) / [drive.tsp](./drive.tsp) /
   [classbox.tsp](./classbox.tsp) / [messaging.tsp](./messaging.tsp) / [settings.tsp](./settings.tsp) /
   [license.tsp](./license.tsp) / [misc.tsp](./misc.tsp) に反映済み。
+- ✅ **`com/metamoji/network` (`NwWebDAVRequest`)** — WebDAVデータプレーン。GET/PUT/HEAD/DELETE/
+  MKCOL(createDirectory)/MOVE/PROPFIND/PROPPATCHの8操作、XMLボディ構造、認証ヘッダ
+  (`Authorization: Basic` + `X-mmj-appcode`)、ロックトークンの`If`ヘッダ付与ルール、
+  カスタムdead property(`create`/`lastSyncedRevision`/`syncUpdate`、名前空間
+  `http://xmlns.metamoji.com/digitalcabinet/tinydotnote/1.0/`)まで解析済み。[webdav.tsp](./webdav.tsp)に反映。
+  呼び出し元 `DmDigitalCabinetAccessUtils` がホームコレクション直下にランダムIDでリソースを配置する
+  フラットな構造であることも確認(`generateResourceIdOnServer`)。
+  なお、ユーザーが任意の外部WebDAVサーバーに接続する`com/metamoji/ex/webdav`(`WebDAVManager`)は
+  MetaMoji自身のサーバーとは無関係の別機能であり、依然未解析(Low優先度のまま)。
 
 ## 未解析パッケージ一覧(優先順位順)
 
@@ -23,7 +32,7 @@
 
 | # | パッケージ | 役割 | 既知のエンドポイント/手がかり | 認証・ホスト |
 |---|---|---|---|---|
-| 1 | `com/metamoji/network` (`NwWebDAVRequest` 他) | **ノート/ドキュメント本体のアップロード・ダウンロード(データプレーン)**。`CsCloudService`が制御プレーン(認証・メタデータ)、こちらが実データ転送を担う。`DmDCSyncManager`等の同期系が呼び出し元。 | `GET`/`PUT`/`HEAD`/`DELETE`/`MKCOL`(createDirectory)/`PROPFIND`/`PROPPATCH`/`MOVE` の8種(sync/callback/coroutineの3系統で計約24メソッド)。URLは呼び出し側が`CsCloudService`ログイン応答由来の`serverUrl`/`userHomeUrl`から組み立てて渡す(このクラス自体はホストを持たない)。 | HTTP Basic認証(`Credentials.basic(username, password)`) + カスタムヘッダ `X-mmj-appcode`(`appAuthKey`)。401時は`Authenticator`で再認証。 |
+| ~~1~~ | ~~`com/metamoji/network` (`NwWebDAVRequest`)~~ | ✅ **解析完了**。[webdav.tsp](./webdav.tsp) と上記「完了済み」を参照。 | — | — |
 | 2 | `com/metamoji/dvm/cs` (`DvmCloudService`) | クラス配信(コンテンツ変換配布)・クラッシュログ送信のクラウドAPI。`com/metamoji/cs/CsHttpClient`(低レベルヘルパー、`CsCloudService`とは別)を利用。 | `convert/DistributeClass`, `convert/GetDistributeStatus`, `crashlogs/upload`(マルチパート) の3エンドポイント。Param/Result型(`DvmDistributeClassParams/Result`等)あり。 | 未調査(`CsHttpClient`共有の可能性が高い、要確認) |
 | 3 | `com/metamoji/lc` | **ライセンスアクティベーション専用API**。`CsCloudService`とは完全に別ホスト。 | ホスト: `https://license.metamoji.com/mmjlicense/`(検証用: `license-test.metamoji.com`)。パス: `license/activate2`, `license/getremainingdays`。 | 独自のJSON+ハッシュ(HMAC風)プロトコル(`HttpUtil.postJson`)。 |
 | 4 | `com/metamoji/ns/service` (`NsCollabo*`) | **リアルタイム授業ルーム共有("ClassShare"の名を冠する中核機能)**。ルーム作成・参加・ロール管理・設定同期。23ファイル中18ファイルが直接通信。 | `/cosmos/ModifyRole`, `/mmjcloud/ShareViewGetList`, `/mmjcloud/ShareViewGetMyRole`, `/mmjcloud/ShareViewGetRoomInfo`, `/mmjcloud/ShareViewGetRoomSetting`, `/mmjcloud/ShareViewSetRoomInfo`, `/mmjcloud/ShareViewSetRoomSetting`, `gallery/PostForShareAnytime` 等。`For{CheckRole,CreateRoom,CreateUniqueID,GetMemberList,GetRoomInfo,...}`というコマンドパターンで整理されており、TypeSpec化しやすい構造。 | `sessionID`ベース。ロール概念(`presenter`/`speaker`/`visitor`)、ルームタイプ(`casual`/`formal`/`limited`)あり。UA文字列 `"Android-Share-G-ClassRoom"`。 |
@@ -53,8 +62,7 @@
 1. **`ns/service`(リアルタイム授業ルーム)** と **`media/video/network`(動画ノート)** は
    アプリの中核機能かつFor*コマンドパターンで構造化されており、`CsCloudService`と同じ手法
    (フィールド抽出スクリプト→TypeSpec生成)が最も効率よく適用できる。次点候補。
-2. **`network`(WebDAV)** は実データ転送を担う重要な層だが、エンドポイント数が少ない
-   (約8verb)ため、他に比べて短時間で着手・完了できる。
+2. ~~`network`(WebDAV)~~ ✅ 解析済み([webdav.tsp](./webdav.tsp))。
 3. **`lc`(ライセンス)** と **`rc`(変換サービス)** はエンドポイント数が少なく
    (各2〜3個)、ホスト・パスも既に判明しているため、着手コストが低い「クイックウィン」。
 4. `sd/cs` は `CsCloudService` のドライブ機能との重複・世代関係が未確認。着手前に
