@@ -1,5 +1,5 @@
 import "@typespec/http";
-import "./common.tsp";
+import "../common.tsp";
 
 using TypeSpec.Http;
 
@@ -84,6 +84,7 @@ model VfReserveResponse {
   ticket?: string;
 }
 
+@tag("動画ノート")
 interface VideoNotes {
   /**
    * クリップ一覧を取得する。レスポンスはJSON配列 (`VfClipInfo[]`) をそのまま返す

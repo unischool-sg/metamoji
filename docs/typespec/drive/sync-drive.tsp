@@ -1,5 +1,5 @@
 import "@typespec/http";
-import "./common.tsp";
+import "../common.tsp";
 
 using TypeSpec.Http;
 
@@ -10,11 +10,11 @@ namespace MetamojiClassShare;
 // ============================================================
 //
 // 解析対象クラス: `com.metamoji.sd.cs.SdCloudService`
-// ([apk/smali_classes3/com/metamoji/sd/cs/SdCloudService.smali](../../apk/smali_classes3/com/metamoji/sd/cs/SdCloudService.smali))。
+// ([apk/smali_classes3/com/metamoji/sd/cs/SdCloudService.smali](../../../apk/smali_classes3/com/metamoji/sd/cs/SdCloudService.smali))。
 // 低レベルHTTP実装は Kotlin製の `com.metamoji.sd.cs.SdHttpClient`
-// ([SdHttpClient.smali](../../apk/smali_classes3/com/metamoji/sd/cs/SdHttpClient.smali))、
+// ([SdHttpClient.smali](../../../apk/smali_classes3/com/metamoji/sd/cs/SdHttpClient.smali))、
 // ホスト/セッション状態の保持は `com.metamoji.sd.cs.SdCloudServiceContext`
-// ([SdCloudServiceContext.smali](../../apk/smali_classes3/com/metamoji/sd/cs/SdCloudServiceContext.smali))
+// ([SdCloudServiceContext.smali](../../../apk/smali_classes3/com/metamoji/sd/cs/SdCloudServiceContext.smali))
 // が担う。Param/Responseクラスは `com.metamoji.sd.cs.params.*`(16ファイル)・
 // `com.metamoji.sd.cs.response.*`(13ファイル)。
 //
@@ -92,7 +92,7 @@ namespace MetamojiClassShare;
 // - **共通レスポンスフィールド**: 全レスポンスは`SdResponseResult`(抽象基底クラス)由来の
 //   `errorCode`/`errorName`/`errorMessage`/`errorData`/`bodyMessage`/`httpStatusCode`/
 //   `isUnderMaintenance`/`maintMessage`を持ちます。`CsResponseBase`
-//   ([common.tsp](./common.tsp))とはフィールド構成が異なる(EULAバージョン関連フィールドが無い等)
+//   ([common.tsp](../common.tsp))とはフィールド構成が異なる(EULAバージョン関連フィールドが無い等)
 //   ため、**`CsResponseBase`を再利用せず独自の`SdResponseBase`を定義**しています。
 //   同様にリクエスト側も`CsRequestBase`のような自動付与共通フィールド
 //   (`deviceName`/`productName`等)を持たないため、独自モデルのみで表現しています。
@@ -286,6 +286,7 @@ model SdTurnOffEditFlagResponse extends SdResponseBase {}
  */
 model SdGetMaintenanceInfoResponse extends SdResponseBase {}
 
+@tag("ドライブ同期 (次世代REST API)")
 interface SyncDrive {
   /**
    * ユーザーID/パスワード(またはqwd)でログインし、`homeDir`が示すホストにセッションCookieを

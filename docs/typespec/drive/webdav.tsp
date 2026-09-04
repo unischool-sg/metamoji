@@ -1,5 +1,5 @@
 import "@typespec/http";
-import "./common.tsp";
+import "../common.tsp";
 
 using TypeSpec.Http;
 
@@ -123,6 +123,7 @@ model WebDavPropResult extends WebDavBytesResult {
   deadProperties?: Record<unknown>;
 }
 
+@tag("WebDAV データプレーン")
 interface WebDavStorage {
   /**
    * リソース(ノート本体)をダウンロードする。

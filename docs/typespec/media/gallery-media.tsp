@@ -1,6 +1,6 @@
 import "@typespec/http";
-import "./common.tsp";
-import "./collabo.tsp";
+import "../common.tsp";
+import "../classroom/collabo.tsp";
 
 using TypeSpec.Http;
 
@@ -17,7 +17,7 @@ namespace MetamojiClassShare;
 //
 // **継承関係**: 抽象基底クラス`MediaURLConnection`
 // (apk/smali_classes3/com/metamoji/media/service/MediaURLConnection.smali)は
-// [collabo.tsp](./collabo.tsp)で解析済みの`com.metamoji.ns.service.NsCollaboURLConnection`を継承する。
+// [collabo.tsp](../classroom/collabo.tsp)で解析済みの`com.metamoji.ns.service.NsCollaboURLConnection`を継承する。
 // ただし`NsCollaboURLConnection`が提供する`baseURL()`/`createAuthInfoParam()`はほぼ使われず、
 // 各コマンドクラスは独自の`com.metamoji.media.MediaUtil.baseURLForEditIt(String)`でURLを構築し、
 // `postRequest(url, body)`/`getRequest(url)`(いずれも基底クラス由来)にフルURLを渡す。
@@ -32,7 +32,7 @@ namespace MetamojiClassShare;
 // 再ログインしてから1回だけリトライする(`CsCloudService`の`executeWithAutoLoginFor`に相当する
 // パターンをコマンドクラスごとに個別実装している)。
 //
-// **認証方式**: [collabo.tsp](./collabo.tsp)の`NsAuthInfo`(JSON化された1パート)とは異なり、
+// **認証方式**: [collabo.tsp](../classroom/collabo.tsp)の`NsAuthInfo`(JSON化された1パート)とは異なり、
 // 本パッケージはユーザーID・パスワードを個別の`multipart/form-data`パート(または`GET`のクエリ
 // パラメータ)としてそのまま平文で送信する。パスワードは`com.metamoji.cs.dc.user.CsDCUserInfo`の
 // 状態に応じて`password`または`qwd`のどちらか一方のパート名で送られる
@@ -50,7 +50,7 @@ namespace MetamojiClassShare;
 // 各operationのdocコメントで実際のワイヤー表現を注記している)。
 //
 // **レスポンス形式が2系統ある**: `gallery/GetMediaList` / `gallery/GetMediaStatus`はJSONオブジェクトを
-// 返す(`NsCollaboServiceUtil.parseResponseJson`経由、[collabo.tsp](./collabo.tsp)と共通のパーサ)。
+// 返す(`NsCollaboServiceUtil.parseResponseJson`経由、[collabo.tsp](../classroom/collabo.tsp)と共通のパーサ)。
 // 一方、`gallery/LoginMedia` / `gallery/TentativeRegistMedia` / `gallery/UploadMedia` /
 // `gallery/SetMediaTitle` / `gallery/DeleteMediaFile`はJSONではなく、**改行区切り・カンマ区切りの
 // プレーンテキスト**を返す旧世代フォーマットである(各`MediaBgTaskForXxx.taskExec()`の文字列パース
@@ -189,6 +189,7 @@ model GalleryMediaFileResult {
   @body body: bytes;
 }
 
+@tag("ギャラリーメディア")
 interface GalleryMedia {
   /**
    * ギャラリーサーバーにユーザー認証情報でログインする(セッションはOkHttpの共有CookieJarに

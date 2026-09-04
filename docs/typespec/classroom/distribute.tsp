@@ -1,5 +1,5 @@
 import "@typespec/http";
-import "./common.tsp";
+import "../common.tsp";
 
 using TypeSpec.Http;
 
@@ -93,6 +93,7 @@ model DvmPostCrashLogsResponse extends DvmResultBase {
   result?: DvmPostCrashLogsResultData;
 }
 
+@tag("クラス配信")
 interface Distribute {
   /**
    * ノート(1件または複数件)を変換ジョブとして登録し、クラスへ配信する。

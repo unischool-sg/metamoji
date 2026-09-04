@@ -1,5 +1,5 @@
 import "@typespec/http";
-import "./common.tsp";
+import "../common.tsp";
 
 using TypeSpec.Http;
 
@@ -107,6 +107,7 @@ model MazecSysInfoResponse {
   `mazec.dic`?: Record<unknown>;
 }
 
+@tag("Mazec辞書アドオン")
 interface MazecDictionaryUpdateCheck {
   /**
    * Mazec手書き辞書アドオンのバージョン情報マニフェストを取得する。
@@ -124,7 +125,7 @@ interface MazecDictionaryUpdateCheck {
    * - パス組み立て: `String.format("%ssysinfo_%s.json", getCDNServer(), productName)`。
    *   `productName` は `AddonStoreUtil.getProductName()` の固定値 `"Android-Share-G-ClassRoom"`。
    *
-   * ⚠️ 実際のワイヤ上のパスは [sysinfo.tsp](./sysinfo.tsp) の `SysInfo.getSysInfo`
+   * ⚠️ 実際のワイヤ上のパスは [sysinfo.tsp](../system/sysinfo.tsp) の `SysInfo.getSysInfo`
    * (`com.metamoji.nt.notify.NtSysInfoManager`)と**文字列としては同一**
    * (`sysinfo_Android-Share-G-ClassRoom.json`)だが、**ホストが異なる別エンドポイント**
    * (こちらは`cdn-test.metamoji.com`固定、`last`クエリなし)。TypeSpecのルートはホストを

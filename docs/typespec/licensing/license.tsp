@@ -1,5 +1,5 @@
 import "@typespec/http";
-import "./common.tsp";
+import "../common.tsp";
 
 using TypeSpec.Http;
 
@@ -53,6 +53,7 @@ model CsGetShareInfoResponse extends CsResponseBase {
   version?: string;
 }
 
+@tag("ライセンス・課金")
 interface Licensing {
   /**
    * 手書きインク使用量をサーバーと同期する。

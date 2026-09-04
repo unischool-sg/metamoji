@@ -1,5 +1,5 @@
 import "@typespec/http";
-import "./common.tsp";
+import "../common.tsp";
 
 using TypeSpec.Http;
 
@@ -77,6 +77,7 @@ model CsGetUserNamesResponse extends CsResponseBase {
   users?: Record<unknown>[];
 }
 
+@tag("ユーザー・組織情報")
 interface Users {
   /**
    * ログイン中ユーザーのプロフィール情報を取得する。

@@ -1,5 +1,5 @@
 import "@typespec/http";
-import "./common.tsp";
+import "../common.tsp";
 
 using TypeSpec.Http;
 
@@ -18,7 +18,7 @@ namespace MetamojiClassShare;
 //
 // ⚠️ **重要な訂正 (このファイルが実際に記載する内容について)**
 //
-// [ROADMAP.md](./ROADMAP.md) の一次調査では「カタログ初期化」として
+// [ROADMAP.md](../ROADMAP.md) の一次調査では「カタログ初期化」として
 // `init/library/com.metamoji.classroom.item.system001.product` 等のパスがネットワークAPIの
 // パスであるかのように記載されていましたが、実際にコードを読むと **これらはネットワーク通信ではなく
 // APK内蔵アセットのローカルパスです。** `LbLibraryItemManager.parseSystemItem()` /
@@ -56,7 +56,7 @@ namespace MetamojiClassShare;
 //
 // **ホスト解決**: ベースURLは `com.metamoji.lb.LbInAppPurchaseUtils.baseURL()` →
 // `ModelInfo$BuildOptions.DIGITAL_CABINET_URL_BASE()` → `CsCloudServiceContext.getRestHost()`
-// が返す値で、これは **[auth.tsp](./auth.tsp) の `CsLoginResponse.restHost`
+// が返す値で、これは **[auth.tsp](../auth/auth.tsp) の `CsLoginResponse.restHost`
 // と全く同じ、CsCloudServiceへのログイン成功後にセットされるテナント別ホスト** です
 // (`CsCloudServiceContext#getRestHost()`はログイン前は空/nullを返すため、このストア機能は
 // 事前に`/users3/login`等でのログインが必要と考えられます)。
@@ -185,6 +185,7 @@ model LbStoreGetPageResponse extends LbStoreStatusResponse {
   products?: LbStoreProduct[];
 }
 
+@tag("レガシーコンテンツストア")
 interface LibraryStore {
   /**
    * ゲストセッションを確立する(実ユーザーのログインではなく `id=guest`/空パスワード固定)。

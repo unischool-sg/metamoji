@@ -1,5 +1,5 @@
 import "@typespec/http";
-import "./common.tsp";
+import "../common.tsp";
 
 using TypeSpec.Http;
 
@@ -38,6 +38,7 @@ model CsSetClientFileParam extends CsRequestBase {
 
 model CsSetClientFileResponse extends CsResponseBase {}
 
+@tag("クライアント設定")
 interface ClientSettings {
   /**
    * サーバーに保存されたクライアント設定(キー・バリュー)を取得する。

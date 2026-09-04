@@ -1,5 +1,5 @@
 import "@typespec/http";
-import "./common.tsp";
+import "../common.tsp";
 
 using TypeSpec.Http;
 
@@ -19,6 +19,7 @@ model CsDeleteDirectMessageParam extends CsRequestBase {}
 
 model CsDeleteDirectMessageResponse extends CsResponseBase {}
 
+@tag("ダイレクトメッセージ")
 interface DirectMessages {
   /**
    * 自分宛のダイレクトメッセージを取得する。

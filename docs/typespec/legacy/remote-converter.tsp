@@ -1,5 +1,5 @@
 import "@typespec/http";
-import "./common.tsp";
+import "../common.tsp";
 
 using TypeSpec.Http;
 
@@ -12,11 +12,11 @@ namespace MetamojiClassShare;
 // `com.metamoji.rc` パッケージ(apk/smali_classes3/com/metamoji/rc/、5ファイルのみ)。
 // 抽象基底クラス `RcRemoteConverterURLConnection`
 // (apk/smali_classes3/com/metamoji/rc/RcRemoteConverterURLConnection.smali)が
-// [collabo.tsp](./collabo.tsp)で解析済みの `com.metamoji.ns.service.NsCollaboURLConnection` を
+// [collabo.tsp](../classroom/collabo.tsp)で解析済みの `com.metamoji.ns.service.NsCollaboURLConnection` を
 // `.super`で直接継承しており、通信の土台(`baseURL()`によるURL組み立て、`postRequest()`による
 // `multipart/form-data`送信、`sendRequest()`のHTTP実行・レスポンス受信処理)は共通です。
 // **ただし認証方式はcollabo.tsp/gradebook.tspの`NsAuthInfo`(JSON化1パート)とは異なり**、
-// [gallery-media.tsp](./gallery-media.tsp)の`Media*`系と同様に`userId`/`password`を素の
+// [gallery-media.tsp](../media/gallery-media.tsp)の`Media*`系と同様に`userId`/`password`を素の
 // multipartフィールドとしてそのまま送る方式です(`RcTentativeRegistURLConnection.sendRequest()`
 // 参照)。`RcRemoteConverterURLConnection`自身が追加するのは、`addContent(builder, name, value)`
 // (文字列パート追加)と `addContent(builder, name, File, mimeType)`
@@ -120,6 +120,7 @@ model RcGetConvertedFileResult {
   @body body: bytes;
 }
 
+@tag("リモートファイル変換")
 interface RemoteConverter {
   /**
    * 変換ジョブを仮登録する(3ステップの1番目)。ユーザーID/パスワードを検証し、成功すると

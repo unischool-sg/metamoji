@@ -1,5 +1,5 @@
 import "@typespec/http";
-import "./common.tsp";
+import "../common.tsp";
 
 using TypeSpec.Http;
 
@@ -28,6 +28,7 @@ model CsPostCrashLogsParam extends CsRequestBase {
 
 model CsPostCrashLogsResponse extends CsResponseBase {}
 
+@tag("メンテナンス・ログ")
 interface Misc {
   /**
    * メンテナンス情報ファイルを取得する。

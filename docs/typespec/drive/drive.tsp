@@ -1,5 +1,5 @@
 import "@typespec/http";
-import "./common.tsp";
+import "../common.tsp";
 
 using TypeSpec.Http;
 
@@ -143,6 +143,7 @@ model CsReverseLinkResponse extends CsResponseBase {
   pageId?: string;
 }
 
+@tag("ドライブ・共有フォルダ")
 interface Drives {
   /**
    * 新しいドライブ(共有フォルダ)を作成する。

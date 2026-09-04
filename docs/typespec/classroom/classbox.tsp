@@ -1,5 +1,5 @@
 import "@typespec/http";
-import "./common.tsp";
+import "../common.tsp";
 
 using TypeSpec.Http;
 
@@ -44,6 +44,7 @@ model CsGetClassCodeResponse extends CsResponseBase {
   joinEnabled?: boolean;
 }
 
+@tag("クラスボックス")
 interface ClassBoxes {
   /**
    * 新しいクラスボックス(オンライン授業ルーム)を作成する。

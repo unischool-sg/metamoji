@@ -1,5 +1,5 @@
 import "@typespec/http";
-import "./common.tsp";
+import "../common.tsp";
 
 using TypeSpec.Http;
 
@@ -199,6 +199,7 @@ model NtSysInfoResponse {
   "WebSite.notify"?: NtSysInfoNotifyVersionMap;
 }
 
+@tag("アプリ設定マニフェスト")
 interface SysInfo {
   /**
    * アプリの設定マニフェスト(EULA/バージョン情報、各種ヘルプ・規約・プロモーションの

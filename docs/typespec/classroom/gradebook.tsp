@@ -1,5 +1,5 @@
 import "@typespec/http";
-import "./common.tsp";
+import "../common.tsp";
 import "./collabo.tsp";
 
 using TypeSpec.Http;
@@ -97,6 +97,7 @@ model ScSetScoreParam {
   scoreString?: string;
 }
 
+@tag("成績表・テストログ")
 interface Gradebook {
   /**
    * 指定したルーム群のテスト成績一覧を取得する。

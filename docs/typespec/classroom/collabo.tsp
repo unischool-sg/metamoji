@@ -1,5 +1,5 @@
 import "@typespec/http";
-import "./common.tsp";
+import "../common.tsp";
 
 using TypeSpec.Http;
 
@@ -14,7 +14,8 @@ namespace MetamojiClassShare;
 // アプリ名"ClassShare"の由来となる、教員・生徒が同時参加する「授業ルーム」のリアルタイム共有機能。
 // ルームの作成・ログイン・ロール(発表者/発言者/参加者)管理・設定同期・ギャラリー投稿を担う。
 // (ルーム内のリアルタイム操作同期そのものは、本ファイルの対象外である別プロトコル
-// `com.metamoji.ns.NsCollaboCommand` の生ソケット通信で行われる — 未解析)
+// `com.metamoji.ns.socket.NsCollaboSocket` の生ソケット通信で行われる。
+// 詳細は [collabo-socket-protocol.md](./collabo-socket-protocol.md) を参照)
 //
 // **ベースURL**: `CsCloudService`と同じ `ModelInfo$BuildOptions.DIGITAL_CABINET_URL_BASE()`
 // (通常本番では`https://mps.metamoji.com/`相当。評価版ビルドでは`CsCloudServiceContext.dcServerURL()`
@@ -71,6 +72,7 @@ model NsRoomInfo {
   openDate?: int64;
 }
 
+@tag("授業ルーム共有 (リアルタイム)")
 interface Collabo {
   /**
    * 新しい授業ルームを作成する。

@@ -1,5 +1,5 @@
 import "@typespec/http";
-import "./common.tsp";
+import "../common.tsp";
 
 using TypeSpec.Http;
 
@@ -126,6 +126,7 @@ model CsGetCredentialResponse extends CsResponseBase {
   loginInfo?: CsLoginInfo;
 }
 
+@tag("認証・アカウント管理")
 interface Auth {
   /**
    * ユーザーID/メールアドレスとパスワードでログインする。

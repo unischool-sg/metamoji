@@ -9,10 +9,12 @@ DigitalCabinet クラウドAPI)を [TypeSpec](https://typespec.io/) として再
 **非公式ドキュメントであり、MetaMoji社の公式仕様ではありません。** 実装の逆解析に基づく推測を含むため、
 実際の挙動と差異がある可能性があります。
 
-> ⚠️ **アプリは1つの統一APIではなく、少なくとも13系統の独立した通信レイヤーを持っています。**
+> ⚠️ **アプリは1つの統一APIではなく、少なくとも13系統の独立したHTTP通信レイヤーを持っています。**
 > 本ドキュメントは全13系統(119エンドポイント)の調査を完了しています(うち2系統は
-> 「独自のワイヤレベル契約なし」と確認した上で新規ファイルを作成せず)。詳細は下記「ファイル構成」表、
-> 各系統の判定根拠は [ROADMAP.md](./ROADMAP.md) を参照してください。
+> 「独自のワイヤレベル契約なし」と確認した上で新規ファイルを作成せず)。
+> さらに、HTTPベースではないリアルタイム協働用の生ソケットプロトコル
+> ([classroom/collabo-socket-protocol.md](./classroom/collabo-socket-protocol.md))も調査済みです。
+> 詳細は下記「ファイル構成」表、各系統の判定根拠は [ROADMAP.md](./ROADMAP.md) を参照してください。
 
 ## 解析範囲・手法
 
@@ -52,35 +54,38 @@ DigitalCabinet クラウドAPI)を [TypeSpec](https://typespec.io/) として再
   (`https://mps.metamoji.com/`, `CsCloudServiceContext#getRootServer()`) を基点にしますが、
   ログイン後の大半のAPIは `CsCloudServiceContext#getRestBasePath()` が返す
   テナント固有のホスト(ログインレスポンスの `restHost` から導出)を基点にします。
-  そのため、[auth.tsp](./auth.tsp) の `getCredential`・[misc.tsp](./misc.tsp) の
+  そのため、[auth/auth.tsp](./auth/auth.tsp) の `getCredential`・[system/misc.tsp](./system/misc.tsp) の
   `getMaintenanceInfo` / `postCrashLogs` はルートサーバー直下のパスとして注記しています。
 
 ## ファイル構成
 
+ドメインごとにサブディレクトリへ整理されています。`main.tsp`が全ファイルをimportします。
+
 | ファイル | 内容 |
 | --- | --- |
-| [main.tsp](./main.tsp) | サービス定義・全ドメインファイルのimport |
+| [main.tsp](./main.tsp) | サービス定義(OpenAPIタグ含む)・全ドメインファイルのimport |
 | [common.tsp](./common.tsp) | 共通リクエスト/レスポンス基底モデル、共有の値オブジェクト |
-| [webdav.tsp](./webdav.tsp) | WebDAVデータプレーン(ノート本体のGET/PUT/DELETE/HEAD/MKCOL/MOVE/PROPFIND/PROPPATCH) |
-| [distribute.tsp](./distribute.tsp) | クラス配信(ノート変換ジョブ登録/ステータス取得)・クラッシュログアップロード(`DvmCloudService`) |
-| [license-activation.tsp](./license-activation.tsp) | ライセンスキーのオンラインアクティベーション/残日数照会(`LicenseUtil`、別ホスト`license.metamoji.com`) |
-| [video.tsp](./video.tsp) | 動画ノート機能(クリップ一覧/詳細/削除/アップロード。動的な「Flora」サーバーを使用) |
-| [collabo.tsp](./collabo.tsp) | リアルタイム授業ルーム共有(ルーム作成/ログイン/ロール管理/設定同期/ギャラリー投稿) |
-| [sync-drive.tsp](./sync-drive.tsp) | ドライブ/ドキュメント同期の新世代REST API(`SdCloudService`。WebDAV経路と並行して稼働) |
-| [gallery-media.tsp](./gallery-media.tsp) | ギャラリーメディア(音声・写真添付)のアップロード/一覧/削除(`Media*`) |
-| [library-store.tsp](./library-store.tsp) | レガシーコンテンツストア(ゲストログイン/ページ一覧/商品情報、`com.metamoji.lb`) |
-| [sysinfo.tsp](./sysinfo.tsp) | アプリ設定マニフェスト(EULA/バージョン/ヘルプリンク/ダウンロードURL、`NtSysInfoManager`) |
-| [gradebook.tsp](./gradebook.tsp) | 成績表・テストログ(小テスト実施ログ・採点・レポート提出状況、`forSchool.service`) |
-| [mazec-purchase.tsp](./mazec-purchase.tsp) | Mazec手書き辞書アドオンの更新チェック(課金機能自体はデッドコードと確認) |
-| [remote-converter.tsp](./remote-converter.tsp) | ファイル形式変換サービス(3ステップの非同期ジョブ。**呼び出し元が存在せず到達不能と確認**) |
-| [auth.tsp](./auth.tsp) | 認証・アカウント管理 (login / logout / register / パスワード / EULA / SSO 等) |
-| [user.tsp](./user.tsp) | ユーザー・組織(グループ)情報 |
-| [drive.tsp](./drive.tsp) | ドライブ(共有フォルダ)・メンバー管理・共有リンク |
-| [classbox.tsp](./classbox.tsp) | クラスボックス(オンライン授業ルーム) |
-| [messaging.tsp](./messaging.tsp) | ダイレクトメッセージ |
-| [settings.tsp](./settings.tsp) | クライアント設定/設定ファイルのサーバー同期 |
-| [license.tsp](./license.tsp) | ライセンス・課金・共有機能の利用可否 |
-| [misc.tsp](./misc.tsp) | メンテナンス情報・操作ログ・クラッシュログ送信 |
+| [auth/auth.tsp](./auth/auth.tsp) | 認証・アカウント管理 (login / logout / register / パスワード / EULA / SSO 等) |
+| [auth/user.tsp](./auth/user.tsp) | ユーザー・組織(グループ)情報 |
+| [drive/drive.tsp](./drive/drive.tsp) | ドライブ(共有フォルダ)・メンバー管理・共有リンク |
+| [drive/sync-drive.tsp](./drive/sync-drive.tsp) | ドライブ/ドキュメント同期の新世代REST API(`SdCloudService`。WebDAV経路と並行して稼働) |
+| [drive/webdav.tsp](./drive/webdav.tsp) | WebDAVデータプレーン(ノート本体のGET/PUT/DELETE/HEAD/MKCOL/MOVE/PROPFIND/PROPPATCH) |
+| [classroom/classbox.tsp](./classroom/classbox.tsp) | クラスボックス(オンライン授業ルーム) |
+| [classroom/collabo.tsp](./classroom/collabo.tsp) | リアルタイム授業ルーム共有REST API(ルーム作成/ログイン/ロール管理/設定同期/ギャラリー投稿) |
+| [classroom/collabo-socket-protocol.md](./classroom/collabo-socket-protocol.md) | ↑のリアルタイム操作同期を担う生ソケットプロトコル(`NsCollaboSocket`)の詳細仕様。TypeSpecではなくMarkdown |
+| [classroom/distribute.tsp](./classroom/distribute.tsp) | クラス配信(ノート変換ジョブ登録/ステータス取得)・クラッシュログアップロード(`DvmCloudService`) |
+| [classroom/gradebook.tsp](./classroom/gradebook.tsp) | 成績表・テストログ(小テスト実施ログ・採点・レポート提出状況、`forSchool.service`) |
+| [media/gallery-media.tsp](./media/gallery-media.tsp) | ギャラリーメディア(音声・写真添付)のアップロード/一覧/削除(`Media*`) |
+| [media/video.tsp](./media/video.tsp) | 動画ノート機能(クリップ一覧/詳細/削除/アップロード。動的な「Flora」サーバーを使用) |
+| [messaging/messaging.tsp](./messaging/messaging.tsp) | ダイレクトメッセージ |
+| [licensing/license.tsp](./licensing/license.tsp) | ライセンス・課金・共有機能の利用可否 |
+| [licensing/license-activation.tsp](./licensing/license-activation.tsp) | ライセンスキーのオンラインアクティベーション/残日数照会(`LicenseUtil`、別ホスト`license.metamoji.com`) |
+| [licensing/mazec-purchase.tsp](./licensing/mazec-purchase.tsp) | Mazec手書き辞書アドオンの更新チェック(課金機能自体はデッドコードと確認) |
+| [system/settings.tsp](./system/settings.tsp) | クライアント設定/設定ファイルのサーバー同期 |
+| [system/sysinfo.tsp](./system/sysinfo.tsp) | アプリ設定マニフェスト(EULA/バージョン/ヘルプリンク/ダウンロードURL、`NtSysInfoManager`) |
+| [system/misc.tsp](./system/misc.tsp) | メンテナンス情報・操作ログ・クラッシュログ送信 |
+| [legacy/library-store.tsp](./legacy/library-store.tsp) | レガシーコンテンツストア(ゲストログイン/ページ一覧/商品情報、`com.metamoji.lb`) |
+| [legacy/remote-converter.tsp](./legacy/remote-converter.tsp) | ファイル形式変換サービス(3ステップの非同期ジョブ。**呼び出し元が存在せず到達不能と確認**) |
 
 各operationのdocコメントに、対応する元Javaメソッド名 (`CsCloudService.executeXxxWithParams`) を
 記載しているので、より詳細な挙動を確認したい場合は同名メソッドを

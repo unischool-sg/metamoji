@@ -1,5 +1,5 @@
 import "@typespec/http";
-import "./common.tsp";
+import "../common.tsp";
 
 using TypeSpec.Http;
 
@@ -84,6 +84,7 @@ model LicenseGetRemainingDaysResponse {
   i_days?: int32;
 }
 
+@tag("ライセンスアクティベーション")
 interface LicenseActivation {
   /**
    * ライセンスキーをオンラインでアクティベートする。
