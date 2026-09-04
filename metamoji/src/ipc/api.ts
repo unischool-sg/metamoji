@@ -10,6 +10,20 @@ import { listen } from "@tauri-apps/api/event";
 import type { GenericTree } from "../model/generic";
 import { memoryBackend } from "./memoryBackend";
 
+export interface Tag {
+  id: string;
+  name: string;
+  color: string;
+}
+
+export interface Folder {
+  id: string;
+  name: string;
+  parentId: string | null;
+  ord: number;
+  noteCount: number;
+}
+
 export interface NoteSummary {
   id: string;
   title: string;
@@ -18,6 +32,21 @@ export interface NoteSummary {
   pageCount: number;
   revision: number;
   thumbnail: string | null;
+  folderId: string | null;
+  trashed: boolean;
+  tags: Tag[];
+}
+
+export type NoteSort = "updated" | "created" | "title";
+
+export interface ListQuery {
+  trashed?: boolean;
+  folderId?: string | null;
+  /** With no folder given, restrict to notes that are in no folder. */
+  rootOnly?: boolean;
+  tagId?: string | null;
+  text?: string;
+  sort?: NoteSort;
 }
 
 export interface AppStatus {
@@ -78,9 +107,69 @@ export async function onAppReady(fn: (status: AppStatus) => void): Promise<() =>
 // Library
 // ---------------------------------------------------------------------------
 
-export async function libraryList(includeTrashed = false): Promise<NoteSummary[]> {
-  if (!isTauri()) return memoryBackend.libraryList();
-  return invoke<NoteSummary[]>("library_list", { includeTrashed });
+export async function libraryList(query: ListQuery = {}): Promise<NoteSummary[]> {
+  if (!isTauri()) return memoryBackend.libraryList(query);
+  return invoke<NoteSummary[]>("library_list", { query });
+}
+
+export async function librarySetFolder(
+  id: string,
+  folderId: string | null,
+): Promise<void> {
+  if (!isTauri()) return memoryBackend.librarySetFolder(id, folderId);
+  return invoke("library_set_folder", { id, folderId });
+}
+
+// ---------------------------------------------------------------------------
+// Folders and tags
+// ---------------------------------------------------------------------------
+
+export async function folderList(): Promise<Folder[]> {
+  if (!isTauri()) return memoryBackend.folderList();
+  return invoke<Folder[]>("folder_list");
+}
+
+export async function folderCreate(
+  id: string,
+  name: string,
+  parentId: string | null = null,
+): Promise<void> {
+  if (!isTauri()) return memoryBackend.folderCreate(id, name, parentId);
+  return invoke("folder_create", { id, name, parentId });
+}
+
+export async function folderRename(id: string, name: string): Promise<void> {
+  if (!isTauri()) return memoryBackend.folderRename(id, name);
+  return invoke("folder_rename", { id, name });
+}
+
+export async function folderDelete(id: string): Promise<void> {
+  if (!isTauri()) return memoryBackend.folderDelete(id);
+  return invoke("folder_delete", { id });
+}
+
+export async function tagList(): Promise<Tag[]> {
+  if (!isTauri()) return memoryBackend.tagList();
+  return invoke<Tag[]>("tag_list");
+}
+
+export async function tagCreate(id: string, name: string, color: string): Promise<Tag> {
+  if (!isTauri()) return memoryBackend.tagCreate(id, name, color);
+  return invoke<Tag>("tag_create", { id, name, color });
+}
+
+export async function tagDelete(id: string): Promise<void> {
+  if (!isTauri()) return memoryBackend.tagDelete(id);
+  return invoke("tag_delete", { id });
+}
+
+export async function tagSetOnDocument(
+  documentId: string,
+  tagId: string,
+  on: boolean,
+): Promise<void> {
+  if (!isTauri()) return memoryBackend.tagSetOnDocument(documentId, tagId, on);
+  return invoke("tag_set_on_document", { documentId, tagId, on });
 }
 
 export async function libraryCreate(tree: GenericTree, title: string): Promise<NoteSummary> {
@@ -125,9 +214,10 @@ export async function noteSave(
   title: string,
   createdAt: string,
   revision: number,
+  searchBody = "",
 ): Promise<string> {
   if (!isTauri()) return memoryBackend.noteSave(tree, title, createdAt, revision);
-  return invoke<string>("note_save", { tree, title, createdAt, revision });
+  return invoke<string>("note_save", { tree, title, createdAt, revision, searchBody });
 }
 
 export async function noteClose(id: string): Promise<void> {

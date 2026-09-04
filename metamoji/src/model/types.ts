@@ -349,3 +349,28 @@ export function visibleUnits(page: Page): Unit[] {
   }
   return out;
 }
+
+/**
+ * All text in a document, flattened for the search index.
+ *
+ * The frontend produces this because it is the only side that knows how to read
+ * a unit; Rust stores the model as opaque property dictionaries by design.
+ * Handwriting contributes nothing — with recognition out of scope there is no
+ * text to extract from ink, and the library UI says so rather than letting the
+ * user assume their notes are searchable.
+ */
+export function searchableText(doc: NoteDocument): string {
+  const parts: string[] = [doc.meta.title];
+  for (const page of doc.pages) {
+    for (const layer of page.layers) {
+      for (const unit of layer.units) {
+        if (unit.type === "$text") {
+          parts.push(unit.text);
+        } else if (unit.type === "$flipunit") {
+          parts.push(unit.frontText, unit.backText);
+        }
+      }
+    }
+  }
+  return parts.filter((p) => p.trim() !== "").join("\n");
+}

@@ -92,6 +92,10 @@ pub struct NoteSummary {
     pub revision: i64,
     /// PNG data URL, or `None` when no thumbnail has been produced yet.
     pub thumbnail: Option<String>,
+    #[serde(rename = "folderId")]
+    pub folder_id: Option<String>,
+    pub trashed: bool,
+    pub tags: Vec<crate::storage::Tag>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

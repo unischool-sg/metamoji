@@ -1,49 +1,85 @@
 /**
  * The note library.
  *
- * Stands in for the original's `MainActivity` / Cabinet hub (docs/02 §1), minus
- * everything cloud-shaped: no drives, no team folders, no sync status. Those
- * belong to phase B and would be dead chrome here.
+ * Stands in for the original's `MainActivity` / Cabinet hub (docs/02 §1). The
+ * cloud half of Cabinet — drives, team folders, sync status — belongs to phase
+ * B and would be dead chrome here, so what is left is the part that works
+ * entirely locally: folders, tags, search and the note grid.
  */
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import { open } from "@tauri-apps/plugin-dialog";
 
+import { ImportReportDialog } from "../components/ImportReportDialog";
+import { Menu } from "../components/Menu";
 import * as api from "../ipc/api";
-import type { ImportReport, NoteSummary } from "../ipc/api";
+import type { Folder, ImportReport, ListQuery, NoteSort, NoteSummary, Tag } from "../ipc/api";
 import { toGeneric } from "../model/converter";
 import { createDocument } from "../model/factory";
-import { newNoteId } from "../model/ids";
-import { ImportReportDialog } from "../components/ImportReportDialog";
+import { newId, newNoteId } from "../model/ids";
+
+const TAG_COLORS = ["#32a5ff", "#d93025", "#188038", "#f29900", "#9334e6", "#e8710a"];
+
+type View = { kind: "all" } | { kind: "folder"; id: string } | { kind: "tag"; id: string } | { kind: "trash" };
 
 export function LibraryScreen() {
   const navigate = useNavigate();
+
   const [notes, setNotes] = useState<NoteSummary[]>([]);
+  const [folders, setFolders] = useState<Folder[]>([]);
+  const [tags, setTags] = useState<Tag[]>([]);
+  const [view, setView] = useState<View>({ kind: "all" });
+  const [search, setSearch] = useState("");
+  const [sort, setSort] = useState<NoteSort>("updated");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [report, setReport] = useState<{ report: ImportReport; noteId: string } | null>(null);
   const [importing, setImporting] = useState(false);
+  const [report, setReport] = useState<ImportReport | null>(null);
+  const [renaming, setRenaming] = useState<string | null>(null);
+
+  const query = useMemo<ListQuery>(
+    () => ({
+      trashed: view.kind === "trash",
+      folderId: view.kind === "folder" ? view.id : null,
+      tagId: view.kind === "tag" ? view.id : null,
+      text: search,
+      sort,
+    }),
+    [view, search, sort],
+  );
 
   const refresh = useCallback(async () => {
     try {
-      setNotes(await api.libraryList());
+      const [n, f, t] = await Promise.all([
+        api.libraryList(query),
+        api.folderList(),
+        api.tagList(),
+      ]);
+      setNotes(n);
+      setFolders(f);
+      setTags(t);
       setError(null);
     } catch (err) {
       setError(String(err));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [query]);
 
   useEffect(() => {
-    void refresh();
-  }, [refresh]);
+    // Debounced so typing in the search box does not fire a query per keystroke.
+    const timer = setTimeout(() => void refresh(), search ? 200 : 0);
+    return () => clearTimeout(timer);
+  }, [refresh, search]);
+
+  // -- notes ---------------------------------------------------------------
 
   const createNote = async () => {
     try {
       const doc = createDocument(`ノート ${notes.length + 1}`);
       const summary = await api.libraryCreate(toGeneric(doc), doc.meta.title);
+      if (view.kind === "folder") await api.librarySetFolder(summary.id, view.id);
       navigate(`/note/${summary.id}`);
     } catch (err) {
       setError(String(err));
@@ -68,7 +104,7 @@ export function LibraryScreen() {
       const title = selected.split("/").pop()?.replace(/\.[^.]+$/, "") ?? "取り込んだノート";
       await api.libraryCreate(result.tree, title);
       await refresh();
-      setReport({ report: result.report, noteId });
+      setReport(result.report);
     } catch (err) {
       setError(String(err));
     } finally {
@@ -76,103 +112,359 @@ export function LibraryScreen() {
     }
   };
 
-  const trash = async (id: string) => {
-    await api.librarySetTrashed(id, true);
-    await refresh();
+  const act = async (fn: () => Promise<unknown>) => {
+    try {
+      await fn();
+      await refresh();
+    } catch (err) {
+      setError(String(err));
+    }
   };
+
+  const duplicate = (note: NoteSummary) =>
+    act(() => api.libraryDuplicate(note.id, newNoteId(), `${note.title} のコピー`));
+
+  const rename = (id: string, title: string) => {
+    setRenaming(null);
+    if (title.trim()) void act(() => api.libraryRename(id, title.trim()));
+  };
+
+  // -- folders and tags -----------------------------------------------------
+
+  const addFolder = () => {
+    const name = window.prompt("フォルダ名");
+    if (name?.trim()) void act(() => api.folderCreate(newId("folder"), name.trim(), null));
+  };
+
+  const addTag = () => {
+    const name = window.prompt("タグ名");
+    if (!name?.trim()) return;
+    const color = TAG_COLORS[tags.length % TAG_COLORS.length];
+    void act(() => api.tagCreate(newId("tag"), name.trim(), color));
+  };
+
+  const viewTitle =
+    view.kind === "trash"
+      ? "ゴミ箱"
+      : view.kind === "folder"
+        ? (folders.find((f) => f.id === view.id)?.name ?? "フォルダ")
+        : view.kind === "tag"
+          ? (tags.find((t) => t.id === view.id)?.name ?? "タグ")
+          : "すべてのノート";
 
   return (
     <div className="app">
       <header className="topbar">
         <span className="topbar__title">MetaMoJi</span>
         <div className="topbar__spacer" />
+        <input
+          className="search-box"
+          type="search"
+          placeholder="ノートを検索"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+        <Menu
+          label="並び順"
+          items={[
+            { id: "updated", label: "更新日時", onSelect: () => setSort("updated") },
+            { id: "created", label: "作成日時", onSelect: () => setSort("created") },
+            { id: "title", label: "名前", onSelect: () => setSort("title") },
+          ]}
+        />
         <button type="button" onClick={importAtdoc} disabled={importing}>
-          {importing ? "取り込み中…" : "ノートを取り込む"}
+          {importing ? "取り込み中…" : "取り込む"}
         </button>
         <button type="button" onClick={createNote}>
           + 新規ノート
         </button>
       </header>
 
-      <main className="library">
-        <div className="library__header">
-          <h1>ノート</h1>
-          <span style={{ color: "var(--color-text-muted)", fontSize: 13 }}>
-            {notes.length} 件
-          </span>
-        </div>
+      <div className="library-body">
+        <nav className="library-sidebar" aria-label="ライブラリ">
+          <button
+            type="button"
+            className="sidebar-item"
+            aria-current={view.kind === "all"}
+            onClick={() => setView({ kind: "all" })}
+          >
+            すべてのノート
+          </button>
 
-        {error && (
-          <div className="notice" style={{ marginBottom: "var(--space-4)" }}>
-            {error}
-          </div>
-        )}
-
-        {loading ? (
-          <div className="library__empty">読み込み中…</div>
-        ) : notes.length === 0 ? (
-          <div className="library__empty">
-            <p>まだノートがありません。</p>
-            <button type="button" className="btn btn--primary" onClick={createNote}>
-              最初のノートを作成
+          <div className="sidebar-heading">
+            <span>フォルダ</span>
+            <button type="button" onClick={addFolder} title="フォルダを追加">
+              +
             </button>
           </div>
-        ) : (
-          <div className="library__grid">
-            {notes.map((note) => (
-              <NoteCard
-                key={note.id}
-                note={note}
-                onOpen={() => navigate(`/note/${note.id}`)}
-                onTrash={() => void trash(note.id)}
-              />
-            ))}
-          </div>
-        )}
-      </main>
+          {folders.length === 0 && <p className="sidebar-empty">まだありません</p>}
+          {folders.map((folder) => (
+            <div key={folder.id} className="sidebar-row">
+              <button
+                type="button"
+                className="sidebar-item"
+                aria-current={view.kind === "folder" && view.id === folder.id}
+                onClick={() => setView({ kind: "folder", id: folder.id })}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  const noteId = e.dataTransfer.getData("text/note-id");
+                  if (noteId) void act(() => api.librarySetFolder(noteId, folder.id));
+                }}
+              >
+                {folder.name}
+                <span className="sidebar-count">{folder.noteCount}</span>
+              </button>
+              <button
+                type="button"
+                className="sidebar-action"
+                title="フォルダを削除"
+                onClick={() => void act(() => api.folderDelete(folder.id))}
+              >
+                ✕
+              </button>
+            </div>
+          ))}
 
-      {report && (
-        <ImportReportDialog
-          report={report.report}
-          onClose={() => setReport(null)}
-        />
-      )}
+          <div className="sidebar-heading">
+            <span>タグ</span>
+            <button type="button" onClick={addTag} title="タグを追加">
+              +
+            </button>
+          </div>
+          {tags.length === 0 && <p className="sidebar-empty">まだありません</p>}
+          {tags.map((tag) => (
+            <div key={tag.id} className="sidebar-row">
+              <button
+                type="button"
+                className="sidebar-item"
+                aria-current={view.kind === "tag" && view.id === tag.id}
+                onClick={() => setView({ kind: "tag", id: tag.id })}
+              >
+                <span className="tag-dot" style={{ background: tag.color }} />
+                {tag.name}
+              </button>
+              <button
+                type="button"
+                className="sidebar-action"
+                title="タグを削除"
+                onClick={() => void act(() => api.tagDelete(tag.id))}
+              >
+                ✕
+              </button>
+            </div>
+          ))}
+
+          <div className="sidebar-heading">
+            <span>その他</span>
+          </div>
+          <button
+            type="button"
+            className="sidebar-item"
+            aria-current={view.kind === "trash"}
+            onClick={() => setView({ kind: "trash" })}
+          >
+            ゴミ箱
+          </button>
+        </nav>
+
+        <main className="library">
+          <div className="library__header">
+            <h1>{viewTitle}</h1>
+            <span style={{ color: "var(--color-text-muted)", fontSize: 13 }}>
+              {notes.length} 件
+            </span>
+          </div>
+
+          {error && (
+            <div className="notice" style={{ marginBottom: "var(--space-4)" }}>
+              {error}
+            </div>
+          )}
+
+          {loading ? (
+            <div className="library__empty">読み込み中…</div>
+          ) : notes.length === 0 ? (
+            <div className="library__empty">
+              {search ? (
+                <p>「{search}」に一致するノートはありません。</p>
+              ) : view.kind === "trash" ? (
+                <p>ゴミ箱は空です。</p>
+              ) : (
+                <>
+                  <p>まだノートがありません。</p>
+                  <button type="button" className="btn btn--primary" onClick={createNote}>
+                    最初のノートを作成
+                  </button>
+                </>
+              )}
+            </div>
+          ) : (
+            <div className="library__grid">
+              {notes.map((note) => (
+                <NoteCard
+                  key={note.id}
+                  note={note}
+                  tags={tags}
+                  renaming={renaming === note.id}
+                  inTrash={view.kind === "trash"}
+                  onOpen={() => navigate(`/note/${note.id}`)}
+                  onStartRename={() => setRenaming(note.id)}
+                  onRename={(title) => rename(note.id, title)}
+                  onDuplicate={() => void duplicate(note)}
+                  onTrash={() => void act(() => api.librarySetTrashed(note.id, true))}
+                  onRestore={() => void act(() => api.librarySetTrashed(note.id, false))}
+                  onDelete={() => {
+                    if (window.confirm(`「${note.title}」を完全に削除しますか?`)) {
+                      void act(() => api.libraryDelete(note.id));
+                    }
+                  }}
+                  onToggleTag={(tagId, on) =>
+                    void act(() => api.tagSetOnDocument(note.id, tagId, on))
+                  }
+                  onRemoveFromFolder={() => void act(() => api.librarySetFolder(note.id, null))}
+                />
+              ))}
+            </div>
+          )}
+        </main>
+      </div>
+
+      {report && <ImportReportDialog report={report} onClose={() => setReport(null)} />}
     </div>
   );
 }
 
+interface CardProps {
+  note: NoteSummary;
+  tags: Tag[];
+  renaming: boolean;
+  inTrash: boolean;
+  onOpen: () => void;
+  onStartRename: () => void;
+  onRename: (title: string) => void;
+  onDuplicate: () => void;
+  onTrash: () => void;
+  onRestore: () => void;
+  onDelete: () => void;
+  onToggleTag: (tagId: string, on: boolean) => void;
+  onRemoveFromFolder: () => void;
+}
+
 function NoteCard({
   note,
+  tags,
+  renaming,
+  inTrash,
   onOpen,
+  onStartRename,
+  onRename,
+  onDuplicate,
   onTrash,
-}: {
-  note: NoteSummary;
-  onOpen: () => void;
-  onTrash: () => void;
-}) {
+  onRestore,
+  onDelete,
+  onToggleTag,
+  onRemoveFromFolder,
+}: CardProps) {
+  const noteTagIds = new Set(note.tags.map((t) => t.id));
+
   return (
-    <div className="note-card">
-      <button type="button" onClick={onOpen} style={{ display: "block", width: "100%" }}>
+    <div
+      className="note-card"
+      draggable={!inTrash}
+      onDragStart={(e) => e.dataTransfer.setData("text/note-id", note.id)}
+    >
+      <button
+        type="button"
+        onClick={onOpen}
+        style={{ display: "block", width: "100%" }}
+        disabled={renaming}
+      >
         {note.thumbnail ? (
-          <img className="note-card__thumb" src={note.thumbnail} alt="" />
+          <img className="note-card__thumb" src={note.thumbnail} alt="" draggable={false} />
         ) : (
           <div className="note-card__thumb" />
         )}
-        <div className="note-card__body">
-          <div className="note-card__title">{note.title}</div>
-          <div className="note-card__meta">
-            {note.pageCount} ページ · {formatDate(note.updatedAt)}
-          </div>
-        </div>
       </button>
-      <div style={{ padding: "0 var(--space-3) var(--space-3)" }}>
-        <button
-          type="button"
-          onClick={onTrash}
-          style={{ fontSize: 12, color: "var(--color-text-muted)" }}
-        >
-          ゴミ箱へ
-        </button>
+
+      <div className="note-card__body">
+        {renaming ? (
+          <input
+            className="note-card__rename"
+            autoFocus
+            defaultValue={note.title}
+            onBlur={(e) => onRename(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") e.currentTarget.blur();
+              if (e.key === "Escape") onRename(note.title);
+            }}
+          />
+        ) : (
+          <div className="note-card__title" title={note.title}>
+            {note.title}
+          </div>
+        )}
+
+        <div className="note-card__meta">
+          {note.pageCount} ページ · {formatDate(note.updatedAt)}
+        </div>
+
+        {note.tags.length > 0 && (
+          <div className="note-card__tags">
+            {note.tags.map((tag) => (
+              <span key={tag.id} className="tag-chip" style={{ background: tag.color }}>
+                {tag.name}
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="note-card__footer">
+        <Menu
+          label="⋯"
+          title="操作"
+          align="left"
+          items={
+            inTrash
+              ? [
+                  { id: "restore", label: "元に戻す", onSelect: onRestore },
+                  {
+                    id: "delete",
+                    label: "完全に削除",
+                    danger: true,
+                    separatorBefore: true,
+                    onSelect: onDelete,
+                  },
+                ]
+              : [
+                  { id: "rename", label: "名前を変更", onSelect: onStartRename },
+                  { id: "duplicate", label: "複製", onSelect: onDuplicate },
+                  ...(note.folderId
+                    ? [
+                        {
+                          id: "unfile",
+                          label: "フォルダから出す",
+                          onSelect: onRemoveFromFolder,
+                        },
+                      ]
+                    : []),
+                  ...tags.map((tag) => ({
+                    id: `tag-${tag.id}`,
+                    label: `${noteTagIds.has(tag.id) ? "✓ " : "　"}${tag.name}`,
+                    separatorBefore: tag.id === tags[0]?.id,
+                    onSelect: () => onToggleTag(tag.id, !noteTagIds.has(tag.id)),
+                  })),
+                  {
+                    id: "trash",
+                    label: "ゴミ箱へ",
+                    danger: true,
+                    separatorBefore: true,
+                    onSelect: onTrash,
+                  },
+                ]
+          }
+        />
       </div>
     </div>
   );

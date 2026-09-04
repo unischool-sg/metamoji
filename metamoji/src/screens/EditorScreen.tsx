@@ -42,7 +42,7 @@ import {
   reorderUnits,
   selectAll,
 } from "../editor/operations";
-import { currentLayer } from "../model/types";
+import { currentLayer, searchableText } from "../model/types";
 import { IDENTITY_VIEWPORT, type Viewport } from "../render/viewport";
 import { EXPORT_DPI, renderPagesForExport, renderPageToDataUrl } from "../io/pageRender";
 import { parsePageRange, readPdfInfo, renderPdfPages } from "../io/pdf";
@@ -132,6 +132,7 @@ export function EditorScreen() {
         state.doc.meta.title,
         state.doc.meta.createdAt,
         state.doc.revision,
+        searchableText(state.doc),
       );
 
       // Page 1 doubles as the library cover, so refresh it alongside the save.

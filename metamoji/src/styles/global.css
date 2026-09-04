@@ -831,3 +831,191 @@ input.layer-row__name {
   border-color: var(--color-accent);
   background: var(--color-surface);
 }
+
+/* --- library shell ------------------------------------------------------ */
+
+.library-body {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
+
+.library-sidebar {
+  flex: 0 0 210px;
+  background: var(--color-surface);
+  border-right: 1px solid var(--color-border);
+  overflow-y: auto;
+  padding: var(--space-3) var(--space-2);
+}
+
+.sidebar-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted);
+  margin: var(--space-4) var(--space-2) var(--space-1);
+}
+
+.sidebar-heading button {
+  width: 18px;
+  height: 18px;
+  border-radius: var(--radius-sm);
+  display: grid;
+  place-items: center;
+  font-size: 14px;
+}
+
+.sidebar-heading button:hover {
+  background: var(--color-surface-alt);
+  color: var(--color-text);
+}
+
+.sidebar-row {
+  display: flex;
+  align-items: center;
+}
+
+.sidebar-item {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  padding: 6px 8px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  text-align: left;
+  color: var(--color-text);
+}
+
+.sidebar-item:hover {
+  background: var(--color-surface-alt);
+}
+
+.sidebar-item[aria-current="true"] {
+  background: var(--color-accent-soft);
+  color: var(--color-accent-strong);
+  font-weight: 600;
+}
+
+.sidebar-count {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.sidebar-action {
+  width: 20px;
+  height: 20px;
+  border-radius: var(--radius-sm);
+  display: grid;
+  place-items: center;
+  font-size: 10px;
+  color: var(--color-text-muted);
+  opacity: 0;
+}
+
+.sidebar-row:hover .sidebar-action {
+  opacity: 1;
+}
+
+.sidebar-action:hover {
+  background: var(--color-surface-alt);
+  color: var(--color-danger);
+}
+
+.sidebar-empty {
+  margin: 0 var(--space-2);
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.search-box {
+  width: 220px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--color-chrome-text);
+  font-size: 13px;
+}
+
+.search-box::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.search-box:focus {
+  outline: none;
+  border-color: var(--color-accent);
+  background: rgba(255, 255, 255, 0.18);
+}
+
+/* --- note card extras --------------------------------------------------- */
+
+.note-card {
+  position: relative;
+}
+
+.note-card__footer {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+
+.note-card:hover .note-card__footer,
+.note-card:focus-within .note-card__footer {
+  opacity: 1;
+}
+
+.note-card__footer .menu > button {
+  width: 26px;
+  height: 26px;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-sm);
+  font-size: 14px;
+  line-height: 1;
+}
+
+.note-card__footer .menu > button:hover {
+  background: var(--color-surface-alt);
+}
+
+.note-card__rename {
+  width: 100%;
+  padding: 2px 4px;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-accent);
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.note-card__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.tag-chip {
+  font-size: 10px;
+  color: #fff;
+  padding: 1px 6px;
+  border-radius: 999px;
+}
+
+.tag-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  flex: 0 0 auto;
+}

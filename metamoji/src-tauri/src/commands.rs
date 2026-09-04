@@ -13,7 +13,7 @@ use tauri::State;
 use crate::error::{AppError, AppResult};
 use crate::model::{AppStatus, GenericTree, NoteSummary};
 use crate::state::AppState;
-use crate::storage::{now_iso, NoteStore};
+use crate::storage::{now_iso, Folder, ListQuery, NoteStore, Tag};
 
 // ---------------------------------------------------------------------------
 // App
@@ -31,13 +31,93 @@ pub fn app_status(state: State<'_, AppState>) -> AppStatus {
 #[tauri::command]
 pub fn library_list(
     state: State<'_, AppState>,
-    include_trashed: Option<bool>,
+    query: Option<ListQuery>,
 ) -> AppResult<Vec<NoteSummary>> {
     state
         .catalog
         .lock()
         .unwrap()
-        .list(include_trashed.unwrap_or(false))
+        .list(&query.unwrap_or_default())
+}
+
+// -- folders ----------------------------------------------------------------
+
+#[tauri::command]
+pub fn folder_list(state: State<'_, AppState>) -> AppResult<Vec<Folder>> {
+    state.catalog.lock().unwrap().folders()
+}
+
+#[tauri::command]
+pub fn folder_create(
+    state: State<'_, AppState>,
+    id: String,
+    name: String,
+    parent_id: Option<String>,
+) -> AppResult<()> {
+    state
+        .catalog
+        .lock()
+        .unwrap()
+        .create_folder(&id, &name, parent_id.as_deref())
+}
+
+#[tauri::command]
+pub fn folder_rename(state: State<'_, AppState>, id: String, name: String) -> AppResult<()> {
+    state.catalog.lock().unwrap().rename_folder(&id, &name)
+}
+
+#[tauri::command]
+pub fn folder_delete(state: State<'_, AppState>, id: String) -> AppResult<()> {
+    state.catalog.lock().unwrap().delete_folder(&id)
+}
+
+#[tauri::command]
+pub fn library_set_folder(
+    state: State<'_, AppState>,
+    id: String,
+    folder_id: Option<String>,
+) -> AppResult<()> {
+    state
+        .catalog
+        .lock()
+        .unwrap()
+        .set_folder(&id, folder_id.as_deref())
+}
+
+// -- tags -------------------------------------------------------------------
+
+#[tauri::command]
+pub fn tag_list(state: State<'_, AppState>) -> AppResult<Vec<Tag>> {
+    state.catalog.lock().unwrap().tags()
+}
+
+#[tauri::command]
+pub fn tag_create(
+    state: State<'_, AppState>,
+    id: String,
+    name: String,
+    color: String,
+) -> AppResult<Tag> {
+    state.catalog.lock().unwrap().create_tag(&id, &name, &color)
+}
+
+#[tauri::command]
+pub fn tag_delete(state: State<'_, AppState>, id: String) -> AppResult<()> {
+    state.catalog.lock().unwrap().delete_tag(&id)
+}
+
+#[tauri::command]
+pub fn tag_set_on_document(
+    state: State<'_, AppState>,
+    document_id: String,
+    tag_id: String,
+    on: bool,
+) -> AppResult<()> {
+    state
+        .catalog
+        .lock()
+        .unwrap()
+        .set_document_tag(&document_id, &tag_id, on)
 }
 
 /// Registers a brand-new note. The frontend has already built the tree; this
@@ -72,6 +152,9 @@ pub fn library_create(
         page_count,
         revision: 0,
         thumbnail: None,
+        folder_id: None,
+        trashed: false,
+        tags: Vec::new(),
     })
 }
 
@@ -141,6 +224,9 @@ pub fn library_duplicate(
         page_count,
         revision,
         thumbnail: None,
+        folder_id: None,
+        trashed: false,
+        tags: Vec::new(),
     })
 }
 
@@ -167,6 +253,9 @@ pub fn note_save(
     title: String,
     created_at: String,
     revision: i64,
+    // `search_body` is the note's text-unit content, flattened. The frontend
+    // supplies it because it is the only side that knows how to read a unit.
+    search_body: Option<String>,
 ) -> AppResult<String> {
     let id = tree.root_id.clone();
     let now = now_iso();
@@ -187,6 +276,11 @@ pub fn note_save(
         page_count,
         revision,
     )?;
+    state
+        .catalog
+        .lock()
+        .unwrap()
+        .index_document(&id, &title, search_body.as_deref().unwrap_or(""))?;
     Ok(now)
 }
 

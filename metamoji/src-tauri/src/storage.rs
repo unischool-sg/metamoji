@@ -87,13 +87,60 @@ impl Catalog {
             );
             CREATE INDEX IF NOT EXISTS idx_documents_updated
                 ON documents(trashed, updated_at DESC);
+
+            CREATE TABLE IF NOT EXISTS folders (
+                id         TEXT PRIMARY KEY,
+                name       TEXT NOT NULL,
+                parent_id  TEXT REFERENCES folders(id) ON DELETE CASCADE,
+                ord        INTEGER NOT NULL DEFAULT 0,
+                created_at TEXT NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_folders_parent ON folders(parent_id, ord);
+
+            CREATE TABLE IF NOT EXISTS tags (
+                id    TEXT PRIMARY KEY,
+                name  TEXT NOT NULL UNIQUE,
+                color TEXT NOT NULL DEFAULT '#32a5ff'
+            );
+            CREATE TABLE IF NOT EXISTS document_tags (
+                document_id TEXT NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+                tag_id      TEXT NOT NULL REFERENCES tags(id) ON DELETE CASCADE,
+                PRIMARY KEY (document_id, tag_id)
+            );
+            CREATE INDEX IF NOT EXISTS idx_document_tags_tag ON document_tags(tag_id);
+
+            -- Full-text index over note titles and text-unit content. The
+            -- original kept a separate tag/search database for exactly this
+            -- reason (docs/07 §3): scanning every note file to answer a search
+            -- does not scale. FTS5 replaces that whole subsystem.
+            CREATE VIRTUAL TABLE IF NOT EXISTS document_search
+                USING fts5(document_id UNINDEXED, title, body);
             "#,
         )?;
+        // `folder_id` arrived after the first release, so add it to tables that
+        // predate it. SQLite has no "ADD COLUMN IF NOT EXISTS", and the error
+        // for a duplicate column is the expected outcome on an up-to-date file.
+        if !self.has_column("documents", "folder_id")? {
+            self.conn
+                .execute("ALTER TABLE documents ADD COLUMN folder_id TEXT", [])?;
+        }
+
         self.conn.execute(
             "INSERT OR REPLACE INTO meta(key, value) VALUES ('schema_version', ?1)",
             params![SCHEMA_VERSION.to_string()],
         )?;
         Ok(())
+    }
+
+    fn has_column(&self, table: &str, column: &str) -> AppResult<bool> {
+        let mut stmt = self.conn.prepare(&format!("PRAGMA table_info({table})"))?;
+        let mut rows = stmt.query([])?;
+        while let Some(row) = rows.next()? {
+            if row.get::<_, String>(1)? == column {
+                return Ok(true);
+            }
+        }
+        Ok(false)
     }
 
     pub fn schema_version(&self) -> i64 {
@@ -108,16 +155,60 @@ impl Catalog {
             .unwrap_or(0)
     }
 
-    pub fn list(&self, include_trashed: bool) -> AppResult<Vec<NoteSummary>> {
-        let sql = if include_trashed {
-            "SELECT id, title, created_at, updated_at, page_count, revision, thumbnail
-             FROM documents ORDER BY updated_at DESC"
-        } else {
-            "SELECT id, title, created_at, updated_at, page_count, revision, thumbnail
-             FROM documents WHERE trashed = 0 ORDER BY updated_at DESC"
-        };
-        let mut stmt = self.conn.prepare(sql)?;
-        let rows = stmt.query_map([], |row| {
+    pub fn list(&self, query: &ListQuery) -> AppResult<Vec<NoteSummary>> {
+        let mut sql = String::from(
+            "SELECT d.id, d.title, d.created_at, d.updated_at, d.page_count, d.revision,
+                    d.thumbnail, d.folder_id, d.trashed
+             FROM documents d",
+        );
+        let mut wheres: Vec<String> = Vec::new();
+        let mut args: Vec<Box<dyn rusqlite::ToSql>> = Vec::new();
+
+        if let Some(tag_id) = &query.tag_id {
+            sql.push_str(" JOIN document_tags dt ON dt.document_id = d.id");
+            wheres.push("dt.tag_id = ?".into());
+            args.push(Box::new(tag_id.clone()));
+        }
+
+        wheres.push(if query.trashed { "d.trashed = 1".into() } else { "d.trashed = 0".into() });
+
+        // A folder filter only applies outside the trash: the trash is flat, so
+        // a note keeps its folder but is listed regardless of it.
+        if !query.trashed {
+            match &query.folder_id {
+                Some(folder) => {
+                    wheres.push("d.folder_id = ?".into());
+                    args.push(Box::new(folder.clone()));
+                }
+                None if query.root_only => wheres.push("d.folder_id IS NULL".into()),
+                None => {}
+            }
+        }
+
+        // A query that reduces to nothing — all punctuation, say — must not
+        // become an empty MATCH, which FTS5 rejects as a syntax error.
+        if let Some(match_expr) = query.text.as_deref().and_then(fts_query) {
+            wheres.push(
+                "d.id IN (SELECT document_id FROM document_search WHERE document_search MATCH ?)"
+                    .into(),
+            );
+            args.push(Box::new(match_expr));
+        }
+
+        if !wheres.is_empty() {
+            sql.push_str(" WHERE ");
+            sql.push_str(&wheres.join(" AND "));
+        }
+
+        sql.push_str(match query.sort.as_deref() {
+            Some("title") => " ORDER BY d.title COLLATE NOCASE ASC",
+            Some("created") => " ORDER BY d.created_at DESC",
+            _ => " ORDER BY d.updated_at DESC",
+        });
+
+        let mut stmt = self.conn.prepare(&sql)?;
+        let params: Vec<&dyn rusqlite::ToSql> = args.iter().map(|b| b.as_ref()).collect();
+        let rows = stmt.query_map(params.as_slice(), |row| {
             let png: Option<Vec<u8>> = row.get(6)?;
             Ok(NoteSummary {
                 id: row.get(0)?,
@@ -127,9 +218,48 @@ impl Catalog {
                 page_count: row.get(4)?,
                 revision: row.get(5)?,
                 thumbnail: png.map(|b| to_png_data_url(&b)),
+                folder_id: row.get(7)?,
+                trashed: row.get::<_, i64>(8)? != 0,
+                tags: Vec::new(),
             })
         })?;
-        Ok(rows.collect::<Result<Vec<_>, _>>()?)
+
+        let mut out = rows.collect::<Result<Vec<_>, _>>()?;
+        self.attach_tags(&mut out)?;
+        Ok(out)
+    }
+
+    /// Fills in each summary's tag list in one query rather than one per note.
+    fn attach_tags(&self, notes: &mut [NoteSummary]) -> AppResult<()> {
+        if notes.is_empty() {
+            return Ok(());
+        }
+        let mut stmt = self.conn.prepare(
+            "SELECT dt.document_id, t.id, t.name, t.color
+             FROM document_tags dt JOIN tags t ON t.id = dt.tag_id",
+        )?;
+        let rows = stmt.query_map([], |row| {
+            Ok((
+                row.get::<_, String>(0)?,
+                Tag {
+                    id: row.get(1)?,
+                    name: row.get(2)?,
+                    color: row.get(3)?,
+                },
+            ))
+        })?;
+
+        let mut by_doc: HashMap<String, Vec<Tag>> = HashMap::new();
+        for row in rows {
+            let (doc_id, tag) = row?;
+            by_doc.entry(doc_id).or_default().push(tag);
+        }
+        for note in notes.iter_mut() {
+            if let Some(tags) = by_doc.remove(&note.id) {
+                note.tags = tags;
+            }
+        }
+        Ok(())
     }
 
     pub fn upsert(
@@ -211,7 +341,241 @@ impl Catalog {
     pub fn remove(&self, id: &str) -> AppResult<()> {
         self.conn
             .execute("DELETE FROM documents WHERE id = ?1", params![id])?;
+        self.conn.execute(
+            "DELETE FROM document_search WHERE document_id = ?1",
+            params![id],
+        )?;
         Ok(())
+    }
+
+    pub fn set_folder(&self, id: &str, folder_id: Option<&str>) -> AppResult<()> {
+        self.conn.execute(
+            "UPDATE documents SET folder_id = ?2 WHERE id = ?1",
+            params![id, folder_id],
+        )?;
+        Ok(())
+    }
+
+    // -- search index --------------------------------------------------------
+
+    /// Replaces a note's search entry.
+    ///
+    /// Called on save with the note's text-unit content flattened by the
+    /// frontend, which is the only place that knows how to read a unit.
+    pub fn index_document(&self, id: &str, title: &str, body: &str) -> AppResult<()> {
+        self.conn.execute(
+            "DELETE FROM document_search WHERE document_id = ?1",
+            params![id],
+        )?;
+        self.conn.execute(
+            "INSERT INTO document_search(document_id, title, body) VALUES (?1, ?2, ?3)",
+            params![id, title, body],
+        )?;
+        Ok(())
+    }
+
+    // -- folders -------------------------------------------------------------
+
+    pub fn folders(&self) -> AppResult<Vec<Folder>> {
+        let mut stmt = self.conn.prepare(
+            "SELECT id, name, parent_id, ord FROM folders ORDER BY ord, name COLLATE NOCASE",
+        )?;
+        let rows = stmt.query_map([], |row| {
+            Ok(Folder {
+                id: row.get(0)?,
+                name: row.get(1)?,
+                parent_id: row.get(2)?,
+                ord: row.get(3)?,
+                note_count: 0,
+            })
+        })?;
+        let mut folders = rows.collect::<Result<Vec<_>, _>>()?;
+
+        let mut counts = self.conn.prepare(
+            "SELECT folder_id, COUNT(*) FROM documents
+             WHERE trashed = 0 AND folder_id IS NOT NULL GROUP BY folder_id",
+        )?;
+        let mut map: HashMap<String, i64> = HashMap::new();
+        let mut rows = counts.query([])?;
+        while let Some(row) = rows.next()? {
+            map.insert(row.get(0)?, row.get(1)?);
+        }
+        for folder in folders.iter_mut() {
+            folder.note_count = map.get(&folder.id).copied().unwrap_or(0);
+        }
+        Ok(folders)
+    }
+
+    pub fn create_folder(&self, id: &str, name: &str, parent_id: Option<&str>) -> AppResult<()> {
+        self.conn.execute(
+            "INSERT INTO folders(id, name, parent_id, ord, created_at)
+             VALUES (?1, ?2, ?3, (SELECT COALESCE(MAX(ord), 0) + 1 FROM folders), ?4)",
+            params![id, name, parent_id, now_iso()],
+        )?;
+        Ok(())
+    }
+
+    pub fn rename_folder(&self, id: &str, name: &str) -> AppResult<()> {
+        self.conn
+            .execute("UPDATE folders SET name = ?2 WHERE id = ?1", params![id, name])?;
+        Ok(())
+    }
+
+    /// Deletes a folder. Its notes are not deleted — they move back to the
+    /// root, because losing notes to a folder operation would be indefensible.
+    pub fn delete_folder(&self, id: &str) -> AppResult<()> {
+        self.conn.execute(
+            "UPDATE documents SET folder_id = NULL WHERE folder_id = ?1",
+            params![id],
+        )?;
+        self.conn
+            .execute("DELETE FROM folders WHERE id = ?1", params![id])?;
+        Ok(())
+    }
+
+    // -- tags ----------------------------------------------------------------
+
+    pub fn tags(&self) -> AppResult<Vec<Tag>> {
+        let mut stmt = self
+            .conn
+            .prepare("SELECT id, name, color FROM tags ORDER BY name COLLATE NOCASE")?;
+        let rows = stmt.query_map([], |row| {
+            Ok(Tag {
+                id: row.get(0)?,
+                name: row.get(1)?,
+                color: row.get(2)?,
+            })
+        })?;
+        Ok(rows.collect::<Result<Vec<_>, _>>()?)
+    }
+
+    pub fn create_tag(&self, id: &str, name: &str, color: &str) -> AppResult<Tag> {
+        self.conn.execute(
+            "INSERT OR IGNORE INTO tags(id, name, color) VALUES (?1, ?2, ?3)",
+            params![id, name, color],
+        )?;
+        // Tag names are unique, so an existing name wins rather than erroring —
+        // the caller wanted a tag with this name and now there is one.
+        let tag = self.conn.query_row(
+            "SELECT id, name, color FROM tags WHERE name = ?1",
+            params![name],
+            |row| {
+                Ok(Tag {
+                    id: row.get(0)?,
+                    name: row.get(1)?,
+                    color: row.get(2)?,
+                })
+            },
+        )?;
+        Ok(tag)
+    }
+
+    pub fn delete_tag(&self, id: &str) -> AppResult<()> {
+        self.conn
+            .execute("DELETE FROM tags WHERE id = ?1", params![id])?;
+        Ok(())
+    }
+
+    pub fn set_document_tag(&self, doc_id: &str, tag_id: &str, on: bool) -> AppResult<()> {
+        if on {
+            self.conn.execute(
+                "INSERT OR IGNORE INTO document_tags(document_id, tag_id) VALUES (?1, ?2)",
+                params![doc_id, tag_id],
+            )?;
+        } else {
+            self.conn.execute(
+                "DELETE FROM document_tags WHERE document_id = ?1 AND tag_id = ?2",
+                params![doc_id, tag_id],
+            )?;
+        }
+        Ok(())
+    }
+}
+
+/// Filters for the library list.
+#[derive(Debug, Clone, Default, serde::Deserialize)]
+pub struct ListQuery {
+    #[serde(default)]
+    pub trashed: bool,
+    #[serde(rename = "folderId")]
+    pub folder_id: Option<String>,
+    /// When no folder is given, restrict to notes that are in no folder.
+    #[serde(default, rename = "rootOnly")]
+    pub root_only: bool,
+    #[serde(rename = "tagId")]
+    pub tag_id: Option<String>,
+    pub text: Option<String>,
+    /// "updated" (default), "created" or "title".
+    pub sort: Option<String>,
+}
+
+#[derive(Debug, Clone, serde::Serialize)]
+pub struct Folder {
+    pub id: String,
+    pub name: String,
+    #[serde(rename = "parentId")]
+    pub parent_id: Option<String>,
+    pub ord: i64,
+    #[serde(rename = "noteCount")]
+    pub note_count: i64,
+}
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct Tag {
+    pub id: String,
+    pub name: String,
+    pub color: String,
+}
+
+/// Turns user input into an FTS5 prefix query, or `None` if there is nothing
+/// left to search for.
+///
+/// Raw input cannot go into MATCH: FTS5 treats `"`, `*`, `:`, `^` and `-` as
+/// syntax, so a stray quote is a syntax error rather than a search for a quote.
+/// Each surviving term is quoted and given a prefix wildcard, which is what
+/// people expect from a search box.
+fn fts_query(input: &str) -> Option<String> {
+    let terms: Vec<String> = input
+        .split_whitespace()
+        // Strip the characters FTS5 would read as operators, then keep only
+        // terms that still have something in them.
+        .map(|term| {
+            term.chars()
+                .filter(|c| !matches!(c, '"' | '*' | ':' | '^' | '-' | '(' | ')'))
+                .collect::<String>()
+        })
+        .filter(|term| !term.is_empty())
+        .map(|term| format!("\"{term}\"*"))
+        .collect();
+
+    (!terms.is_empty()).then(|| terms.join(" "))
+}
+
+#[cfg(test)]
+mod fts_tests {
+    use super::fts_query;
+
+    #[test]
+    fn builds_a_prefix_query_per_term() {
+        assert_eq!(fts_query("algebra"), Some("\"algebra\"*".into()));
+        assert_eq!(
+            fts_query("algebra notes"),
+            Some("\"algebra\"* \"notes\"*".into())
+        );
+    }
+
+    #[test]
+    fn strips_fts_operators_rather_than_passing_them_through() {
+        assert_eq!(fts_query("a:b"), Some("\"ab\"*".into()));
+        assert_eq!(fts_query("-foo"), Some("\"foo\"*".into()));
+    }
+
+    #[test]
+    fn returns_none_when_nothing_searchable_remains() {
+        // These would each build an empty MATCH expression, which FTS5 rejects.
+        for junk in ["", "   ", "\"", "*", "^^^", "-", "()"] {
+            assert_eq!(fts_query(junk), None, "expected None for {junk:?}");
+        }
     }
 }
 

@@ -12,7 +12,7 @@ import {
 import { addNode, type GenericTree } from "./generic";
 import { newStrokeId } from "./ids";
 import { strokeBounds } from "./stroke";
-import type { DrawUnit, NoteDocument, Stroke } from "./types";
+import { searchableText, type DrawUnit, type NoteDocument, type Stroke } from "./types";
 
 function makeStroke(): Stroke {
   const points = [
@@ -246,5 +246,32 @@ describe("converter", () => {
     // 3 samples x (x, y, pressure, t)
     expect(points.$points).toHaveLength(12);
     expect(points.$points.every((n) => typeof n === "number")).toBe(true);
+  });
+});
+
+describe("searchableText", () => {
+  it("collects the title and every text-bearing unit", () => {
+    const doc = createDocument("代数のノート");
+    const layer = doc.pages[0].layers[0];
+
+    const text = createTextUnit(0, 0);
+    text.text = "二次方程式";
+    const sticky = createFlipUnit(0, 0);
+    sticky.frontText = "おもて";
+    sticky.backText = "うら";
+    layer.units.push(text, sticky);
+
+    const body = searchableText(doc);
+    expect(body).toContain("代数のノート");
+    expect(body).toContain("二次方程式");
+    expect(body).toContain("おもて");
+    expect(body).toContain("うら");
+  });
+
+  it("skips empty text and contributes nothing for ink", () => {
+    const doc = createDocument("空");
+    doc.pages[0].layers[0].units.push(createTextUnit(0, 0));
+    // Handwriting has no recognised text, so it adds nothing.
+    expect(searchableText(doc)).toBe("空");
   });
 });

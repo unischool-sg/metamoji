@@ -8,7 +8,7 @@
 use std::collections::HashMap;
 
 use metamoji_lib::model::{GenericModel, GenericTree};
-use metamoji_lib::storage::{now_iso, AppPaths, Catalog, NoteStore};
+use metamoji_lib::storage::{now_iso, AppPaths, Catalog, ListQuery, NoteStore};
 
 fn tmp_dir(name: &str) -> std::path::PathBuf {
     let dir = std::env::temp_dir().join(format!(
@@ -183,13 +183,13 @@ fn the_catalog_lists_indexes_and_trashes_notes() {
         .upsert("n2", &paths.note_path("n2"), "二つ目", &now, &now, 1, 0)
         .expect("upsert");
 
-    assert_eq!(catalog.list(false).expect("list").len(), 2);
+    assert_eq!(catalog.list(&ListQuery::default()).expect("list").len(), 2);
 
     // Upsert on an existing id updates rather than duplicating.
     catalog
         .upsert("n1", &paths.note_path("n1"), "改題", &now, &now, 5, 7)
         .expect("re-upsert");
-    let notes = catalog.list(false).expect("list");
+    let notes = catalog.list(&ListQuery::default()).expect("list");
     assert_eq!(notes.len(), 2);
     let n1 = notes.iter().find(|n| n.id == "n1").expect("n1");
     assert_eq!(n1.title, "改題");
@@ -197,16 +197,23 @@ fn the_catalog_lists_indexes_and_trashes_notes() {
     assert_eq!(n1.revision, 7);
 
     catalog.set_trashed("n1", true).expect("trash");
-    assert_eq!(catalog.list(false).expect("list").len(), 1);
-    assert_eq!(catalog.list(true).expect("list all").len(), 2);
+    // The default list hides trashed notes; `trashed: true` is the trash view,
+    // which shows only them.
+    assert_eq!(catalog.list(&ListQuery::default()).expect("list").len(), 1);
+    let trash = catalog
+        .list(&ListQuery { trashed: true, ..Default::default() })
+        .expect("trash view");
+    assert_eq!(trash.len(), 1);
+    assert_eq!(trash[0].id, "n1");
+    assert!(trash[0].trashed);
 
     catalog.set_trashed("n1", false).expect("restore");
-    assert_eq!(catalog.list(false).expect("list").len(), 2);
+    assert_eq!(catalog.list(&ListQuery::default()).expect("list").len(), 2);
 
     // A thumbnail comes back as a data URL the library grid can use directly.
     catalog.set_thumbnail("n2", &[1, 2, 3]).expect("thumb");
     let n2 = catalog
-        .list(false)
+        .list(&ListQuery::default())
         .expect("list")
         .into_iter()
         .find(|n| n.id == "n2")
@@ -246,4 +253,156 @@ fn walk_visits_parents_before_children() {
         *seen.entry(id).or_insert(0) += 1;
     }
     assert!(seen.values().all(|c| *c == 1), "walk visited a model twice");
+}
+
+#[test]
+fn folders_hold_notes_and_release_them_when_deleted() {
+    let dir = tmp_dir("folders");
+    let paths = AppPaths::new(dir.clone()).expect("paths");
+    let catalog = Catalog::open(&paths.library_db).expect("catalog");
+    let now = now_iso();
+
+    catalog
+        .upsert("n1", &paths.note_path("n1"), "一つ目", &now, &now, 1, 0)
+        .expect("upsert");
+    catalog
+        .upsert("n2", &paths.note_path("n2"), "二つ目", &now, &now, 1, 0)
+        .expect("upsert");
+
+    catalog.create_folder("f1", "授業", None).expect("folder");
+    catalog.set_folder("n1", Some("f1")).expect("assign");
+
+    let folders = catalog.folders().expect("folders");
+    assert_eq!(folders.len(), 1);
+    assert_eq!(folders[0].note_count, 1);
+
+    let in_folder = catalog
+        .list(&ListQuery {
+            folder_id: Some("f1".into()),
+            ..Default::default()
+        })
+        .expect("list");
+    assert_eq!(in_folder.len(), 1);
+    assert_eq!(in_folder[0].id, "n1");
+
+    // Only notes with no folder at all, for the library root view.
+    let root = catalog
+        .list(&ListQuery {
+            root_only: true,
+            ..Default::default()
+        })
+        .expect("list");
+    assert_eq!(root.len(), 1);
+    assert_eq!(root[0].id, "n2");
+
+    // Deleting a folder must not delete the notes inside it.
+    catalog.delete_folder("f1").expect("delete folder");
+    assert_eq!(catalog.list(&ListQuery::default()).expect("list").len(), 2);
+    assert!(catalog.folders().expect("folders").is_empty());
+
+    std::fs::remove_dir_all(&dir).ok();
+}
+
+#[test]
+fn tags_attach_to_notes_and_filter_the_list() {
+    let dir = tmp_dir("tags");
+    let paths = AppPaths::new(dir.clone()).expect("paths");
+    let catalog = Catalog::open(&paths.library_db).expect("catalog");
+    let now = now_iso();
+
+    catalog
+        .upsert("n1", &paths.note_path("n1"), "一つ目", &now, &now, 1, 0)
+        .expect("upsert");
+    catalog
+        .upsert("n2", &paths.note_path("n2"), "二つ目", &now, &now, 1, 0)
+        .expect("upsert");
+
+    let tag = catalog.create_tag("t1", "重要", "#d93025").expect("tag");
+    assert_eq!(tag.name, "重要");
+
+    // Creating the same name twice returns the existing tag rather than failing.
+    let again = catalog.create_tag("t2", "重要", "#000000").expect("tag");
+    assert_eq!(again.id, "t1");
+    assert_eq!(catalog.tags().expect("tags").len(), 1);
+
+    catalog.set_document_tag("n1", "t1", true).expect("attach");
+    let tagged = catalog
+        .list(&ListQuery {
+            tag_id: Some("t1".into()),
+            ..Default::default()
+        })
+        .expect("list");
+    assert_eq!(tagged.len(), 1);
+    assert_eq!(tagged[0].id, "n1");
+    assert_eq!(tagged[0].tags.len(), 1);
+    assert_eq!(tagged[0].tags[0].name, "重要");
+
+    catalog.set_document_tag("n1", "t1", false).expect("detach");
+    assert!(catalog
+        .list(&ListQuery {
+            tag_id: Some("t1".into()),
+            ..Default::default()
+        })
+        .expect("list")
+        .is_empty());
+
+    std::fs::remove_dir_all(&dir).ok();
+}
+
+#[test]
+fn full_text_search_finds_notes_by_title_and_body() {
+    let dir = tmp_dir("search");
+    let paths = AppPaths::new(dir.clone()).expect("paths");
+    let catalog = Catalog::open(&paths.library_db).expect("catalog");
+    let now = now_iso();
+
+    for (id, title) in [("n1", "algebra notes"), ("n2", "history essay")] {
+        catalog
+            .upsert(id, &paths.note_path(id), title, &now, &now, 1, 0)
+            .expect("upsert");
+    }
+    catalog
+        .index_document("n1", "algebra notes", "quadratic equations and factoring")
+        .expect("index");
+    catalog
+        .index_document("n2", "history essay", "the industrial revolution")
+        .expect("index");
+
+    let by_title = |text: &str| {
+        catalog
+            .list(&ListQuery {
+                text: Some(text.into()),
+                ..Default::default()
+            })
+            .expect("list")
+    };
+
+    assert_eq!(by_title("algebra").len(), 1);
+    assert_eq!(by_title("algebra")[0].id, "n1");
+    // Body text is searchable too, not just the title.
+    assert_eq!(by_title("quadratic")[0].id, "n1");
+    assert_eq!(by_title("industrial")[0].id, "n2");
+    assert!(by_title("nonexistent").is_empty());
+
+    // Re-indexing replaces rather than accumulating, so stale text stops matching.
+    catalog
+        .index_document("n1", "algebra notes", "completely different content")
+        .expect("reindex");
+    assert!(by_title("quadratic").is_empty());
+
+    // Punctuation is FTS5 syntax; it must not blow up the query.
+    for junk in ["\"", "*", "a:b", "^^^", "-", ""] {
+        catalog
+            .list(&ListQuery {
+                text: Some(junk.into()),
+                ..Default::default()
+            })
+            .unwrap_or_else(|e| panic!("query {junk:?} failed: {e}"));
+    }
+
+    // Deleting a note clears its search entry.
+    catalog.remove("n1").expect("remove");
+    assert!(by_title("algebra").is_empty());
+
+    std::fs::remove_dir_all(&dir).ok();
 }
