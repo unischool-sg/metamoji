@@ -38,6 +38,17 @@
   に反映。ただし製品ID定数が `"Android-Note-Business_3.1.8"` (別製品由来) であり、
   `share_classroom`で実際にこの画面へ到達する経路は未確認(コード自体は`EntryActivity`/
   `LicenseKeyInputProxyActivity`から到達可能で生きている)。レガシー/共有ライブラリ機能の可能性。
+- ✅ **`com/metamoji/media/video/network` (`NwServerAccessor`/`NwUpload`)** — 動画ノート機能の
+  「Flora」REST API。10コマンド(`getlist`/`getclipcount`/`getclipinfo`/`getposterframe`/
+  `deleteclip`/`exportclipinfo`/`getcoinfo`/`getserverstatus`/`getuploadpoint`/`reserve`、
+  各`{command}2`というパス)全て解析済み。認証はHTTPヘッダではなく`multipart/form-data`の
+  フォームパートとして送信する独特の方式(`loginUser`/`loginCompany`/`userId`/`companyId`/
+  `rootServer`等)。動画本体のアップロードは`getUploadPoint`で取得した署名付きURLに対する
+  別経路の直接POST(`mmj.ms.coid`/`mmj.ms.userid`/`mmj.ms.ticket`ヘッダ)であることも確認。
+  [video.tsp](./video.tsp)に反映。ベースホストが固定でなく動的な「Floraサーバー」である点、
+  ホスト名にスキームが無い場合は平文HTTPとして扱われる点に注意(ドキュメント内に明記)。
+  一部レスポンス(`getclipinfo`/`getposterframe`/`deleteclip`/`exportclipinfo`/`getcoinfo`の
+  詳細フィールド)は未確認で`Record<unknown>`のまま。
 
 ## 未解析パッケージ一覧(優先順位順)
 
@@ -48,8 +59,8 @@
 | ~~1~~ | ~~`com/metamoji/network` (`NwWebDAVRequest`)~~ | ✅ **解析完了**。[webdav.tsp](./webdav.tsp) と上記「完了済み」を参照。 | — | — |
 | ~~2~~ | ~~`com/metamoji/dvm/cs` (`DvmCloudService`)~~ | ✅ **解析完了**。[distribute.tsp](./distribute.tsp) と上記「完了済み」を参照。 | — | — |
 | ~~3~~ | ~~`com/metamoji/lc`~~ | ✅ **解析完了**。[license-activation.tsp](./license-activation.tsp) と上記「完了済み」を参照。 | — | — |
+| ~~5~~ | ~~`com/metamoji/media/video/network`~~ | ✅ **解析完了**。[video.tsp](./video.tsp) と上記「完了済み」を参照。 | — | — |
 | 4 | `com/metamoji/ns/service` (`NsCollabo*`) | **リアルタイム授業ルーム共有("ClassShare"の名を冠する中核機能)**。ルーム作成・参加・ロール管理・設定同期。23ファイル中18ファイルが直接通信。 | `/cosmos/ModifyRole`, `/mmjcloud/ShareViewGetList`, `/mmjcloud/ShareViewGetMyRole`, `/mmjcloud/ShareViewGetRoomInfo`, `/mmjcloud/ShareViewGetRoomSetting`, `/mmjcloud/ShareViewSetRoomInfo`, `/mmjcloud/ShareViewSetRoomSetting`, `gallery/PostForShareAnytime` 等。`For{CheckRole,CreateRoom,CreateUniqueID,GetMemberList,GetRoomInfo,...}`というコマンドパターンで整理されており、TypeSpec化しやすい構造。 | `sessionID`ベース。ロール概念(`presenter`/`speaker`/`visitor`)、ルームタイプ(`casual`/`formal`/`limited`)あり。UA文字列 `"Android-Share-G-ClassRoom"`。 |
-| 5 | `com/metamoji/media/video/network` (`VfCloud`, `NwServerAccessor`等) | **動画ノート機能(録画・アップロード・再生)**。アプリの目玉機能の一つ。71ファイル中の中核は`VfCloud`(+Companion), `VfIdMappingService`, `NwUpload`, `NwServerAccessor`, `NwUserInfoUpdater`の5クラス。 | 動的に割り当てられる"Flora"メディアサーバー(`flora/api/v1/`)に対し、`getlist`/`reserve`/`getclipcount`/`getclipinfo`/`getcoinfo`/`getposterframe`/`deleteclip`/`getserverstatus`/`getuploadpoint`/`exportclipinfo`等のコマンドクエリでアクセス。 | 独自ログイン/トークン方式(`accessToken`/`refreshToken`/`loginUser`/`loginCompany`)。サーバー予約フロー(`reserveServerId`)あり。 |
 | 6 | `com/metamoji/rc` (`RcRemoteConverter*`) | **ファイル形式変換サービス**("Remote Converter")。`CsCloudService`と同じDigitalCabinetホストを共有。 | `/convert/TentativeRegist`, `/convert/ConvertRequest`, `/convert/GetConvertedFile`。マルチパートPOST(userId/password/productName/productVersion/jobId1/jobId2/fromMime/toMime/fileEntity)。エラーコード例: `14`=ライセンスなし, `100`=変換中。 | `CsCloudService`と同じDigital Cabinetホスト(`ModelInfo$BuildOptions.DIGITAL_CABINET_URL_BASE`)。 |
 
 ### 優先度: Medium
@@ -72,12 +83,13 @@
 
 ## 次回セッションへの推奨アクション
 
-1. **`ns/service`(リアルタイム授業ルーム)** と **`media/video/network`(動画ノート)** は
-   アプリの中核機能かつFor*コマンドパターンで構造化されており、`CsCloudService`と同じ手法
-   (フィールド抽出スクリプト→TypeSpec生成)が最も効率よく適用できる。次点候補。
+1. **`ns/service`(リアルタイム授業ルーム)** は残るHigh優先度の最後の1件。
+   For*コマンドパターンで構造化されており、これまでと同じ手法が適用できる。次点候補。
 2. ~~`network`(WebDAV)~~ ✅ 解析済み([webdav.tsp](./webdav.tsp))。
-3. **`lc`(ライセンス)** と **`rc`(変換サービス)** はエンドポイント数が少なく
-   (各2〜3個)、ホスト・パスも既に判明しているため、着手コストが低い「クイックウィン」。
+3. ~~`lc`(ライセンス)~~ ✅ 解析済み([license-activation.tsp](./license-activation.tsp))。
+   **`rc`(変換サービス)** はエンドポイント数が少なく(3個)、ホスト・パスも既に判明しているため、
+   着手コストが低い「クイックウィン」。
+4. ~~`media/video/network`(動画ノート)~~ ✅ 解析済み([video.tsp](./video.tsp))。
 4. `sd/cs` は `CsCloudService` のドライブ機能との重複・世代関係が未確認。着手前に
    どちらが実際にこのバージョン(3.15.1.0)で使われているか実装呼び出し元を確認すると無駄がない。
 5. Low優先度の4パッケージは、必要になったタイミングで着手すれば十分。
