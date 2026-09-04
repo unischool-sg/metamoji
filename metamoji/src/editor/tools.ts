@@ -12,10 +12,14 @@ export type ToolId =
   | "pen"
   | "eraser"
   | "select"
+  | "lasso"
   | "pan"
   | "text"
   | "sticky"
-  | "image";
+  | "image"
+  | "shape"
+  | "form"
+  | "laser";
 
 export interface ToolDef {
   id: ToolId;
@@ -28,11 +32,25 @@ export const TOOLS: ToolDef[] = [
   { id: "pen", label: "ペン", shortcut: "P", cursor: "crosshair" },
   { id: "eraser", label: "消しゴム", shortcut: "E", cursor: "cell" },
   { id: "select", label: "選択", shortcut: "V", cursor: "default" },
+  { id: "lasso", label: "なげなわ", shortcut: "L", cursor: "crosshair" },
   { id: "text", label: "テキスト", shortcut: "T", cursor: "text" },
   { id: "sticky", label: "付箋", shortcut: "N", cursor: "copy" },
+  { id: "shape", label: "図形", shortcut: "S", cursor: "crosshair" },
+  { id: "form", label: "表・罫線", shortcut: "F", cursor: "crosshair" },
   { id: "image", label: "画像", shortcut: "I", cursor: "copy" },
+  { id: "laser", label: "レーザー", shortcut: "R", cursor: "crosshair" },
   { id: "pan", label: "移動", shortcut: "H", cursor: "grab" },
 ];
+
+/** Tools that place a unit by dragging out its frame. */
+export const DRAG_TO_PLACE_TOOLS: ReadonlySet<ToolId> = new Set(["shape", "form"]);
+
+/** Tools that place a unit with a single tap. */
+export const TAP_TO_PLACE_TOOLS: ReadonlySet<ToolId> = new Set([
+  "text",
+  "sticky",
+  "image",
+]);
 
 export interface PenPreset extends PenAttributes {
   id: string;

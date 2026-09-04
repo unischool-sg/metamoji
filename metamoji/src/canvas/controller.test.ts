@@ -9,8 +9,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { CanvasController, type ToolMode } from "./controller";
 import { EditSession } from "../editor/session";
-import { A4_WIDTH, A4_HEIGHT, createDocument } from "../model/factory";
-import type { Point } from "../model/types";
+import { A4_WIDTH, A4_HEIGHT, createDocument, createTextUnit } from "../model/factory";
+import type { Point, Rect } from "../model/types";
 
 /**
  * jsdom has no canvas backend, so the drawing calls need somewhere to go. The
@@ -59,11 +59,15 @@ function makeCanvas(parentWidth: number, parentHeight: number) {
 
 function setup(width: number, height: number) {
   const placements: { tool: ToolMode; world: Point }[] = [];
+  const frames: { tool: ToolMode; frame: Rect }[] = [];
+  const toolRequests: ToolMode[] = [];
   const controller = new CanvasController({
     onSelectionChange: () => {},
     onViewportChange: () => {},
     onPlace: (tool, world) => placements.push({ tool, world }),
+    onPlaceFrame: (tool, frame) => frames.push({ tool, frame }),
     onEditText: () => {},
+    onRequestTool: (tool) => toolRequests.push(tool),
   });
 
   const scene = makeCanvas(width, height);
@@ -71,7 +75,14 @@ function setup(width: number, height: number) {
   // Both canvases must share a parent for the size lookup to be consistent.
   scene.parent.appendChild(overlayEl.canvas);
 
-  return { controller, scene: scene.canvas, overlay: overlayEl.canvas, placements };
+  return {
+    controller,
+    scene: scene.canvas,
+    overlay: overlayEl.canvas,
+    placements,
+    frames,
+    toolRequests,
+  };
 }
 
 beforeEach(() => {
@@ -188,6 +199,106 @@ describe("CanvasController viewport", () => {
     ).not.toThrow();
 
     expect(placements).toHaveLength(1);
+  });
+
+  it("reports a dragged frame in world coordinates", () => {
+    const { controller, scene, overlay, frames } = setup(984, 642);
+    const doc = createDocument();
+    controller.attach(scene, overlay);
+    controller.setDocument(doc, 0, new EditSession(doc));
+    controller.setTool("shape");
+
+    const vp = controller.getViewport();
+    const send = (type: string, x: number, y: number, shiftKey = false) =>
+      overlay.dispatchEvent(
+        new PointerEvent(type, {
+          pointerId: 3,
+          button: 0,
+          buttons: type === "pointerup" ? 0 : 1,
+          clientX: x,
+          clientY: y,
+          shiftKey,
+          bubbles: true,
+        }),
+      );
+
+    send("pointerdown", 200, 200);
+    send("pointermove", 400, 320);
+    send("pointerup", 400, 320);
+
+    expect(frames).toHaveLength(1);
+    expect(frames[0].tool).toBe("shape");
+    expect(frames[0].frame.x).toBeCloseTo((200 - vp.tx) / vp.scale, 3);
+    expect(frames[0].frame.width).toBeCloseTo(200 / vp.scale, 3);
+  });
+
+  it("ignores a frame drag too small to be intentional", () => {
+    const { controller, scene, overlay, frames } = setup(984, 642);
+    const doc = createDocument();
+    controller.attach(scene, overlay);
+    controller.setDocument(doc, 0, new EditSession(doc));
+    controller.setTool("shape");
+
+    const send = (type: string, x: number, y: number) =>
+      overlay.dispatchEvent(
+        new PointerEvent(type, {
+          pointerId: 4,
+          button: 0,
+          buttons: type === "pointerup" ? 0 : 1,
+          clientX: x,
+          clientY: y,
+          bubbles: true,
+        }),
+      );
+
+    send("pointerdown", 200, 200);
+    send("pointermove", 201, 201);
+    send("pointerup", 201, 201);
+    expect(frames).toHaveLength(0);
+  });
+
+  it("hands over to the select tool once a lasso catches something", () => {
+    const { controller, scene, overlay, toolRequests } = setup(984, 642);
+    const doc = createDocument();
+    const unit = createTextUnit(0, 0);
+    unit.width = 200;
+    unit.height = 100;
+    doc.pages[0].layers[0].units.push(unit);
+
+    controller.attach(scene, overlay);
+    controller.setDocument(doc, 0, new EditSession(doc));
+    controller.setTool("lasso");
+    controller.setLassoMode("overlap");
+
+    const vp = controller.getViewport();
+    const toScreen = (wx: number, wy: number) => ({
+      x: wx * vp.scale + vp.tx,
+      y: wy * vp.scale + vp.ty,
+    });
+    const send = (type: string, x: number, y: number) =>
+      overlay.dispatchEvent(
+        new PointerEvent(type, {
+          pointerId: 5,
+          button: 0,
+          buttons: type === "pointerup" ? 0 : 1,
+          clientX: x,
+          clientY: y,
+          bubbles: true,
+        }),
+      );
+
+    // A loop comfortably around the unit.
+    const loop = [
+      toScreen(-50, -50),
+      toScreen(300, -50),
+      toScreen(300, 200),
+      toScreen(-50, 200),
+    ];
+    send("pointerdown", loop[0].x, loop[0].y);
+    for (const p of loop.slice(1)) send("pointermove", p.x, p.y);
+    send("pointerup", loop[0].x, loop[0].y);
+
+    expect(toolRequests).toContain("select");
   });
 
   it("zooms about a point without moving the world point under it", () => {

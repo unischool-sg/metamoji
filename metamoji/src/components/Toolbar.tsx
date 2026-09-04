@@ -12,9 +12,13 @@ const GLYPHS: Record<ToolId, string> = {
   pen: "✎",
   eraser: "⌫",
   select: "⬚",
+  lasso: "◌",
   text: "T",
   sticky: "🗒",
+  shape: "◇",
+  form: "▦",
   image: "🖼",
+  laser: "◉",
   pan: "✥",
 };
 
@@ -26,7 +30,7 @@ export function Toolbar() {
     <div className="toolbar" role="toolbar" aria-label="ツール">
       {TOOLS.map((tool, index) => (
         <div key={tool.id}>
-          {index === 3 && <div className="toolbar__rule" />}
+          {(index === 4 || index === 10) && <div className="toolbar__rule" />}
           <button
             type="button"
             className="tool-btn"

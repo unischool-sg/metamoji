@@ -54,26 +54,48 @@ import {
   IDENTITY_VIEWPORT,
 } from "../render/viewport";
 import { PointFilter } from "./oneEuro";
+import {
+  simplifyPolygon,
+  unitInLasso,
+  type LassoMode,
+} from "../render/polygon";
 
 export type ToolMode =
   | "pen"
   | "eraser"
   | "select"
+  | "lasso"
   | "pan"
   | "text"
   | "sticky"
-  | "image";
+  | "image"
+  | "shape"
+  | "form"
+  | "laser";
 
 export interface ControllerCallbacks {
   onSelectionChange: (ids: ModelId[]) => void;
   onViewportChange: (viewport: Viewport) => void;
   /** A tap with a placement tool active, in world coordinates. */
   onPlace: (tool: ToolMode, world: Point) => void;
+  /** A drag with a frame-placing tool active, in world coordinates. */
+  onPlaceFrame: (tool: ToolMode, frame: Rect) => void;
   onEditText: (unitId: ModelId) => void;
+  /** The canvas asking the UI to switch tools, e.g. after a lasso completes. */
+  onRequestTool: (tool: ToolMode) => void;
 }
 
 interface Gesture {
-  kind: "ink" | "erase" | "pan" | "marquee" | "move" | "transform";
+  kind:
+    | "ink"
+    | "erase"
+    | "pan"
+    | "marquee"
+    | "move"
+    | "transform"
+    | "lasso"
+    | "frame"
+    | "laser";
   pointerId: number;
   startScreen: Point;
   startWorld: Point;
@@ -83,10 +105,15 @@ interface Gesture {
   originals?: Map<ModelId, Pick<Unit, "x" | "y" | "width" | "height" | "rotation">>;
   marquee?: Rect;
   erased?: Set<string>;
+  /** Lasso path and laser trail, both in world coordinates. */
+  path?: Point[];
 }
 
 /** Devices without a pressure sensor report 0 or a constant 0.5. */
 const NO_PRESSURE = 0.5;
+
+/** How long a laser trail point stays visible. */
+const LASER_FADE_MS = 900;
 
 export class CanvasController {
   private scene: HTMLCanvasElement | null = null;
@@ -104,6 +131,9 @@ export class CanvasController {
   private pen: PenAttributes = PEN_PRESETS[0];
   private eraserSize = 16;
   private selection: ModelId[] = [];
+  private lassoMode: LassoMode = "overlap";
+  /** Laser trail points with their fade deadlines. */
+  private laserTrail: { x: number; y: number; until: number }[] = [];
 
   private gesture: Gesture | null = null;
   private wetPoints: InkPoint[] = [];
@@ -239,6 +269,11 @@ export class CanvasController {
     this.eraserSize = size;
   }
 
+  setLassoMode(mode: LassoMode): void {
+    this.lassoMode = mode;
+  }
+
+
   setSelection(ids: ModelId[]): void {
     this.selection = ids;
     this.overlayDirty = true;
@@ -366,6 +401,32 @@ export class CanvasController {
       });
     }
 
+    if (this.gesture?.kind === "lasso" && this.gesture.path) {
+      const path = this.gesture.path;
+      ctx.strokeStyle = "#32a5ff";
+      ctx.lineWidth = 1.5 / this.viewport.scale;
+      ctx.setLineDash([5 / this.viewport.scale, 4 / this.viewport.scale]);
+      ctx.beginPath();
+      ctx.moveTo(path[0].x, path[0].y);
+      for (const p of path.slice(1)) ctx.lineTo(p.x, p.y);
+      // Show the loop the release will close, rather than leaving the user to
+      // imagine it.
+      ctx.closePath();
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = "rgba(50, 165, 255, 0.10)";
+      ctx.fill();
+    }
+
+    if (this.gesture?.kind === "frame" && this.gesture.marquee) {
+      const r = normalizeRect(this.gesture.marquee);
+      ctx.strokeStyle = "#32a5ff";
+      ctx.lineWidth = 1.5 / this.viewport.scale;
+      ctx.strokeRect(r.x, r.y, r.width, r.height);
+      ctx.fillStyle = "rgba(50, 165, 255, 0.08)";
+      ctx.fillRect(r.x, r.y, r.width, r.height);
+    }
+
     if (this.gesture?.kind === "marquee" && this.gesture.marquee) {
       const r = normalizeRect(this.gesture.marquee);
       ctx.strokeStyle = "#32a5ff";
@@ -377,10 +438,62 @@ export class CanvasController {
       ctx.fillRect(r.x, r.y, r.width, r.height);
     }
 
+    this.paintLaser(ctx);
+
     ctx.restore();
 
     this.paintSelectionHandles(ctx);
     this.paintEraserCursor(ctx);
+  }
+
+  /**
+   * The laser trail.
+   *
+   * Deliberately not part of the document: docs/02 lists the laser pointer
+   * among the editing tools, but it marks nothing permanent, so it never opens
+   * a transaction and never produces an undo entry. It lives on the overlay and
+   * fades on a timer.
+   */
+  private pushLaser(world: Point): void {
+    this.laserTrail.push({ x: world.x, y: world.y, until: Date.now() + LASER_FADE_MS });
+    this.overlayDirty = true;
+  }
+
+  private paintLaser(ctx: CanvasRenderingContext2D): void {
+    if (this.laserTrail.length === 0) return;
+    const now = Date.now();
+    this.laserTrail = this.laserTrail.filter((p) => p.until > now);
+    if (this.laserTrail.length === 0) {
+      this.overlayDirty = true;
+      return;
+    }
+
+    ctx.save();
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    for (let i = 1; i < this.laserTrail.length; i++) {
+      const a = this.laserTrail[i - 1];
+      const b = this.laserTrail[i];
+      const life = (b.until - now) / LASER_FADE_MS;
+      ctx.globalAlpha = Math.max(0, Math.min(1, life)) * 0.8;
+      ctx.strokeStyle = "#ff3b30";
+      ctx.lineWidth = 4 / this.viewport.scale;
+      ctx.beginPath();
+      ctx.moveTo(a.x, a.y);
+      ctx.lineTo(b.x, b.y);
+      ctx.stroke();
+    }
+
+    const head = this.laserTrail[this.laserTrail.length - 1];
+    ctx.globalAlpha = 0.9;
+    ctx.fillStyle = "#ff3b30";
+    ctx.beginPath();
+    ctx.arc(head.x, head.y, 5 / this.viewport.scale, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    // Keep repainting while anything is still fading.
+    this.overlayDirty = true;
   }
 
   /**
@@ -514,6 +627,20 @@ export class CanvasController {
 
       case "select":
         this.beginSelectGesture(base, world, e.shiftKey);
+        break;
+
+      case "lasso":
+        this.gesture = { ...base, kind: "lasso", path: [world] };
+        break;
+
+      case "shape":
+      case "form":
+        this.gesture = { ...base, kind: "frame" };
+        break;
+
+      case "laser":
+        this.gesture = { ...base, kind: "laser", path: [world] };
+        this.pushLaser(world);
         break;
 
       case "text":
@@ -680,6 +807,18 @@ export class CanvasController {
       case "transform":
         this.applyLiveTransform(gesture, world, e.shiftKey);
         break;
+
+      case "lasso":
+        gesture.path?.push(world);
+        break;
+
+      case "frame":
+        gesture.marquee = frameFrom(gesture.startWorld, world, e.shiftKey);
+        break;
+
+      case "laser":
+        this.pushLaser(world);
+        break;
     }
 
     gesture.lastScreen = screen;
@@ -783,12 +922,45 @@ export class CanvasController {
     this.releasePointer(e.pointerId);
 
     if (gesture.kind === "ink") this.commitStroke();
+
     if (gesture.kind === "marquee" && gesture.marquee) {
       const page = this.page();
       if (page) {
         const ids = unitsInRect(page, gesture.marquee).map((u) => u.id);
         this.selection = ids;
         this.callbacks.onSelectionChange(ids);
+      }
+    }
+
+    if (gesture.kind === "lasso" && gesture.path) {
+      const page = this.page();
+      // A stray tap is not a loop; three points is the minimum that encloses
+      // anything at all.
+      if (page && gesture.path.length >= 3) {
+        const polygon = simplifyPolygon(gesture.path);
+        const ids: ModelId[] = [];
+        for (const layer of page.layers) {
+          if (!layer.visible || layer.locked) continue;
+          for (const unit of layer.units) {
+            if (unitInLasso(unit, polygon, this.lassoMode)) ids.push(unit.id);
+          }
+        }
+        this.selection = ids;
+        this.callbacks.onSelectionChange(ids);
+        // Hand over to the select tool: a lasso that leaves you unable to move
+        // what you just selected has only done half the job.
+        if (ids.length > 0) {
+          this.tool = "select";
+          this.callbacks.onRequestTool("select");
+        }
+      }
+    }
+
+    if (gesture.kind === "frame" && gesture.marquee) {
+      const frame = normalizeRect(gesture.marquee);
+      // Ignore an accidental click; a frame needs real extent to be useful.
+      if (frame.width >= 8 && frame.height >= 8) {
+        this.callbacks.onPlaceFrame(this.tool, frame);
       }
     }
 
@@ -931,9 +1103,28 @@ function inflate(rect: Rect, by: number): Rect {
   };
 }
 
+/**
+ * The rect a drag defines. Holding shift constrains it to a square, which is
+ * what makes circles and 45-degree lines reachable without a separate tool.
+ */
+function frameFrom(start: Point, current: Point, constrain: boolean): Rect {
+  let width = current.x - start.x;
+  let height = current.y - start.y;
+  if (constrain) {
+    const size = Math.max(Math.abs(width), Math.abs(height));
+    width = Math.sign(width || 1) * size;
+    height = Math.sign(height || 1) * size;
+  }
+  return { x: start.x, y: start.y, width, height };
+}
+
 function cursorForTool(tool: ToolMode): string {
   switch (tool) {
     case "pen":
+    case "lasso":
+    case "shape":
+    case "form":
+    case "laser":
       return "crosshair";
     case "eraser":
       return "cell";

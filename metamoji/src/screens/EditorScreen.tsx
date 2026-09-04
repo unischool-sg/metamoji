@@ -15,11 +15,29 @@ import { CanvasHost } from "../components/CanvasHost";
 import { Inspector } from "../components/Inspector";
 import { TextEditOverlay } from "../components/TextEditOverlay";
 import { Toolbar } from "../components/Toolbar";
+import { TOOLS } from "../editor/tools";
 import * as api from "../ipc/api";
 import { fromGeneric, toGeneric } from "../model/converter";
-import { createFlipUnit, createImageUnit, createTextUnit } from "../model/factory";
+import {
+  createFlipUnit,
+  createFormUnit,
+  createImageUnit,
+  createShapeUnit,
+  createTextUnit,
+} from "../model/factory";
 import { newTicket } from "../model/ids";
-import type { ModelId, Point } from "../model/types";
+import type { ModelId, Point, Rect } from "../model/types";
+import {
+  clipboardUnits,
+  copyUnits,
+  cutUnits,
+  deleteUnits,
+  duplicateUnits,
+  nudgeUnits,
+  pasteUnits,
+  reorderUnits,
+  selectAll,
+} from "../editor/operations";
 import { currentLayer } from "../model/types";
 import { IDENTITY_VIEWPORT, type Viewport } from "../render/viewport";
 import { useAssetCache } from "../hooks/useAssetCache";
@@ -136,7 +154,12 @@ export function EditorScreen() {
       if (target && /^(INPUT|TEXTAREA)$/.test(target.tagName)) return;
       if (target?.isContentEditable) return;
 
+      const state = useEditorStore.getState();
+      const s = state.session;
+      const p = state.doc?.pages[state.pageIndex];
+      const selection = state.selection;
       const mod = e.metaKey || e.ctrlKey;
+
       if (mod && e.key.toLowerCase() === "z") {
         e.preventDefault();
         // docs/15 §5: the original cancels an in-flight gesture around undo, so
@@ -157,19 +180,90 @@ export function EditorScreen() {
         return;
       }
 
-      const shortcut = e.key.toLowerCase();
-      const toolByKey: Record<string, ToolMode> = {
-        p: "pen",
-        e: "eraser",
-        v: "select",
-        t: "text",
-        n: "sticky",
-        i: "image",
-        h: "pan",
-      };
-      if (!mod && toolByKey[shortcut]) {
-        useEditorStore.getState().setTool(toolByKey[shortcut]);
+      // -- selection editing ------------------------------------------------
+      if (s && p) {
+        if (mod && e.key.toLowerCase() === "a") {
+          e.preventDefault();
+          state.setTool("select");
+          state.setSelection(selectAll(p));
+          return;
+        }
+        if (mod && e.key.toLowerCase() === "c" && selection.length > 0) {
+          e.preventDefault();
+          copyUnits(p, selection);
+          return;
+        }
+        if (mod && e.key.toLowerCase() === "x" && selection.length > 0) {
+          e.preventDefault();
+          cutUnits(s, p, selection);
+          state.setSelection([]);
+          return;
+        }
+        if (mod && e.key.toLowerCase() === "v") {
+          e.preventDefault();
+          state.setSelection(pasteUnits(s, p, clipboardUnits()));
+          return;
+        }
+        if (mod && e.key.toLowerCase() === "d" && selection.length > 0) {
+          e.preventDefault();
+          state.setSelection(duplicateUnits(s, p, selection));
+          return;
+        }
+        if ((e.key === "Delete" || e.key === "Backspace") && selection.length > 0) {
+          e.preventDefault();
+          deleteUnits(s, p, selection);
+          state.setSelection([]);
+          return;
+        }
+        if (mod && e.key === "]" && selection.length > 0) {
+          e.preventDefault();
+          reorderUnits(s, p, selection, e.shiftKey ? "front" : "forward");
+          return;
+        }
+        if (mod && e.key === "[" && selection.length > 0) {
+          e.preventDefault();
+          reorderUnits(s, p, selection, e.shiftKey ? "back" : "backward");
+          return;
+        }
+
+        // Arrow keys nudge; shift makes it a coarse step.
+        const arrows: Record<string, [number, number]> = {
+          ArrowLeft: [-1, 0],
+          ArrowRight: [1, 0],
+          ArrowUp: [0, -1],
+          ArrowDown: [0, 1],
+        };
+        const arrow = arrows[e.key];
+        if (arrow && selection.length > 0) {
+          e.preventDefault();
+          const step = e.shiftKey ? 10 : 1;
+          nudgeUnits(s, p, selection, arrow[0] * step, arrow[1] * step);
+          return;
+        }
       }
+
+      if (e.key === "Escape") {
+        controllerRef.current?.cancelGesture();
+        state.setSelection([]);
+        return;
+      }
+
+      // -- page navigation --------------------------------------------------
+      if (!mod && e.key === "PageDown") {
+        e.preventDefault();
+        state.setPageIndex(state.pageIndex + 1);
+        return;
+      }
+      if (!mod && e.key === "PageUp") {
+        e.preventDefault();
+        state.setPageIndex(state.pageIndex - 1);
+        return;
+      }
+
+      // -- tools ------------------------------------------------------------
+      if (mod) return;
+      const tool = TOOLS.find((t) => t.shortcut.toLowerCase() === e.key.toLowerCase());
+      if (tool) state.setTool(tool.id);
     };
 
     window.addEventListener("keydown", onKeyDown);
@@ -261,6 +355,40 @@ export function EditorScreen() {
     [beginTextEdit],
   );
 
+  const handlePlaceFrame = useCallback((tool: ToolMode, frame: Rect) => {
+    const state = useEditorStore.getState();
+    const { session: s, doc: d, pageIndex: pi } = state;
+    if (!s || !d) return;
+    const p = d.pages[pi];
+    const layer = p && currentLayer(p);
+    if (!p || !layer || layer.locked) return;
+
+    const unit =
+      tool === "shape"
+        ? createShapeUnit(
+            frame.x,
+            frame.y,
+            frame.width,
+            frame.height,
+            state.shapeKind,
+            state.shapeStrokeColor,
+            state.shapeFillColor,
+          )
+        : createFormUnit(frame.x, frame.y, frame.width, frame.height, state.formKind);
+
+    s.transact(tool === "shape" ? "図形を追加" : "表・罫線を追加", () => {
+      s.record({
+        kind: "unit.add",
+        pageId: p.id,
+        layerId: layer.id,
+        index: layer.units.length,
+        unit,
+      });
+    });
+    state.setTool("select");
+    state.setSelection([unit.id]);
+  }, []);
+
   const page = doc?.pages[pageIndex];
 
   if (loadError) {
@@ -330,6 +458,7 @@ export function EditorScreen() {
           controllerRef={controllerRef}
           assets={assets}
           onPlace={handlePlace}
+          onPlaceFrame={handlePlaceFrame}
           onEditText={beginTextEdit}
           onViewportChange={handleViewportChange}
         />

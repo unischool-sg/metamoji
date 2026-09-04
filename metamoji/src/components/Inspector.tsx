@@ -8,8 +8,16 @@
  */
 
 import { ERASER_SIZES, PEN_COLORS, PEN_PRESETS, PEN_WIDTHS } from "../editor/tools";
+import {
+  clipboardUnits,
+  copyUnits,
+  deleteUnits,
+  duplicateUnits,
+  pasteUnits,
+  reorderUnits,
+} from "../editor/operations";
 import { STICKY_COLORS } from "../model/factory";
-import type { PaperStyle } from "../model/types";
+import type { FormKind, PaperStyle, ShapeKind } from "../model/types";
 import { useEditorStore } from "../store/editorStore";
 
 const PAPER_STYLES: { id: PaperStyle; label: string }[] = [
@@ -21,13 +29,20 @@ const PAPER_STYLES: { id: PaperStyle; label: string }[] = [
 
 export function Inspector() {
   const activeTool = useEditorStore((s) => s.activeTool);
+  const hasSelection = useEditorStore((s) => s.selection.length > 0);
 
   return (
     <aside className="inspector">
       {activeTool === "pen" && <PenSection />}
       {activeTool === "eraser" && <EraserSection />}
-      {activeTool === "select" && <SelectionSection />}
+      {/* Selection actions follow the selection, not the tool: a lasso leaves
+          you with something selected and nothing to do with it otherwise. */}
+      {(activeTool === "select" || hasSelection) && <SelectionSection />}
+      {activeTool === "lasso" && <LassoSection />}
+      {activeTool === "shape" && <ShapeSection />}
+      {activeTool === "form" && <FormSection />}
       {activeTool === "sticky" && <StickySection />}
+      {activeTool === "laser" && <LaserSection />}
       <PaperSection />
       <LayerSection />
     </aside>
@@ -144,43 +159,253 @@ function SelectionSection() {
   const setSelection = useEditorStore((s) => s.setSelection);
 
   const page = doc?.pages[pageIndex];
+  const has = selection.length > 0;
 
-  const remove = () => {
-    if (!session || !page || selection.length === 0) return;
-    session.transact("削除", () => {
-      // Removing back-to-front keeps the remaining indices valid as we go.
-      for (const layer of page.layers) {
-        for (let i = layer.units.length - 1; i >= 0; i--) {
-          const unit = layer.units[i];
-          if (!selection.includes(unit.id)) continue;
-          session.record({
-            kind: "unit.remove",
-            pageId: page.id,
-            layerId: layer.id,
-            index: i,
-            unit,
-          });
-        }
-      }
-    });
-    setSelection([]);
+  const run = (fn: () => void) => {
+    if (!session || !page) return;
+    fn();
   };
 
   return (
     <>
       <h2>選択</h2>
-      {selection.length === 0 ? (
-        <p style={{ fontSize: 12, color: "var(--color-text-muted)" }}>
+      {!has ? (
+        <p style={{ fontSize: 12, color: "var(--color-text-muted)", lineHeight: 1.6 }}>
           オブジェクトをクリック、または範囲をドラッグして選択します。
         </p>
       ) : (
-        <>
-          <p style={{ fontSize: 13, marginTop: 0 }}>{selection.length} 個を選択中</p>
-          <button type="button" className="btn btn--danger" onClick={remove}>
-            削除
-          </button>
-        </>
+        <p style={{ fontSize: 13, marginTop: 0 }}>{selection.length} 個を選択中</p>
       )}
+
+      <div className="button-grid">
+        <button
+          type="button"
+          className="btn"
+          disabled={!has}
+          onClick={() => run(() => copyUnits(page!, selection))}
+        >
+          コピー
+        </button>
+        <button
+          type="button"
+          className="btn"
+          disabled={clipboardUnits().length === 0}
+          onClick={() => run(() => setSelection(pasteUnits(session!, page!, clipboardUnits())))}
+        >
+          貼り付け
+        </button>
+        <button
+          type="button"
+          className="btn"
+          disabled={!has}
+          onClick={() => run(() => setSelection(duplicateUnits(session!, page!, selection)))}
+        >
+          複製
+        </button>
+        <button
+          type="button"
+          className="btn btn--danger"
+          disabled={!has}
+          onClick={() =>
+            run(() => {
+              deleteUnits(session!, page!, selection);
+              setSelection([]);
+            })
+          }
+        >
+          削除
+        </button>
+      </div>
+
+      <h2>重ね順</h2>
+      <div className="button-grid">
+        <button
+          type="button"
+          className="btn"
+          disabled={!has}
+          onClick={() => run(() => reorderUnits(session!, page!, selection, "front"))}
+        >
+          最前面へ
+        </button>
+        <button
+          type="button"
+          className="btn"
+          disabled={!has}
+          onClick={() => run(() => reorderUnits(session!, page!, selection, "forward"))}
+        >
+          前面へ
+        </button>
+        <button
+          type="button"
+          className="btn"
+          disabled={!has}
+          onClick={() => run(() => reorderUnits(session!, page!, selection, "backward"))}
+        >
+          背面へ
+        </button>
+        <button
+          type="button"
+          className="btn"
+          disabled={!has}
+          onClick={() => run(() => reorderUnits(session!, page!, selection, "back"))}
+        >
+          最背面へ
+        </button>
+      </div>
+    </>
+  );
+}
+
+function LassoSection() {
+  const lassoMode = useEditorStore((s) => s.lassoMode);
+  const setLassoMode = useEditorStore((s) => s.setLassoMode);
+
+  return (
+    <>
+      <h2>なげなわの範囲</h2>
+      <div className="pen-list">
+        <button
+          type="button"
+          className="pen-row"
+          aria-pressed={lassoMode === "contain"}
+          onClick={() => setLassoMode("contain")}
+        >
+          完全に囲んだものだけ
+        </button>
+        <button
+          type="button"
+          className="pen-row"
+          aria-pressed={lassoMode === "overlap"}
+          onClick={() => setLassoMode("overlap")}
+        >
+          触れたものすべて
+        </button>
+      </div>
+    </>
+  );
+}
+
+const SHAPES: { id: ShapeKind; label: string; glyph: string }[] = [
+  { id: "rect", label: "長方形", glyph: "▭" },
+  { id: "roundRect", label: "角丸", glyph: "▢" },
+  { id: "ellipse", label: "楕円", glyph: "◯" },
+  { id: "triangle", label: "三角形", glyph: "△" },
+  { id: "diamond", label: "菱形", glyph: "◇" },
+  { id: "line", label: "直線", glyph: "╱" },
+  { id: "arrow", label: "矢印", glyph: "↗" },
+];
+
+function ShapeSection() {
+  const shapeKind = useEditorStore((s) => s.shapeKind);
+  const strokeColor = useEditorStore((s) => s.shapeStrokeColor);
+  const fillColor = useEditorStore((s) => s.shapeFillColor);
+  const setShapeKind = useEditorStore((s) => s.setShapeKind);
+  const setStroke = useEditorStore((s) => s.setShapeStrokeColor);
+  const setFill = useEditorStore((s) => s.setShapeFillColor);
+
+  return (
+    <>
+      <h2>図形</h2>
+      <div className="shape-grid">
+        {SHAPES.map((shape) => (
+          <button
+            key={shape.id}
+            type="button"
+            className="shape-btn"
+            aria-pressed={shapeKind === shape.id}
+            title={shape.label}
+            onClick={() => setShapeKind(shape.id)}
+          >
+            <span aria-hidden>{shape.glyph}</span>
+            <span className="sr-only">{shape.label}</span>
+          </button>
+        ))}
+      </div>
+
+      <h2>線の色</h2>
+      <div className="swatches">
+        {PEN_COLORS.map((color) => (
+          <button
+            key={color}
+            type="button"
+            className="swatch"
+            aria-pressed={strokeColor === color}
+            aria-label={`線 ${color}`}
+            style={{ background: color }}
+            onClick={() => setStroke(color)}
+          />
+        ))}
+      </div>
+
+      <h2>塗り</h2>
+      <div className="swatches">
+        <button
+          type="button"
+          className="swatch swatch--none"
+          aria-pressed={fillColor === ""}
+          aria-label="塗りなし"
+          onClick={() => setFill("")}
+        />
+        {PEN_COLORS.slice(0, 7).map((color) => (
+          <button
+            key={color}
+            type="button"
+            className="swatch"
+            aria-pressed={fillColor === color}
+            aria-label={`塗り ${color}`}
+            style={{ background: color }}
+            onClick={() => setFill(color)}
+          />
+        ))}
+      </div>
+
+      <p style={{ fontSize: 12, color: "var(--color-text-muted)", lineHeight: 1.6 }}>
+        ドラッグで大きさを決めます。Shift で正方形・正円になります。
+      </p>
+    </>
+  );
+}
+
+const FORMS: { id: FormKind; label: string }[] = [
+  { id: "table", label: "表" },
+  { id: "ruled", label: "罫線" },
+  { id: "grid", label: "方眼" },
+];
+
+function FormSection() {
+  const formKind = useEditorStore((s) => s.formKind);
+  const setFormKind = useEditorStore((s) => s.setFormKind);
+
+  return (
+    <>
+      <h2>表・罫線</h2>
+      <div className="pen-list">
+        {FORMS.map((form) => (
+          <button
+            key={form.id}
+            type="button"
+            className="pen-row"
+            aria-pressed={formKind === form.id}
+            onClick={() => setFormKind(form.id)}
+          >
+            {form.label}
+          </button>
+        ))}
+      </div>
+      <p style={{ fontSize: 12, color: "var(--color-text-muted)", lineHeight: 1.6 }}>
+        ドラッグで大きさを決めます。行数・列数は配置後に変更できます。
+      </p>
+    </>
+  );
+}
+
+function LaserSection() {
+  return (
+    <>
+      <h2>レーザーポインタ</h2>
+      <p style={{ fontSize: 12, color: "var(--color-text-muted)", lineHeight: 1.6 }}>
+        軌跡は少し経つと消え、ノートには保存されません。
+      </p>
     </>
   );
 }

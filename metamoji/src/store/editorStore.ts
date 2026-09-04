@@ -19,7 +19,15 @@ import {
   type ToolId,
 } from "../editor/tools";
 import { createDocument, createPage } from "../model/factory";
-import type { ModelId, NoteDocument, PenAttributes, Unit } from "../model/types";
+import type {
+  FormKind,
+  ModelId,
+  NoteDocument,
+  PenAttributes,
+  ShapeKind,
+  Unit,
+} from "../model/types";
+import type { LassoMode } from "../render/polygon";
 import { currentLayer, findPage } from "../model/types";
 
 export type SaveState = "saved" | "dirty" | "saving" | "error";
@@ -35,6 +43,11 @@ interface EditorState {
   /** Colour and width per pen slot, so switching pens keeps each one's look. */
   penSettings: Record<string, PenSlotSettings>;
   eraserSize: number;
+  lassoMode: LassoMode;
+  shapeKind: ShapeKind;
+  shapeStrokeColor: string;
+  shapeFillColor: string;
+  formKind: FormKind;
 
   selection: ModelId[];
   canUndo: boolean;
@@ -54,6 +67,11 @@ interface EditorState {
   setPenColor: (color: string) => void;
   setPenWidth: (width: number) => void;
   setEraserSize: (size: number) => void;
+  setLassoMode: (mode: LassoMode) => void;
+  setShapeKind: (kind: ShapeKind) => void;
+  setShapeStrokeColor: (color: string) => void;
+  setShapeFillColor: (color: string) => void;
+  setFormKind: (kind: FormKind) => void;
   currentPen: () => PenAttributes;
 
   // -- pages --------------------------------------------------------------
@@ -83,6 +101,11 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   penPresetId: PEN_PRESETS[0].id,
   penSettings: defaultPenSettings(),
   eraserSize: 16,
+  lassoMode: "overlap",
+  shapeKind: "rect",
+  shapeStrokeColor: "#1f1f1f",
+  shapeFillColor: "",
+  formKind: "grid",
 
   selection: [],
   canUndo: false,
@@ -133,10 +156,12 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   setTool: (activeTool) =>
     set((s) => ({
       activeTool,
-      // Leaving the selection tool drops the selection; keeping handles visible
-      // while drawing is confusing and makes the overlay lie about what a drag
-      // will do.
-      selection: activeTool === "select" ? s.selection : [],
+      // Leaving the selection tools drops the selection: keeping handles
+      // visible while drawing is confusing and makes the overlay lie about
+      // what a drag will do. Select and lasso share one selection, so moving
+      // between them keeps it.
+      selection:
+        activeTool === "select" || activeTool === "lasso" ? s.selection : [],
     })),
 
   setPenPreset: (penPresetId) => set({ penPresetId }),
@@ -158,6 +183,11 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     })),
 
   setEraserSize: (eraserSize) => set({ eraserSize }),
+  setLassoMode: (lassoMode) => set({ lassoMode }),
+  setShapeKind: (shapeKind) => set({ shapeKind }),
+  setShapeStrokeColor: (shapeStrokeColor) => set({ shapeStrokeColor }),
+  setShapeFillColor: (shapeFillColor) => set({ shapeFillColor }),
+  setFormKind: (formKind) => set({ formKind }),
 
   currentPen: () => {
     const { penPresetId, penSettings } = get();
