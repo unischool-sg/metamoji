@@ -138,7 +138,9 @@ fn african_colon() -> char {
 }
 
 fn client() -> CloudClient {
-    CloudClient::new("test-machine".into(), "ja_JP".into(), "Asia/Tokyo".into()).unwrap()
+    // No store path: these tests are about the wire, and a shared session file
+    // would let them see each other's state.
+    CloudClient::new("test-machine".into(), "ja_JP".into(), "Asia/Tokyo".into(), None).unwrap()
 }
 
 /// What `mpsroot/RequestServlet` really answers.
@@ -400,4 +402,131 @@ async fn changing_the_root_server_drops_the_session() {
     client.set_root_server("https://other.example/");
     assert!(client.session().is_none());
     assert_eq!(client.root_server(), "https://other.example/");
+}
+
+// ---------------------------------------------------------------------------
+// Session persistence
+// ---------------------------------------------------------------------------
+//
+// The reason this exists: without it the app asked for a password on every
+// launch. The cookie *is* the session, so nothing short of persisting the jar
+// keeps a sign-in alive across a restart.
+
+fn temp_path(name: &str) -> std::path::PathBuf {
+    let dir = std::env::temp_dir().join(format!("metamoji-test-{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    dir.join(name)
+}
+
+fn client_at(path: &std::path::Path) -> CloudClient {
+    CloudClient::new(
+        "test-machine".into(),
+        "ja_JP".into(),
+        "Asia/Tokyo".into(),
+        Some(path.to_path_buf()),
+    )
+    .unwrap()
+}
+
+#[tokio::test]
+async fn a_sign_in_survives_a_restart() {
+    let path = temp_path("survives.json");
+    let _ = std::fs::remove_file(&path);
+
+    let stub = stub(vec![
+        ("200 OK", SCHOOL_OK.to_string()),
+        ("200 OK", login_ok()),
+    ]);
+
+    {
+        let client = client_at(&path);
+        client.set_root_server(&stub.base);
+        client.login("school01", "student01", "hunter2").await.unwrap();
+        assert!(client.session().is_some());
+    }
+
+    // A new process, reading only what the last one left behind.
+    let restarted = client_at(&path);
+    let session = restarted.session().expect("the session came back");
+    assert_eq!(session.login_name, "student01");
+    assert_eq!(session.co_login_id, "school01");
+    assert_eq!(restarted.root_server(), stub.base);
+    // And the credential `cosmos/*` needs on every request.
+    assert!(restarted.collabo_identity().is_some());
+}
+
+#[tokio::test]
+async fn the_session_cookie_itself_is_restored() {
+    // Restoring the identity but not the cookie would look signed in and then
+    // fail on the first request — the worst of both.
+    let path = temp_path("cookie.json");
+    let _ = std::fs::remove_file(&path);
+
+    let stub = stub(vec![
+        ("200 OK", SCHOOL_OK.to_string()),
+        ("200 OK", login_ok()),
+        ("200 OK", r#"{"joinCode":"1234","joinEnabled":true}"#.to_string()),
+    ]);
+
+    {
+        let client = client_at(&path);
+        client.set_root_server(&stub.base);
+        client.login("school01", "student01", "x").await.unwrap();
+    }
+
+    let restarted = client_at(&path);
+    // The stub set `JSESSIONID` on every reply; a restored jar sends it back.
+    let _ = restarted.class_code("d1", false).await;
+    let _ = stub.seen.recv().unwrap();
+    let _ = stub.seen.recv().unwrap();
+    let third = stub.seen.recv().unwrap();
+    assert_eq!(
+        third.header("cookie"),
+        Some("JSESSIONID=abc123"),
+        "the restored jar must carry the session cookie"
+    );
+}
+
+#[tokio::test]
+async fn signing_out_erases_the_stored_session() {
+    let path = temp_path("signout.json");
+    let _ = std::fs::remove_file(&path);
+
+    let stub = stub(vec![
+        ("200 OK", SCHOOL_OK.to_string()),
+        ("200 OK", login_ok()),
+    ]);
+
+    let client = client_at(&path);
+    client.set_root_server(&stub.base);
+    client.login("school01", "student01", "x").await.unwrap();
+    client.logout().await.unwrap();
+
+    // Not merely forgotten in memory: the file must not hold a credential
+    // after an explicit sign-out.
+    let restarted = client_at(&path);
+    assert!(restarted.session().is_none());
+    assert!(restarted.collabo_identity().is_none());
+    let text = std::fs::read_to_string(&path).unwrap();
+    assert!(!text.contains("Password"), "credential left on disk: {text}");
+}
+
+#[cfg(unix)]
+#[tokio::test]
+async fn the_session_file_is_not_world_readable() {
+    use std::os::unix::fs::PermissionsExt;
+
+    let path = temp_path("perms.json");
+    let _ = std::fs::remove_file(&path);
+
+    let stub = stub(vec![
+        ("200 OK", SCHOOL_OK.to_string()),
+        ("200 OK", login_ok()),
+    ]);
+    let client = client_at(&path);
+    client.set_root_server(&stub.base);
+    client.login("school01", "student01", "x").await.unwrap();
+
+    let mode = std::fs::metadata(&path).unwrap().permissions().mode() & 0o777;
+    assert_eq!(mode, 0o600, "it holds a credential");
 }

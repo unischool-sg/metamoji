@@ -14,6 +14,8 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 
 import { Icon } from "../components/Icon";
+import * as api from "../ipc/api";
+import { newNoteId } from "../model/ids";
 import { useTranslation } from "../i18n/useTranslation";
 import { useAuthStore } from "../store/authStore";
 import { canEdit, useClassroomStore } from "../store/classroomStore";
@@ -27,6 +29,7 @@ export function ClassroomScreen() {
   const [boxName, setBoxName] = useState("");
   const [joinCode, setJoinCode] = useState("");
   const [roomTitle, setRoomTitle] = useState("");
+  const [opening, setOpening] = useState<string | null>(null);
 
   const nickname = session?.name || session?.loginName || "";
 
@@ -152,9 +155,36 @@ export function ClassroomScreen() {
     );
   }
 
-  // -- step 2: a room inside it --------------------------------------------
+  // -- step 2: the box's contents, and a room inside it ---------------------
 
   const online = store.members.filter((m) => m.online);
+
+  /**
+   * Copies a note out of the class box into the local library.
+   *
+   * A copy, not a link: writing back needs a serialiser this build does not
+   * have, so pretending the two stay in step would be a lie the user only
+   * discovers after a lesson's work.
+   */
+  const openNote = async (documentId: string, title: string | null) => {
+    if (!store.box) return;
+    setOpening(documentId);
+    try {
+      const noteId = newNoteId();
+      const result = await api.classboxOpenNote(store.box.driveId, documentId, noteId);
+      const summary = await api.libraryCreate(
+        result.tree,
+        title ?? t("クラスボックスのノート"),
+      );
+      navigate(`/note/${summary.id}`);
+    } catch (err) {
+      useClassroomStore.setState({
+        error: err instanceof Error ? err.message : String(err),
+      });
+    } finally {
+      setOpening(null);
+    }
+  };
 
   return (
     <Shell
@@ -245,6 +275,63 @@ export function ClassroomScreen() {
             </p>
           </section>
         )}
+
+        <section>
+          <h2>{t("クラスボックスのノート")}</h2>
+          {store.openingBox ? (
+            <p className="setting-note">{t("読み込み中…")}</p>
+          ) : !store.listing ? (
+            <button type="button" className="btn" onClick={() => void store.openBox()}>
+              <Icon name="folder" size={18} />
+              {t("開く")}
+            </button>
+          ) : store.listing.documents.length === 0 ? (
+            <>
+              <p className="setting-note">{t("ノートはまだありません。")}</p>
+              {store.listing.unrecognised.length > 0 && (
+                // An unreadable box and an empty one mean very different things
+                // to a teacher, so they must not look the same.
+                <div className="notice notice--warning" style={{ marginTop: "var(--space-3)" }}>
+                  <Icon name="warning" size={20} />
+                  <span>
+                    {t(
+                      "中身を解釈できませんでした({count} 個のモデル、未知の種別: {types})。",
+                      {
+                        count: store.listing.modelCount,
+                        types: store.listing.unrecognised.join(", "),
+                      },
+                    )}
+                  </span>
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="library__grid">
+              {store.listing.documents.map((doc) => (
+                <div key={doc.documentId} className="note-card">
+                  <button
+                    type="button"
+                    className="note-card__open"
+                    disabled={opening !== null}
+                    onClick={() => void openNote(doc.documentId, doc.title)}
+                  >
+                    <div className="note-card__thumb" />
+                  </button>
+                  <div className="note-card__body">
+                    <div className="note-card__title">
+                      {doc.title ?? doc.documentId}
+                    </div>
+                    <div className="note-card__meta">
+                      {opening === doc.documentId
+                        ? t("読み込み中…")
+                        : t("端末に複製して開きます")}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
 
         <section>
           <h2>

@@ -12,6 +12,7 @@ use tauri::State;
 
 use crate::cloud::{ClassBox, ClassGroup, CloudClient, CloudSession, School};
 use crate::collabo::session::{ClassroomState, CollaboMember, CollaboRoom, EnterResult};
+use crate::drive::{self, listing::Listing, DriveClient};
 use crate::error::{AppError, AppResult};
 use crate::model::{AppStatus, GenericTree, NoteSummary};
 use crate::state::AppState;
@@ -644,4 +645,89 @@ pub async fn classroom_detach_booth(
 #[tauri::command]
 pub fn classroom_current_room(classroom: State<'_, ClassroomState>) -> Option<String> {
     classroom.room_id()
+}
+
+// ---------------------------------------------------------------------------
+// Class box contents
+// ---------------------------------------------------------------------------
+//
+// A class box is a drive, and drives live behind `SdCloudService` — a separate
+// service with its own host, its own session and its own conventions. Opening
+// one is therefore three steps, done together so a half-open box cannot exist:
+// find the drive's home, sign into it, and read its contents.
+
+#[tauri::command]
+pub async fn classbox_open(
+    cloud: State<'_, CloudClient>,
+    drive: State<'_, DriveClient>,
+    drive_id: String,
+) -> AppResult<Listing> {
+    let home = cloud.drive_home(&drive_id).await?;
+    let (user_id, password, qwd) = cloud
+        .drive_credential()
+        .ok_or_else(|| AppError::other("サインインしていません"))?;
+
+    drive
+        .login(&home, &user_id, password.as_deref(), qwd.as_deref())
+        .await?;
+    // Announces the sync before reading; the original always does, and a drive
+    // that refuses it will refuse the read too — better to find out here.
+    drive.sync_start(&drive_id).await?;
+
+    let file = drive.drive_data(&drive_id, None).await?;
+    drive::listing::parse(file.bytes)
+}
+
+#[tauri::command]
+pub async fn classbox_revision(
+    drive: State<'_, DriveClient>,
+    drive_id: String,
+) -> AppResult<Option<String>> {
+    drive.last_revision(&drive_id).await
+}
+
+/// Downloads a note from the class box and converts it to this app's model.
+///
+/// The bytes come back in MetaMoJi's own container format — the same one
+/// `.atdoc` uses — so the importer that was written for local files reads them
+/// unchanged. That is the payoff for having built import against the real
+/// format rather than a simplification of it.
+#[tauri::command]
+pub async fn classbox_open_note(
+    drive: State<'_, DriveClient>,
+    drive_id: String,
+    document_id: String,
+    revision: Option<String>,
+    new_root_id: String,
+) -> AppResult<crate::AtdocImportResult> {
+    let file = drive
+        .document_data(&drive_id, &document_id, revision.as_deref())
+        .await?;
+    let result = crate::atdoc::import(file.bytes, &new_root_id)?;
+    Ok(crate::AtdocImportResult {
+        tree: result.tree,
+        report: result.report,
+    })
+}
+
+#[tauri::command]
+pub async fn classbox_note_thumbnail(
+    drive: State<'_, DriveClient>,
+    drive_id: String,
+    document_id: String,
+    revision: Option<String>,
+) -> AppResult<String> {
+    let file = drive
+        .document_thumbnail(&drive_id, &document_id, revision.as_deref())
+        .await?;
+    let mime = file.mime_type.unwrap_or_else(|| "image/png".to_string());
+    Ok(format!(
+        "data:{mime};base64,{}",
+        base64::engine::general_purpose::STANDARD.encode(&file.bytes)
+    ))
+}
+
+#[tauri::command]
+pub fn classbox_close(drive: State<'_, DriveClient>) {
+    drive.sign_out();
 }

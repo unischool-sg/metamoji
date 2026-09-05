@@ -563,3 +563,69 @@ export async function onClassroomEvent(
   if (!isTauri()) return () => {};
   return listen<ClassroomEvent>("classroom://event", (e) => fn(e.payload));
 }
+
+// ---------------------------------------------------------------------------
+// Class box contents
+// ---------------------------------------------------------------------------
+//
+// A class box is a drive, and drives live behind a separate service with its
+// own host and session — `src-tauri/src/drive/`. `classboxOpen` does the whole
+// handshake, so there is no half-open state for the UI to represent.
+
+export interface DriveDocument {
+  documentId: string;
+  title: string | null;
+  revision: string | null;
+  updatedAt: string | null;
+}
+
+export interface ClassBoxListing {
+  documents: DriveDocument[];
+  /**
+   * Model types in the listing that the decoder did not recognise. Non-empty
+   * means the schema guess is incomplete — an unreadable class box and an
+   * empty one must not look the same.
+   */
+  unrecognised: string[];
+  modelCount: number;
+}
+
+export async function classboxOpen(driveId: string): Promise<ClassBoxListing> {
+  requireTauri();
+  return invoke<ClassBoxListing>("classbox_open", { driveId });
+}
+
+export async function classboxRevision(driveId: string): Promise<string | null> {
+  requireTauri();
+  return invoke<string | null>("classbox_revision", { driveId });
+}
+
+/** Downloads a note and converts it with the same importer `.atdoc` uses. */
+export async function classboxOpenNote(
+  driveId: string,
+  documentId: string,
+  newRootId: string,
+  revision: string | null = null,
+): Promise<AtdocImportResult> {
+  requireTauri();
+  return invoke<AtdocImportResult>("classbox_open_note", {
+    driveId,
+    documentId,
+    revision,
+    newRootId,
+  });
+}
+
+export async function classboxNoteThumbnail(
+  driveId: string,
+  documentId: string,
+  revision: string | null = null,
+): Promise<string> {
+  requireTauri();
+  return invoke<string>("classbox_note_thumbnail", { driveId, documentId, revision });
+}
+
+export async function classboxClose(): Promise<void> {
+  if (!isTauri()) return;
+  return invoke<void>("classbox_close");
+}

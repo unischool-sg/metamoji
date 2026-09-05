@@ -17,7 +17,13 @@
 import { create } from "zustand";
 
 import * as api from "../ipc/api";
-import type { ClassBox, ClassroomEvent, CollaboMember, RelayInfo } from "../ipc/api";
+import type {
+  ClassBox,
+  ClassBoxListing,
+  ClassroomEvent,
+  CollaboMember,
+  RelayInfo,
+} from "../ipc/api";
 
 export type Connection = "offline" | "connecting" | "online";
 
@@ -27,6 +33,9 @@ export interface ClassroomMember extends CollaboMember {
 
 interface ClassroomState {
   box: ClassBox | null;
+  /** The class box's contents, or null before it has been opened. */
+  listing: ClassBoxListing | null;
+  openingBox: boolean;
   roomId: string | null;
   roomTitle: string | null;
   relay: RelayInfo | null;
@@ -44,6 +53,8 @@ interface ClassroomState {
 
   createBox: (name: string) => Promise<ClassBox | null>;
   joinBox: (joinCode: string) => Promise<ClassBox | null>;
+  openBox: () => Promise<void>;
+  closeBox: () => Promise<void>;
   refreshCode: (regenerate: boolean) => Promise<void>;
   setJoinEnabled: (enabled: boolean) => Promise<void>;
   enterRoom: (title: string, nickname: string) => Promise<boolean>;
@@ -63,6 +74,8 @@ export function canEdit(roles: string[]): boolean {
 
 export const useClassroomStore = create<ClassroomState>((set, get) => ({
   box: null,
+  listing: null,
+  openingBox: false,
   roomId: null,
   roomTitle: null,
   relay: null,
@@ -79,7 +92,8 @@ export const useClassroomStore = create<ClassroomState>((set, get) => ({
     set({ busy: true, error: null });
     try {
       const box = await api.classroomCreateBox(name);
-      set({ box, busy: false });
+      set({ box, listing: null, busy: false });
+      void get().openBox();
       return box;
     } catch (err) {
       set({ busy: false, error: message(err) });
@@ -91,12 +105,35 @@ export const useClassroomStore = create<ClassroomState>((set, get) => ({
     set({ busy: true, error: null });
     try {
       const box = await api.classroomJoinBox(joinCode);
-      set({ box, busy: false });
+      set({ box, listing: null, busy: false });
+      void get().openBox();
       return box;
     } catch (err) {
       set({ busy: false, error: message(err) });
       return null;
     }
+  },
+
+  /**
+   * Reads the class box's contents.
+   *
+   * Separate from joining because it is a different service with its own
+   * session: joining gets you membership, this gets you the notes.
+   */
+  openBox: async () => {
+    const box = get().box;
+    if (!box) return;
+    set({ openingBox: true, error: null });
+    try {
+      set({ listing: await api.classboxOpen(box.driveId), openingBox: false });
+    } catch (err) {
+      set({ openingBox: false, listing: null, error: message(err) });
+    }
+  },
+
+  closeBox: async () => {
+    await api.classboxClose();
+    set({ box: null, listing: null });
   },
 
   refreshCode: async (regenerate) => {

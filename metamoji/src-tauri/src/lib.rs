@@ -1,6 +1,7 @@
 pub mod atdoc;
 pub mod cloud;
 pub mod collabo;
+pub mod drive;
 #[cfg(test)]
 mod cloud_wire_tests;
 mod commands;
@@ -116,6 +117,13 @@ fn locale() -> String {
         .unwrap_or_else(|| "ja_JP".to_string())
 }
 
+/// `X-DM-Device`, which `SdHttpClient` formats as
+/// `"{Build.MODEL};Android;{SDK_INT}"`. There is no honest Android answer from
+/// a desktop, so this says what the machine actually is.
+fn device_header() -> String {
+    format!("desktop;{};", std::env::consts::OS)
+}
+
 fn timezone() -> String {
     // `/etc/localtime` is a symlink into the zoneinfo tree on macOS and Linux;
     // its tail is the IANA name. Windows has no equivalent, hence the fallback.
@@ -151,6 +159,7 @@ pub fn run() {
                 device_name(),
                 locale(),
                 timezone(),
+                Some(state_dir.join("session.json")),
             )?);
 
             // The relay recognises a returning device by these, so they are
@@ -158,6 +167,10 @@ pub fn run() {
             // under `CollaboDeviceId` / `CollaboDeviceCode`.
             let (device_id, device_code) = device_identity(&state_dir)?;
             app.manage(collabo::session::ClassroomState::new(device_id, device_code));
+
+            // The drive service keeps its own session, so it gets its own
+            // client rather than a few more methods on the cloud one.
+            app.manage(drive::DriveClient::new(locale(), device_header())?);
 
             // The frontend gates on this exactly as the original gated on
             // `StartupViewModel.isNeedLogin` (docs/14 §3).
@@ -212,6 +225,11 @@ pub fn run() {
             commands::classroom_attach_booth,
             commands::classroom_detach_booth,
             commands::classroom_current_room,
+            commands::classbox_open,
+            commands::classbox_revision,
+            commands::classbox_open_note,
+            commands::classbox_note_thumbnail,
+            commands::classbox_close,
             atdoc_import,
             atdoc_probe,
             export_pdf,

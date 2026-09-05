@@ -22,9 +22,27 @@
 //!
 //! Step 1 is not optional: before it the client has no tenant host to talk to,
 //! and every post-login call is relative to the one it returns.
+//!
+//! ## The session is on disk
+//!
+//! Signing in on every launch is not a security posture, it is an obstacle —
+//! and the original does not do it either (`CsDCUserInfoSettings` keeps the
+//! credential so `executeWithAutoLoginFor` can re-authenticate silently). So
+//! the cookie jar, the identity and the credential are written to
+//! `session.json` in the app data directory, `0600` where the platform has
+//! permissions.
+//!
+//! The credential is there because `cosmos/*` — the classroom rooms — sends it
+//! in a JSON part on **every request** rather than relying on the cookie
+//! (`collabo/rest.rs`). Persisting the cookie alone would leave the classroom
+//! broken after a restart while everything else worked, which is a worse
+//! failure than an honest one.
 
-use std::sync::Mutex;
+use std::path::PathBuf;
+use std::sync::{Arc, Mutex};
 use std::time::Duration;
+
+use reqwest_cookie_store::CookieStoreMutex;
 
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Map, Value};
@@ -88,7 +106,7 @@ pub struct ClassGroup {
 }
 
 /// What `cosmos/*` puts in its `authInfo` part.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Credential {
     Password(String),
     /// The pre-shared token a QR code carries.
@@ -112,7 +130,7 @@ pub struct ClassBox {
 /// Deliberately no `qwd`: that is the original's silent-re-login credential,
 /// and handing it to the webview would put a password-equivalent in
 /// `localStorage`. The session lives in this process and ends with it.
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CloudSession {
     pub user_id: String,
@@ -154,18 +172,52 @@ struct Inner {
 
 pub struct CloudClient {
     http: reqwest::Client,
+    cookies: Arc<CookieStoreMutex>,
+    /// Where the session is written. `None` disables persistence, which is what
+    /// the tests want.
+    store_path: Option<PathBuf>,
     inner: Mutex<Inner>,
     device_name: String,
     locale: String,
     timezone: String,
 }
 
+/// Everything needed to pick a session back up after a restart.
+#[derive(Default, Serialize, Deserialize)]
+struct Persisted {
+    root_server: Option<String>,
+    rest_host: Option<String>,
+    school: Option<School>,
+    session: Option<CloudSession>,
+    credential: Option<Credential>,
+    cookies: Option<Value>,
+}
+
 impl CloudClient {
-    pub fn new(device_name: String, locale: String, timezone: String) -> AppResult<Self> {
+    pub fn new(
+        device_name: String,
+        locale: String,
+        timezone: String,
+        store_path: Option<PathBuf>,
+    ) -> AppResult<Self> {
+        let saved = store_path
+            .as_ref()
+            .and_then(|path| std::fs::read_to_string(path).ok())
+            .and_then(|text| serde_json::from_str::<Persisted>(&text).ok())
+            .unwrap_or_default();
+
+        // The session *is* the cookie (docs/typespec/README.md §認証), so the
+        // jar has to survive the process for the sign-in to.
+        let jar = saved
+            .cookies
+            .as_ref()
+            .and_then(|value| serde_json::to_string(value).ok())
+            .and_then(|json| cookie_store::serde::json::load(json.as_bytes()).ok())
+            .unwrap_or_default();
+        let cookies = Arc::new(CookieStoreMutex::new(jar));
+
         let http = reqwest::Client::builder()
-            // The session is a cookie (docs/typespec/README.md §認証), so the
-            // jar is the session. Dropping this client signs the user out.
-            .cookie_store(true)
+            .cookie_provider(Arc::clone(&cookies))
             .user_agent(USER_AGENT)
             .timeout(Duration::from_secs(30))
             .build()
@@ -173,17 +225,64 @@ impl CloudClient {
 
         Ok(Self {
             http,
+            cookies,
+            store_path,
             inner: Mutex::new(Inner {
-                root_server: DEFAULT_ROOT_SERVER.to_string(),
-                credential: None,
-                rest_host: None,
-                school: None,
-                session: None,
+                root_server: saved
+                    .root_server
+                    .unwrap_or_else(|| DEFAULT_ROOT_SERVER.to_string()),
+                credential: saved.credential,
+                rest_host: saved.rest_host,
+                school: saved.school,
+                session: saved.session,
             }),
             device_name,
             locale,
             timezone,
         })
+    }
+
+    /// Writes the session out. Called after anything that changes it.
+    ///
+    /// Failure is logged, not raised: a sign-in that worked must not be
+    /// reported as failed because a file could not be written.
+    fn persist(&self) {
+        let Some(path) = self.store_path.as_ref() else {
+            return;
+        };
+
+        let snapshot = {
+            let inner = self.inner.lock().unwrap();
+            Persisted {
+                root_server: Some(inner.root_server.clone()),
+                rest_host: inner.rest_host.clone(),
+                school: inner.school.clone(),
+                session: inner.session.clone(),
+                credential: inner.credential.clone(),
+                cookies: {
+                    let mut buffer = Vec::new();
+                    let store = self.cookies.lock().unwrap();
+                    // `save` alone drops non-persistent cookies — and a login
+                    // session cookie has no `Expires`, so it is exactly the one
+                    // that would be dropped. Saving it is the entire point.
+                    cookie_store::serde::json::save_incl_expired_and_nonpersistent(
+                        &store,
+                        &mut buffer,
+                    )
+                    .ok()
+                    .and_then(|_| serde_json::from_slice(&buffer).ok())
+                },
+            }
+        };
+
+        let Ok(json) = serde_json::to_vec_pretty(&snapshot) else {
+            return;
+        };
+        if std::fs::write(path, json).is_err() {
+            log::warn!("could not write the session to {}", path.display());
+            return;
+        }
+        restrict_permissions(path);
     }
 
     pub fn root_server(&self) -> String {
@@ -198,6 +297,8 @@ impl CloudClient {
         inner.school = None;
         inner.session = None;
         inner.credential = None;
+        drop(inner);
+        self.persist();
     }
 
     pub fn session(&self) -> Option<CloudSession> {
@@ -217,6 +318,17 @@ impl CloudClient {
 
     pub fn locale(&self) -> &str {
         &self.locale
+    }
+
+    /// The credential in the shape the drive service's login wants.
+    pub fn drive_credential(&self) -> Option<(String, Option<String>, Option<String>)> {
+        let inner = self.inner.lock().unwrap();
+        let session = inner.session.as_ref()?;
+        let (password, qwd) = match inner.credential.as_ref()? {
+            Credential::Password(p) => (Some(p.clone()), None),
+            Credential::Qwd(q) => (None, Some(q.clone())),
+        };
+        Some((session.user_id.clone(), password, qwd))
     }
 
     /// The five fields `CsParamBaseAbstract#stringify()` adds to every request.
@@ -378,6 +490,7 @@ impl CloudClient {
         let session = self.finish_login(&school, body)?;
         self.inner.lock().unwrap().credential =
             Some(Credential::Password(password.to_string()));
+        self.persist();
         Ok(session)
     }
 
@@ -403,6 +516,7 @@ impl CloudClient {
         let session = self.finish_login(&school, body)?;
         self.inner.lock().unwrap().credential =
             Some(Credential::Password(password.to_string()));
+        self.persist();
         Ok(session)
     }
 
@@ -456,6 +570,23 @@ impl CloudClient {
         // TypeSpec names the Java *field* (`allList`), and the wire key differs.
         // Verified against a live school's response.
         Ok(parse_class_groups(body.get("alllist")))
+    }
+
+    /// Where a drive's own service lives.
+    ///
+    /// This is the link `docs/typespec/drive/sync-drive.tsp` records as
+    /// unresolved — it notes that every `SdCloudService` path is relative to a
+    /// per-drive `homeDir` and that it could not find where that value is first
+    /// issued. It is issued here: `GET /drives/{driveId}/home` on the tenant.
+    pub async fn drive_home(&self, drive_id: &str) -> AppResult<String> {
+        let co_login_id = self.signed_in_school()?;
+        let mut params = self.base_params();
+        params.insert("driveId".into(), json!(drive_id));
+
+        let body = self
+            .post_command(&co_login_id, &format!("/drives/{drive_id}/home"), params)
+            .await?;
+        Ok(with_trailing_slash(&required_str(&body, "homeDir")?))
     }
 
     // -- class boxes ---------------------------------------------------------
@@ -583,6 +714,10 @@ impl CloudClient {
             inner.session = None;
             inner.credential = None;
         }
+        // Written before the network call: a logout must stick even if the
+        // server cannot be told about it.
+        self.cookies.lock().unwrap().clear();
+        self.persist();
 
         if let (Some(host), Some(co_login_id)) = (host, co_login_id) {
             let url = format!("{host}{REST_BASE_PATH}/users3/logout");
@@ -714,6 +849,21 @@ fn parse_class_groups(all_list: Option<&Value>) -> Vec<ClassGroup> {
         })
         .collect()
 }
+
+/// Narrows the session file to the owner.
+///
+/// It holds a credential, so leaving it world-readable in a shared home
+/// directory would be careless. Windows has no equivalent that is meaningful
+/// here — its ACLs already inherit from the user profile — so this is a no-op
+/// there rather than a false reassurance.
+#[cfg(unix)]
+fn restrict_permissions(path: &std::path::Path) {
+    use std::os::unix::fs::PermissionsExt;
+    let _ = std::fs::set_permissions(path, std::fs::Permissions::from_mode(0o600));
+}
+
+#[cfg(not(unix))]
+fn restrict_permissions(_path: &std::path::Path) {}
 
 fn opt_str(body: &Map<String, Value>, key: &str) -> Option<String> {
     body.get(key)
