@@ -103,7 +103,7 @@ pub async fn post_strokes(
     classroom: &ClassroomState,
     room_id: &str,
     strokes: &[send::Pending],
-    removals: &[(String, String)],
+    removals: &[send::Ledger],
 ) -> AppResult<Posted> {
     if strokes.is_empty() && removals.is_empty() {
         return Ok(Posted::default());
@@ -155,10 +155,11 @@ pub async fn post_strokes(
         post(&connection, &pending.layer_id, payload).await;
         posted.sent.push(element_id);
     }
-    for (element_id, layer_id) in removals {
-        let payload = send::remove_element(element_id, layer_id, &mut ids, None)?;
-        post(&connection, layer_id, payload).await;
-        posted.removed.push(element_id.clone());
+    for entry in removals {
+        let payload = send::remove_element(&entry.element_id, &entry.layer_id, &mut ids, None)?;
+        post(&connection, &entry.layer_id, payload).await;
+        // Keyed the way the ledger is, so the caller can drop the right row.
+        posted.removed.push(entry.stroke_id.clone());
     }
 
     // The posts are queued on the writer task; leaving at once would drop
@@ -176,8 +177,9 @@ pub async fn post_strokes(
     Ok(posted)
 }
 
-/// What went out. The ids matter: a stroke can only be erased later by the id
-/// it was sent under.
+/// What went out. `sent` holds the room's new element ids, in the order the
+/// strokes were given; `removed` holds the note's own stroke ids, which is how
+/// the ledger is keyed.
 #[derive(Debug, Default, Clone)]
 pub struct Posted {
     pub sent: Vec<String>,
@@ -209,6 +211,7 @@ pub async fn fetch(
     classroom: &ClassroomState,
     room_id: &str,
     tree: &mut GenericTree,
+    ledger: &[send::Ledger],
 ) -> AppResult<(RoomPull, Vec<Asset>)> {
     let Some(session) = cloud.session() else {
         return Ok((
@@ -287,8 +290,12 @@ pub async fn fetch(
         .await;
     let _ = connection.commands.send(Command::Disconnect).await;
 
+    let aliases: std::collections::HashMap<String, String> = ledger
+        .iter()
+        .map(|l| (l.element_id.clone(), l.stroke_id.clone()))
+        .collect();
     let directions = std::mem::take(&mut *received.lock().unwrap());
-    let result = fold(tree, directions);
+    let result = fold(tree, directions, &aliases);
 
     // Whether or not the room had anything, this user needs a layer of their
     // own to write on. Without one the next stroke lands on a layer the room
@@ -303,6 +310,7 @@ pub async fn fetch(
 fn fold(
     tree: &mut GenericTree,
     directions: Vec<(String, Vec<u8>)>,
+    aliases: &std::collections::HashMap<String, String>,
 ) -> (RoomPull, Vec<Asset>) {
     let mut pull = RoomPull {
         directions: directions.len(),
@@ -323,7 +331,7 @@ fn fold(
             stroke_ids,
             assets: found,
             unsupported: kinds,
-        } = apply::apply(tree, &booth_id, &direction);
+        } = apply::apply(tree, &booth_id, &direction, aliases);
         pull.units += units;
         pull.strokes += strokes;
         pull.removed += removed;
@@ -396,7 +404,11 @@ mod tests {
     #[test]
     fn a_direction_that_will_not_decode_is_counted_rather_than_fatal() {
         let mut tree = GenericTree::new("root", "$sharenote");
-        let (pull, assets) = fold(&mut tree, vec![("P1".into(), b"not a container".to_vec())]);
+        let (pull, assets) = fold(
+            &mut tree,
+            vec![("P1".into(), b"not a container".to_vec())],
+            &Default::default(),
+        );
         assert_eq!(pull.directions, 1);
         assert_eq!(pull.units, 0);
         assert!(assets.is_empty());

@@ -322,51 +322,44 @@ pub fn remove_element(
     )
 }
 
-/// A stroke that has been posted is marked here, so a second send does not
-/// draw it on everyone's screen twice.
-pub const SENT_KEY: &str = "$sentToRoom";
-/// The id the room knows a stroke by, which is what a later removal names.
+/// The id the room knows a stroke by, when the note happens to be carrying it.
+///
+/// Not to be relied on: the editor rewrites a stroke's properties from its own
+/// model on every save (`strokeToProp` writes points and pen and nothing
+/// else), so anything added here is gone the next time the user saves. What
+/// the room knows lives in the note's `room_strokes` table instead — see
+/// `Ledger`. This is a hint for matching an incoming removal, no more.
 pub const ELEMENT_KEY: &str = "$roomStrokeId";
+
+/// What the room has been told, keyed by the note's own stroke id.
+///
+/// The pairing has to live outside the note. The editor owns the document
+/// while it is open and rewrites it on every save from its own model, so
+/// anything this code writes into a stroke is lost — and a lost marker reads
+/// as "the user erased it", which is how a first version of this deleted a
+/// note's writing on the next save.
+#[derive(Debug, Clone, PartialEq)]
+pub struct Ledger {
+    /// The note's own id for the stroke, which `strokeToProp` does preserve.
+    pub stroke_id: String,
+    /// The id the room knows it by.
+    pub element_id: String,
+    pub layer_id: String,
+}
 
 /// One stroke waiting to go out, and where it belongs.
 #[derive(Debug, Clone)]
 pub struct Pending {
-    pub draw_id: String,
-    pub stroke_index: usize,
+    pub stroke_id: String,
     pub layer_id: String,
     pub stroke: Value,
 }
 
-/// Every stroke the room knows about, by the id it knows it by.
-///
-/// A stroke that came from the room is keyed by its own element id; one this
-/// app sent carries the id it was sent under. Used to work out what has been
-/// erased since the last send.
-pub fn known_element_ids(tree: &GenericTree) -> Vec<String> {
-    let mut out = Vec::new();
-    for draw in tree.models.values() {
-        if draw.model_type != "$draw" {
-            continue;
-        }
-        let Some(strokes) = draw.props.get("strokes").and_then(Value::as_array) else {
-            continue;
-        };
-        for stroke in strokes {
-            if let Some(id) = stroke.get(ELEMENT_KEY).and_then(Value::as_str) {
-                out.push(id.to_string());
-            }
-        }
-    }
-    out.sort();
-    out.dedup();
-    out
-}
-
-/// Every stroke on a personal layer that has not been posted yet.
+/// Every stroke on a personal layer, with the layer it is on.
 ///
 /// Only personal layers: they are the ones the room has a booth for, and the
 /// only place a student is meant to be writing on a distributed note.
-pub fn pending(tree: &GenericTree) -> Vec<Pending> {
+fn personal_strokes(tree: &GenericTree) -> Vec<Pending> {
     let mut out = Vec::new();
     for layer in tree.models.values() {
         if layer.model_type != "$layer" {
@@ -389,38 +382,84 @@ pub fn pending(tree: &GenericTree) -> Vec<Pending> {
             let Some(strokes) = draw.props.get("strokes").and_then(Value::as_array) else {
                 continue;
             };
-            for (index, stroke) in strokes.iter().enumerate() {
-                if stroke.get(SENT_KEY) == Some(&Value::Bool(true)) {
+            for stroke in strokes {
+                let Some(stroke_id) = stroke.get("id").and_then(Value::as_str) else {
+                    // Without an id there is no way to tell this stroke from
+                    // the next one on the next save, so it cannot be tracked.
                     continue;
-                }
+                };
                 out.push(Pending {
-                    draw_id: draw.id.clone(),
-                    stroke_index: index,
+                    stroke_id: stroke_id.to_string(),
                     layer_id: layer_id.to_string(),
                     stroke: stroke.clone(),
                 });
             }
         }
     }
-    out.sort_by(|a, b| (&a.draw_id, a.stroke_index).cmp(&(&b.draw_id, b.stroke_index)));
+    out.sort_by(|a, b| a.stroke_id.cmp(&b.stroke_id));
     out
 }
 
-/// Marks a stroke as posted, under the id the room now knows it by.
-pub fn mark_sent(tree: &mut GenericTree, draw_id: &str, stroke_index: usize, element_id: &str) {
-    let Some(draw) = tree.models.get_mut(draw_id) else {
-        return;
-    };
-    let Value::Object(props) = &mut draw.props else {
-        return;
-    };
-    let Some(Value::Array(strokes)) = props.get_mut("strokes") else {
-        return;
-    };
-    if let Some(Value::Object(stroke)) = strokes.get_mut(stroke_index) {
-        stroke.insert(SENT_KEY.into(), Value::Bool(true));
-        stroke.insert(ELEMENT_KEY.into(), Value::String(element_id.to_string()));
+/// What has changed since the room was last told.
+///
+/// `ledger` is what the room has been told so far. A stroke it does not know
+/// is new; an entry whose stroke is no longer in the note was erased.
+pub fn changes(tree: &GenericTree, ledger: &[Ledger]) -> (Vec<Pending>, Vec<Ledger>) {
+    let here = personal_strokes(tree);
+    let known: std::collections::HashSet<&str> =
+        ledger.iter().map(|l| l.stroke_id.as_str()).collect();
+    let added: Vec<Pending> = here
+        .iter()
+        .filter(|p| !known.contains(p.stroke_id.as_str()))
+        .cloned()
+        .collect();
+
+    // Erased strokes are looked for across the whole note, not just the
+    // personal layers: a stroke that moved to another layer has not been
+    // erased, and reporting it as such would delete it for everyone.
+    let alive = all_stroke_ids(tree);
+    let layers = layer_ids(tree);
+    let removed: Vec<Ledger> = ledger
+        .iter()
+        .filter(|l| !alive.contains(&l.stroke_id))
+        // And only from a layer the note still has. If the layer itself is
+        // missing, the note is not what this expected — a half-loaded tree, a
+        // page that did not come down — and "everything on it was erased" is
+        // the wrong conclusion to draw from that.
+        .filter(|l| layers.contains(&l.layer_id))
+        .cloned()
+        .collect();
+    (added, removed)
+}
+
+fn layer_ids(tree: &GenericTree) -> std::collections::HashSet<String> {
+    tree.models
+        .values()
+        .filter(|m| m.model_type == "$layer")
+        .filter_map(|m| m.props.get("layerId").and_then(Value::as_str))
+        .map(str::to_string)
+        .collect()
+}
+
+fn all_stroke_ids(tree: &GenericTree) -> std::collections::HashSet<String> {
+    let mut out = std::collections::HashSet::new();
+    for draw in tree.models.values() {
+        if draw.model_type != "$draw" {
+            continue;
+        }
+        for stroke in draw
+            .props
+            .get("strokes")
+            .and_then(Value::as_array)
+            .into_iter()
+            .flatten()
+        {
+            if let Some(id) = stroke.get("id").and_then(Value::as_str) {
+                out.insert(id.to_string());
+            }
+        }
     }
+    out
 }
 
 #[cfg(test)]
@@ -653,53 +692,115 @@ mod queue_tests {
         tree
     }
 
+    fn ledger(stroke_id: &str) -> Ledger {
+        Ledger {
+            stroke_id: stroke_id.into(),
+            element_id: format!("el {stroke_id}"),
+            layer_id: "P1_[layer-forUser]_9".into(),
+        }
+    }
+
     #[test]
-    fn a_new_stroke_on_a_personal_layer_is_waiting_to_go_out() {
+    fn a_stroke_the_room_has_not_been_told_about_goes_out() {
         let tree = note_with(json!([{ "id": "a" }, { "id": "b" }]), "system:personal");
-        let waiting = pending(&tree);
-        assert_eq!(waiting.len(), 2);
-        assert_eq!(waiting[0].layer_id, "P1_[layer-forUser]_9");
+        let (added, removed) = changes(&tree, &[ledger("a")]);
+        assert_eq!(added.len(), 1);
+        assert_eq!(added[0].stroke_id, "b");
+        assert_eq!(added[0].layer_id, "P1_[layer-forUser]_9");
+        assert!(removed.is_empty());
     }
 
     #[test]
-    fn a_stroke_already_posted_is_not_sent_again() {
-        let tree = note_with(
-            json!([{ "id": "a", "$sentToRoom": true }, { "id": "b" }]),
-            "system:personal",
-        );
-        let waiting = pending(&tree);
-        assert_eq!(waiting.len(), 1);
-        assert_eq!(waiting[0].stroke["id"], json!("b"));
+    fn a_stroke_no_longer_in_the_note_is_reported_as_erased() {
+        let tree = note_with(json!([{ "id": "a" }]), "system:personal");
+        let (added, removed) = changes(&tree, &[ledger("a"), ledger("gone")]);
+        assert!(added.is_empty());
+        assert_eq!(removed, vec![ledger("gone")]);
     }
 
     #[test]
-    fn strokes_that_came_from_the_room_are_marked_when_posted() {
-        let mut tree = note_with(json!([{ "id": "a" }]), "system:personal");
-        mark_sent(&mut tree, "draw", 0, "prefix 1");
-        assert!(pending(&tree).is_empty());
-        // And under the id a later erase will name it by.
-        assert_eq!(known_element_ids(&tree), vec!["prefix 1".to_string()]);
+    fn saving_does_not_turn_every_stroke_into_an_erasure() {
+        // The editor rewrites a stroke's properties from its own model on
+        // every save, keeping only what `strokeToProp` writes — id, points,
+        // pen. A first version of this kept "already sent" *in the stroke*, so
+        // the first save wiped the marks and the next send deleted the note's
+        // entire contents for everyone in the class.
+        let saved = json!([
+            { "id": "a", "points": { "$points": [1.0, 2.0, 0.5, 0.0] }, "color": "#000000",
+              "width": 2.0, "penType": "ballpoint", "opacity": 1.0 },
+        ]);
+        let tree = note_with(saved, "system:personal");
+        let (added, removed) = changes(&tree, &[ledger("a")]);
+        assert!(added.is_empty(), "nothing new to send");
+        assert!(removed.is_empty(), "and nothing to erase");
     }
 
     #[test]
-    fn a_removal_names_only_the_element() {
-        let bytes = remove_element("prefix 1", "P1_[layer-forUser]_9", &mut IdGenerator::new(3), None)
-            .unwrap();
-        let doc = crate::atdoc::parse_document(&bytes).unwrap();
-        let record = doc.models.values().find(|m| m.model_type == "i").unwrap();
-        assert_eq!(record.props["i"], json!("prefix 1"));
-        assert_eq!(record.props["t"], json!(EXECUTION_REMOVE));
-        assert!(record.props.get("m").is_none());
+    fn a_stroke_moved_to_another_layer_has_not_been_erased() {
+        let mut tree = note_with(json!([{ "id": "a" }]), "system:edit");
+        // The ledger remembers it from when it was on a personal layer.
+        let (added, removed) = changes(&tree, &[ledger("a")]);
+        assert!(added.is_empty());
+        assert!(removed.is_empty(), "still in the note, just not here");
 
-        let d = doc.models.values().find(|m| m.model_type == "D").unwrap();
-        assert_eq!(d.props["T"], json!(0));
+        // Gone from the note entirely is a different matter.
+        tree.models.get_mut("draw").unwrap().props = json!({ "strokes": [] });
+        let (_, removed) = changes(&tree, &[ledger("a")]);
+        assert_eq!(removed.len(), 1);
     }
 
     #[test]
-    fn a_layer_the_room_has_no_booth_for_is_left_alone() {
-        // The handout's own layers are not the student's to write on, and
-        // there is nowhere to send them.
+    fn a_layer_the_room_has_no_booth_for_is_not_sent_from() {
         let tree = note_with(json!([{ "id": "a" }]), "system:edit");
-        assert!(pending(&tree).is_empty());
+        let (added, _) = changes(&tree, &[]);
+        assert!(added.is_empty());
+    }
+
+    #[test]
+    fn a_stroke_with_no_id_of_its_own_is_left_alone() {
+        // There would be no way to tell it from the next one after a save.
+        let tree = note_with(json!([{ "points": { "$points": [1.0, 2.0] } }]), "system:personal");
+        assert!(changes(&tree, &[]).0.is_empty());
+    }
+}
+
+#[cfg(test)]
+mod guard_tests {
+    use super::*;
+    use crate::model::GenericModel;
+
+    #[test]
+    fn nothing_is_erased_from_a_layer_the_note_does_not_have() {
+        // A note that did not load the way this expects — a page that never
+        // came down, a tree read mid-write — must not be read as "the user
+        // erased all of it". Getting that wrong once deleted a class note's
+        // contents for everyone in it.
+        let tree = GenericTree::new("root", "$sharenote");
+        let ledger = vec![Ledger {
+            stroke_id: "a".into(),
+            element_id: "el a".into(),
+            layer_id: "P1_[layer-forUser]_9".into(),
+        }];
+        let (added, removed) = changes(&tree, &ledger);
+        assert!(added.is_empty());
+        assert!(removed.is_empty(), "an absent layer is not an erasure");
+    }
+
+    #[test]
+    fn an_empty_layer_that_is_still_there_does_mean_erased() {
+        let mut tree = GenericTree::new("root", "$sharenote");
+        tree.insert(GenericModel {
+            id: "layer".into(),
+            parent_id: Some("root".into()),
+            model_type: "$layer".into(),
+            props: json!({ "layerId": "P1_[layer-forUser]_9", "layerType": "system:personal" }),
+            children: Vec::new(),
+        });
+        let ledger = vec![Ledger {
+            stroke_id: "a".into(),
+            element_id: "el a".into(),
+            layer_id: "P1_[layer-forUser]_9".into(),
+        }];
+        assert_eq!(changes(&tree, &ledger).1.len(), 1);
     }
 }

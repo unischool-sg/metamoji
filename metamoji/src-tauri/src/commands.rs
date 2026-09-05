@@ -770,7 +770,8 @@ pub async fn classbox_open_note(
     let room_id = room_id_of(&drive, &drive_id, &document_id).await.ok().flatten();
     let room = match room_id.clone() {
         Some(room_id) => {
-            match collabo::pull::fetch(&cloud, &classroom, &room_id, &mut tree).await {
+            let ledger = state.note(&new_root_id)?.lock().unwrap().room_strokes()?;
+            match collabo::pull::fetch(&cloud, &classroom, &room_id, &mut tree, &ledger).await {
                 Ok((pull, assets)) => {
                     let store = state.note(&new_root_id)?;
                     let store = store.lock().unwrap();
@@ -779,8 +780,10 @@ pub async fn classbox_open_note(
                     }
                     // Remembered so that erasing one of these later can be
                     // reported to the room by the id it knows it by.
+                    // A stroke that came from the room is keyed by its own
+                    // element id in the note too, so the two ids match here.
                     for (element_id, layer_id) in &pull.stroke_ids {
-                        store.remember_room_stroke(element_id, layer_id)?;
+                        store.remember_room_stroke(element_id, element_id, layer_id)?;
                     }
                     Some(pull)
                 }
@@ -829,18 +832,12 @@ pub async fn classbox_send_strokes(
         tree
     };
 
-    let waiting = collabo::send::pending(&tree);
-    // What the room has that the note no longer does: the user erased it.
-    let removals: Vec<(String, String)> = {
+    let ledger = {
         let store = state.note(&note_id)?;
-        let store = store.lock().unwrap();
-        let alive = collabo::send::known_element_ids(&tree);
-        store
-            .room_strokes()?
-            .into_iter()
-            .filter(|(element_id, _)| !alive.contains(element_id))
-            .collect()
+        let ledger = store.lock().unwrap().room_strokes()?;
+        ledger
     };
+    let (waiting, removals) = collabo::send::changes(&tree, &ledger);
     if waiting.is_empty() && removals.is_empty() {
         return Ok(0);
     }
@@ -873,19 +870,16 @@ pub async fn classbox_send_strokes(
         collabo::pull::post_strokes(&cloud, &classroom, &room_id, &waiting, &removals).await?;
 
     // Recorded only after the relay has had them, and only as far as it got.
+    // The note itself is not touched: the editor owns it while it is open, and
+    // writing behind its back loses whatever it saves next.
     let store = state.note(&note_id)?;
-    let mut store = store.lock().unwrap();
-    let mut tree = tree;
+    let store = store.lock().unwrap();
     for (pending, element_id) in waiting.iter().zip(posted.sent.iter()) {
-        collabo::send::mark_sent(&mut tree, &pending.draw_id, pending.stroke_index, element_id);
-        store.remember_room_stroke(element_id, &pending.layer_id)?;
+        store.remember_room_stroke(&pending.stroke_id, element_id, &pending.layer_id)?;
     }
-    for element_id in &posted.removed {
-        store.forget_room_stroke(element_id)?;
+    for stroke_id in &posted.removed {
+        store.forget_room_stroke(stroke_id)?;
     }
-
-    let (title, created_at, _updated_at, revision, _page_count) = store.meta()?;
-    store.write_tree(&tree, &title, &created_at, &now_iso(), revision)?;
     Ok(posted.sent.len() + posted.removed.len())
 }
 

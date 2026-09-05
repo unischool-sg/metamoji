@@ -165,7 +165,7 @@ fn a_direction_kind_this_build_does_not_act_on_is_named() {
 fn applying_creates_the_personal_layer_the_drive_copy_lacks() {
     let mut tree = note();
     let direction = decode(&add_unit_payload("$text", "u-1")).unwrap();
-    let applied = apply(&mut tree, "P1_[layer-forUser]_9876", &direction);
+    let applied = apply(&mut tree, "P1_[layer-forUser]_9876", &direction, &Default::default());
 
     assert_eq!(applied.units, 1);
     let layer = tree
@@ -187,9 +187,9 @@ fn applying_the_same_direction_twice_replaces_rather_than_duplicates() {
     // gains a copy of every unit on every reopen.
     let mut tree = note();
     let direction = decode(&add_unit_payload("$text", "u-1")).unwrap();
-    apply(&mut tree, "P1_[layer-forUser]_9876", &direction);
+    apply(&mut tree, "P1_[layer-forUser]_9876", &direction, &Default::default());
     let after_one = tree.models.len();
-    apply(&mut tree, "P1_[layer-forUser]_9876", &direction);
+    apply(&mut tree, "P1_[layer-forUser]_9876", &direction, &Default::default());
 
     assert_eq!(tree.models.len(), after_one);
     let layer = tree
@@ -204,7 +204,7 @@ fn applying_the_same_direction_twice_replaces_rather_than_duplicates() {
 fn a_booth_for_a_page_the_note_does_not_have_is_ignored() {
     let mut tree = note();
     let direction = decode(&add_unit_payload("$text", "u-1")).unwrap();
-    let applied = apply(&mut tree, "P9_[layer-forUser]_9876", &direction);
+    let applied = apply(&mut tree, "P9_[layer-forUser]_9876", &direction, &Default::default());
     assert_eq!(applied.units, 0);
     assert_eq!(tree.models.len(), note().models.len());
 }
@@ -213,7 +213,7 @@ fn a_booth_for_a_page_the_note_does_not_have_is_ignored() {
 fn a_page_level_booth_lands_on_the_edit_layer() {
     let mut tree = note();
     let direction = decode(&add_unit_payload("$image", "u-2")).unwrap();
-    apply(&mut tree, "P1", &direction);
+    apply(&mut tree, "P1", &direction, &Default::default());
 
     let layer = &tree.models["layer_edit"];
     assert_eq!(layer.children.len(), 1);
@@ -248,7 +248,7 @@ fn what_a_unit_references_comes_with_it() {
 
     let mut tree = note();
     let direction = decode(&payload).unwrap();
-    apply(&mut tree, "P1_[layer-forUser]_9876", &direction);
+    apply(&mut tree, "P1_[layer-forUser]_9876", &direction, &Default::default());
 
     let unit = tree
         .models
@@ -268,7 +268,7 @@ fn the_personal_layer_becomes_the_one_being_drawn_on() {
     // sent back.
     let mut tree = note();
     let direction = decode(&add_unit_payload("$text", "u-1")).unwrap();
-    apply(&mut tree, "P1_[layer-forUser]_9876", &direction);
+    apply(&mut tree, "P1_[layer-forUser]_9876", &direction, &Default::default());
 
     let personal = tree
         .models
@@ -284,7 +284,7 @@ fn the_personal_layer_becomes_the_one_being_drawn_on() {
 fn a_common_layer_does_not_steal_the_cursor() {
     let mut tree = note();
     let direction = decode(&add_unit_payload("$text", "u-1")).unwrap();
-    apply(&mut tree, "P1_[layer-common]", &direction);
+    apply(&mut tree, "P1_[layer-common]", &direction, &Default::default());
     assert!(tree.models["page"].props.get("currentLayer").is_none());
 }
 
@@ -310,7 +310,7 @@ fn an_erased_stroke_is_taken_out_again() {
         json!({ "$ref": "d" })
     }))
     .unwrap();
-    let applied = apply(&mut tree, "P1_[layer-forUser]_9876", &add);
+    let applied = apply(&mut tree, "P1_[layer-forUser]_9876", &add, &Default::default());
     assert_eq!(applied.strokes, 1);
     assert_eq!(applied.stroke_ids, vec![("el-1".to_string(), "P1_[layer-forUser]_9876".to_string())]);
 
@@ -322,7 +322,7 @@ fn an_erased_stroke_is_taken_out_again() {
     .unwrap();
     assert_eq!(remove.changes, vec![Change::Remove { id: "el-1".into() }]);
 
-    let applied = apply(&mut tree, "P1_[layer-forUser]_9876", &remove);
+    let applied = apply(&mut tree, "P1_[layer-forUser]_9876", &remove, &Default::default());
     assert_eq!(applied.removed, 1);
     let draw = tree.models.values().find(|m| m.model_type == "$draw").unwrap();
     assert_eq!(draw.props["strokes"].as_array().unwrap().len(), 0);
@@ -337,7 +337,7 @@ fn a_removal_for_something_this_note_does_not_have_changes_nothing() {
         json!({ "$ref": "d" })
     }))
     .unwrap();
-    let applied = apply(&mut tree, "P1_[layer-forUser]_9876", &remove);
+    let applied = apply(&mut tree, "P1_[layer-forUser]_9876", &remove, &Default::default());
     assert_eq!(applied.removed, 0);
 }
 
@@ -345,7 +345,7 @@ fn a_removal_for_something_this_note_does_not_have_changes_nothing() {
 fn a_unit_remembers_the_element_id_it_arrived_under() {
     let mut tree = note();
     let direction = decode(&add_unit_payload("$text", "u-1")).unwrap();
-    apply(&mut tree, "P1_[layer-forUser]_9876", &direction);
+    apply(&mut tree, "P1_[layer-forUser]_9876", &direction, &Default::default());
     let unit = tree.models.values().find(|m| m.model_type == "$text").unwrap();
     assert_eq!(unit.props["$roomElementId"], json!("e1"));
 }

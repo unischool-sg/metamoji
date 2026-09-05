@@ -498,7 +498,15 @@ pub struct Applied {
 /// Idempotent: a unit is keyed by its own id, so replaying a booth from the
 /// beginning — which is what a reconnect does — rewrites the same models
 /// instead of stacking copies.
-pub fn apply(tree: &mut GenericTree, booth_id: &str, direction: &Direction) -> Applied {
+/// `aliases` pairs the room's element ids with the note's own stroke ids, for
+/// the strokes this app sent: their local id is not the id the room knows them
+/// by, so a removal naming one would otherwise find nothing to take out.
+pub fn apply(
+    tree: &mut GenericTree,
+    booth_id: &str,
+    direction: &Direction,
+    aliases: &std::collections::HashMap<String, String>,
+) -> Applied {
     let mut applied = Applied::default();
     let place = placement_of(booth_id);
 
@@ -526,7 +534,8 @@ pub fn apply(tree: &mut GenericTree, booth_id: &str, direction: &Direction) -> A
                 }
             }
             Change::Remove { id } => {
-                if remove_element(tree, id) {
+                let local = aliases.get(id).map(String::as_str);
+                if remove_element(tree, id, local) {
                     applied.removed += 1;
                 }
             }
@@ -642,9 +651,10 @@ fn place_stroke(tree: &mut GenericTree, place: &Placement, id: &str, stroke: &Va
     strokes.retain(|s| s.get("id").and_then(Value::as_str) != Some(id));
     let mut stroke = stroke.clone();
     if let Value::Object(map) = &mut stroke {
-        // The room already has this one, under this id — which is what a later
-        // erase has to name.
-        map.insert(super::send::SENT_KEY.into(), Value::Bool(true));
+        // A hint for matching a later removal. The note's own record of what
+        // the room knows is kept outside the tree — the editor rewrites a
+        // stroke's properties from its own model on every save, so nothing put
+        // here survives one.
         map.insert(
             super::send::ELEMENT_KEY.into(),
             Value::String(id.to_string()),
@@ -667,7 +677,7 @@ fn place_stroke(tree: &mut GenericTree, place: &Placement, id: &str, stroke: &Va
 
 /// Takes out whatever the room says is gone: a stroke by the id it is known
 /// by, or a unit whose element carried that id.
-fn remove_element(tree: &mut GenericTree, element_id: &str) -> bool {
+fn remove_element(tree: &mut GenericTree, element_id: &str, local_id: Option<&str>) -> bool {
     let mut gone = false;
 
     let draws: Vec<String> = tree
@@ -688,8 +698,10 @@ fn remove_element(tree: &mut GenericTree, element_id: &str) -> bool {
         };
         let before = strokes.len();
         strokes.retain(|stroke| {
+            let id = stroke.get("id").and_then(Value::as_str);
             stroke.get(super::send::ELEMENT_KEY).and_then(Value::as_str) != Some(element_id)
-                && stroke.get("id").and_then(Value::as_str) != Some(element_id)
+                && id != Some(element_id)
+                && (local_id.is_none() || id != local_id)
         });
         if strokes.len() != before {
             gone = true;

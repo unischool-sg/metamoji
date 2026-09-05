@@ -755,7 +755,8 @@ impl NoteStore {
             -- user erased is gone from the tree, and erasing is exactly what
             -- has to be reported.
             CREATE TABLE IF NOT EXISTS room_strokes (
-                element_id TEXT PRIMARY KEY,
+                stroke_id  TEXT PRIMARY KEY,
+                element_id TEXT NOT NULL,
                 layer_id   TEXT NOT NULL
             );
 
@@ -914,26 +915,38 @@ impl NoteStore {
 
     // -- classroom bookkeeping -------------------------------------------------
 
-    pub fn remember_room_stroke(&self, element_id: &str, layer_id: &str) -> AppResult<()> {
+    pub fn remember_room_stroke(
+        &self,
+        stroke_id: &str,
+        element_id: &str,
+        layer_id: &str,
+    ) -> AppResult<()> {
         self.conn.execute(
-            "INSERT OR REPLACE INTO room_strokes(element_id, layer_id) VALUES (?1, ?2)",
-            params![element_id, layer_id],
+            "INSERT OR REPLACE INTO room_strokes(stroke_id, element_id, layer_id)
+             VALUES (?1, ?2, ?3)",
+            params![stroke_id, element_id, layer_id],
         )?;
         Ok(())
     }
 
-    pub fn room_strokes(&self) -> AppResult<Vec<(String, String)>> {
-        let mut stmt = self
-            .conn
-            .prepare("SELECT element_id, layer_id FROM room_strokes ORDER BY element_id")?;
-        let rows = stmt.query_map([], |r| Ok((r.get(0)?, r.get(1)?)))?;
+    pub fn room_strokes(&self) -> AppResult<Vec<crate::collabo::send::Ledger>> {
+        let mut stmt = self.conn.prepare(
+            "SELECT stroke_id, element_id, layer_id FROM room_strokes ORDER BY stroke_id",
+        )?;
+        let rows = stmt.query_map([], |r| {
+            Ok(crate::collabo::send::Ledger {
+                stroke_id: r.get(0)?,
+                element_id: r.get(1)?,
+                layer_id: r.get(2)?,
+            })
+        })?;
         Ok(rows.collect::<Result<Vec<_>, _>>()?)
     }
 
-    pub fn forget_room_stroke(&self, element_id: &str) -> AppResult<()> {
+    pub fn forget_room_stroke(&self, stroke_id: &str) -> AppResult<()> {
         self.conn.execute(
-            "DELETE FROM room_strokes WHERE element_id = ?1",
-            params![element_id],
+            "DELETE FROM room_strokes WHERE stroke_id = ?1",
+            params![stroke_id],
         )?;
         Ok(())
     }
