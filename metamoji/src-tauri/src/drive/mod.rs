@@ -52,6 +52,21 @@ pub struct DriveDocument {
     pub title: Option<String>,
     pub revision: Option<String>,
     pub updated_at: Option<String>,
+    /// The folder that claims it, as an absolute path. `/` for the root.
+    pub folder_path: String,
+}
+
+/// One folder in a class box.
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DriveFolder {
+    /// `/算数/4月/` — always slash-delimited, always ends with one.
+    pub abs_path: String,
+    /// The last segment. The root's is empty.
+    pub name: String,
+    /// The containing folder's path, or `None` for the root.
+    pub parent_path: Option<String>,
+    pub depth: usize,
 }
 
 /// A downloaded file: the bytes and what the server called them.

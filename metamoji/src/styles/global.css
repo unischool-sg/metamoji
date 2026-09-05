@@ -91,6 +91,8 @@ button {
 .icon-btn,
 .fab,
 .tool-btn,
+.folder-card,
+.breadcrumbs__crumb,
 .menu__item,
 .sidebar-item,
 .pen-row,
@@ -113,6 +115,8 @@ button {
 .icon-btn::before,
 .fab::before,
 .tool-btn::before,
+.folder-card::before,
+.breadcrumbs__crumb::before,
 .menu__item::before,
 .sidebar-item::before,
 .pen-row::before,
@@ -141,6 +145,8 @@ button {
 .icon-btn:hover:not(:disabled)::before,
 .fab:hover:not(:disabled)::before,
 .tool-btn:hover:not(:disabled)::before,
+.folder-card:hover:not(:disabled)::before,
+.breadcrumbs__crumb:hover:not(:disabled)::before,
 .menu__item:hover:not(:disabled)::before,
 .sidebar-item:hover:not(:disabled)::before,
 .pen-row:hover:not(:disabled)::before,
@@ -161,6 +167,8 @@ button {
 .icon-btn:focus-visible::before,
 .fab:focus-visible::before,
 .tool-btn:focus-visible::before,
+.folder-card:focus-visible::before,
+.breadcrumbs__crumb:focus-visible::before,
 .menu__item:focus-visible::before,
 .sidebar-item:focus-visible::before,
 .pen-row:focus-visible::before,
@@ -181,6 +189,8 @@ button {
 .icon-btn:active:not(:disabled)::before,
 .fab:active:not(:disabled)::before,
 .tool-btn:active:not(:disabled)::before,
+.folder-card:active:not(:disabled)::before,
+.breadcrumbs__crumb:active:not(:disabled)::before,
 .menu__item:active:not(:disabled)::before,
 .sidebar-item:active:not(:disabled)::before,
 .pen-row:active:not(:disabled)::before,
@@ -1454,6 +1464,67 @@ input.layer-row__name {
 
 .library__empty p {
   margin: 0;
+}
+
+/* --- class box folders -------------------------------------------------- */
+
+/* Material 3 outlined card, shaped like a folder row rather than a note. */
+.folder-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 96px;
+  padding: var(--space-4);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: var(--md-sys-shape-corner-medium);
+  background: var(--md-sys-color-surface-container-low);
+  color: var(--md-sys-color-on-surface-variant);
+  text-align: left;
+}
+
+.folder-card__name {
+  font-size: var(--md-sys-typescale-title-small-size);
+  line-height: var(--md-sys-typescale-title-small-line-height);
+  letter-spacing: var(--md-sys-typescale-title-small-tracking);
+  font-weight: 500;
+  color: var(--md-sys-color-on-surface);
+  overflow-wrap: anywhere;
+}
+
+.breadcrumbs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1);
+  margin-bottom: var(--space-4);
+}
+
+.breadcrumbs__step {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+.breadcrumbs__crumb {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  height: 32px;
+  padding: 0 var(--space-3);
+  border-radius: var(--md-sys-shape-corner-full);
+  font-size: var(--md-sys-typescale-label-large-size);
+  letter-spacing: var(--md-sys-typescale-label-large-tracking);
+  font-weight: 500;
+  color: var(--md-sys-color-primary);
+}
+
+/* The last crumb is where we already are, so it is a label, not a control. */
+.breadcrumbs__crumb:disabled {
+  color: var(--md-sys-color-on-surface);
+  cursor: default;
 }
 
 /* --- page strip --------------------------------------------------------- */

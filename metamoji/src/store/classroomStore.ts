@@ -47,6 +47,8 @@ interface ClassroomState {
   listingError: string | null;
   /** Why the join code could not be fetched, if it could not. */
   codeError: string | null;
+  /** Which folder inside the class box is open. `/` is the top level. */
+  boxPath: string;
   roomId: string | null;
   roomTitle: string | null;
   relay: RelayInfo | null;
@@ -68,6 +70,7 @@ interface ClassroomState {
   joinBox: (joinCode: string) => Promise<ClassBox | null>;
   openBox: () => Promise<void>;
   closeBox: () => Promise<void>;
+  setBoxPath: (path: string) => void;
   refreshCode: (regenerate: boolean) => Promise<void>;
   setJoinEnabled: (enabled: boolean) => Promise<void>;
   enterRoom: (title: string, nickname: string) => Promise<boolean>;
@@ -94,6 +97,7 @@ export const useClassroomStore = create<ClassroomState>((set, get) => ({
   openingBox: false,
   listingError: null,
   codeError: null,
+  boxPath: "/",
   roomId: null,
   roomTitle: null,
   relay: null,
@@ -147,7 +151,7 @@ export const useClassroomStore = create<ClassroomState>((set, get) => ({
     set({ busy: true, error: null });
     try {
       const box = await api.classroomCreateBox(name);
-      set({ box, listing: null, busy: false });
+      set({ box, listing: null, boxPath: "/", busy: false });
       void get().openBox();
       return box;
     } catch (err) {
@@ -160,7 +164,7 @@ export const useClassroomStore = create<ClassroomState>((set, get) => ({
     set({ busy: true, error: null });
     try {
       const box = await api.classroomJoinBox(joinCode);
-      set({ box, listing: null, busy: false });
+      set({ box, listing: null, boxPath: "/", busy: false });
       void get().openBox();
       return box;
     } catch (err) {
@@ -178,7 +182,10 @@ export const useClassroomStore = create<ClassroomState>((set, get) => ({
   openBox: async () => {
     const box = get().box;
     if (!box) return;
-    set({ openingBox: true, error: null, listingError: null });
+    // Reopening starts at the top: the folder that was open may not exist any
+    // more, and a path that names nothing shows an empty folder rather than an
+    // error, which is the worst of both.
+    set({ openingBox: true, error: null, listingError: null, boxPath: "/" });
     try {
       set({
         listing: await api.classboxOpen(box.driveId),
@@ -194,9 +201,11 @@ export const useClassroomStore = create<ClassroomState>((set, get) => ({
 
   closeBox: async () => {
     await api.classboxClose();
-    set({ box: null, listing: null });
+    set({ box: null, listing: null, boxPath: "/" });
     void get().loadMyBoxes();
   },
+
+  setBoxPath: (boxPath) => set({ boxPath }),
 
   refreshCode: async (regenerate) => {
     const box = get().box;

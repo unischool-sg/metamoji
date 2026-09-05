@@ -18,92 +18,185 @@ fn archive(entries: &[(&str, &str)]) -> Vec<u8> {
     buffer
 }
 
+fn ids(listing: &Listing) -> Vec<&str> {
+    listing.documents.iter().map(|d| d.document_id.as_str()).collect()
+}
+
 #[test]
-fn reads_document_records_from_a_json_entry() {
+fn reads_notes_from_a_documents_entry() {
     let listing = parse(archive(&[(
-        "docinfo_1.json",
+        "documents_1.json",
         r#"[{"id":"doc-9","title":"算数 4月12日","contentsRevision":"17",
              "lastUpdate":"2026-04-12T01:00:00Z"}]"#,
     )]))
     .unwrap();
 
     assert_eq!(listing.documents.len(), 1);
-    assert_eq!(listing.documents[0].document_id, "doc-9");
     assert_eq!(listing.documents[0].title.as_deref(), Some("算数 4月12日"));
     assert_eq!(listing.documents[0].revision.as_deref(), Some("17"));
+    // Nothing claimed it, so it sits at the top rather than nowhere.
+    assert_eq!(listing.documents[0].folder_path, "/");
+}
+
+#[test]
+fn folders_come_from_their_paths() {
+    // `SdMOFolder` is keyed by `absPath`, so the hierarchy is already in the
+    // strings — there is nothing to join.
+    let listing = parse(archive(&[(
+        "folderdefs_1.json",
+        r#"[{"absPath":"/算数/"},{"absPath":"/算数/4月/"},{"absPath":"/国語/"}]"#,
+    )]))
+    .unwrap();
+
+    let paths: Vec<&str> = listing.folders.iter().map(|f| f.abs_path.as_str()).collect();
+    assert_eq!(paths, ["/国語/", "/算数/", "/算数/4月/"]);
+
+    let april = listing.folders.iter().find(|f| f.name == "4月").unwrap();
+    assert_eq!(april.parent_path.as_deref(), Some("/算数/"));
+    assert_eq!(april.depth, 2);
+
+    let maths = listing.folders.iter().find(|f| f.name == "算数").unwrap();
+    assert_eq!(maths.parent_path, None, "a top-level folder has no parent");
+    assert_eq!(maths.depth, 1);
+}
+
+#[test]
+fn a_folder_claims_its_notes_through_children_order() {
+    // `/`-delimited, per `SdUtils.tagsFromPath`.
+    let listing = parse(archive(&[
+        (
+            "folderdefs_1.json",
+            r#"[{"absPath":"/算数/","childrenOrder":"/doc-a/doc-b/"}]"#,
+        ),
+        (
+            "documents_1.json",
+            r#"[{"id":"doc-a"},{"id":"doc-b"},{"id":"doc-c"}]"#,
+        ),
+    ]))
+    .unwrap();
+
+    let folder_of = |id: &str| {
+        listing
+            .documents
+            .iter()
+            .find(|d| d.document_id == id)
+            .unwrap()
+            .folder_path
+            .clone()
+    };
+    assert_eq!(folder_of("doc-a"), "/算数/");
+    assert_eq!(folder_of("doc-b"), "/算数/");
+    assert_eq!(folder_of("doc-c"), "/", "unclaimed notes go to the top");
+}
+
+#[test]
+fn a_children_order_naming_subfolders_does_not_invent_notes() {
+    // `childrenOrder` names both notes and subfolders; a name matching no note
+    // is simply not a note.
+    let listing = parse(archive(&[
+        (
+            "folderdefs_1.json",
+            r#"[{"absPath":"/算数/","childrenOrder":"/4月/doc-a/"}]"#,
+        ),
+        ("documents_1.json", r#"[{"id":"doc-a"}]"#),
+    ]))
+    .unwrap();
+
+    assert_eq!(ids(&listing), ["doc-a"]);
+}
+
+#[test]
+fn the_root_is_not_listed_as_a_folder() {
+    // It is where everything already is; a row for it would be a loop.
+    let listing = parse(archive(&[(
+        "folderdefs_1.json",
+        r#"[{"absPath":"/"},{"absPath":""}]"#,
+    )]))
+    .unwrap();
+    assert!(listing.folders.is_empty());
+    assert_eq!(listing.record_count, 2, "still counted");
+}
+
+#[test]
+fn deleted_records_are_counted_but_not_offered() {
+    let listing = parse(archive(&[
+        (
+            "documents_1.json",
+            r#"[{"id":"a"},{"id":"b","deleteFlag":true},{"id":"c","deleteFlag":1}]"#,
+        ),
+        (
+            "folderdefs_1.json",
+            r#"[{"absPath":"/消した/","deleteFlag":true}]"#,
+        ),
+    ]))
+    .unwrap();
+
+    assert_eq!(ids(&listing), ["a"]);
+    assert!(listing.folders.is_empty());
+    // "four records, one visible" and "one record" are different situations.
+    assert_eq!(listing.record_count, 4);
+}
+
+#[test]
+fn the_archives_other_entries_are_not_reported_as_faults() {
+    // They are real data this build does not use yet, not corruption.
+    let listing = parse(archive(&[
+        ("documents_1.json", r#"[{"id":"a"}]"#),
+        ("tagdefs_1.json", r#"[{"name":"重要"}]"#),
+        ("tagorder.json", r#"{"tagOrder":""}"#),
+        ("drive.json", r#"{"lastUpdateRevision":"9"}"#),
+        ("meta.json", r#"{}"#),
+        ("childrenorders_1.json", r#"[]"#),
+    ]))
+    .unwrap();
+
+    assert_eq!(ids(&listing), ["a"]);
     assert!(listing.unrecognised.is_empty(), "{:?}", listing.unrecognised);
 }
 
 #[test]
-fn a_deleted_record_is_not_offered() {
-    // Deleted documents stay in the archive. Listing them would offer notes
-    // that cannot be opened.
-    let listing = parse(archive(&[(
-        "docinfo.json",
-        r#"[{"id":"a","title":"生きている"},
-            {"id":"b","title":"消した","deleteFlag":true},
-            {"id":"c","title":"消した2","deleteFlag":1}]"#,
-    )]))
-    .unwrap();
-
-    assert_eq!(
-        listing.documents.iter().map(|d| d.document_id.as_str()).collect::<Vec<_>>(),
-        ["a"]
-    );
-    // Counted even so: "three records, one visible" and "one record" are
-    // different situations.
-    assert_eq!(listing.record_count, 3);
-}
-
-#[test]
-fn several_entries_are_merged_and_ordered() {
+fn a_genuinely_unknown_entry_is_named() {
+    // An archive holding more than this understands is worth saying so about;
+    // silently showing fewer notes than the class has is not.
     let listing = parse(archive(&[
-        ("b.json", r#"[{"id":"doc-b"}]"#),
-        ("a.json", r#"[{"id":"doc-a"}]"#),
+        ("documents_1.json", r#"[{"id":"a"}]"#),
+        ("surprise_1.json", r#"[{"id":"b"}]"#),
     ]))
     .unwrap();
 
-    assert_eq!(
-        listing.documents.iter().map(|d| d.document_id.as_str()).collect::<Vec<_>>(),
-        ["doc-a", "doc-b"]
-    );
+    assert_eq!(ids(&listing), ["a"]);
+    assert_eq!(listing.unrecognised, ["surprise_1.json"]);
 }
 
 #[test]
-fn an_array_wrapped_in_an_object_is_still_read() {
+fn entries_may_be_nested_in_the_archive() {
+    // The dispatch is on the file name, not the whole path.
+    let listing = parse(archive(&[("data/documents_1.json", r#"[{"id":"a"}]"#)])).unwrap();
+    assert_eq!(ids(&listing), ["a"]);
+}
+
+#[test]
+fn notes_are_ordered_by_title_not_by_archive_order() {
     let listing = parse(archive(&[(
-        "x.json",
-        r#"{"documents":[{"id":"doc-1","title":"入れ子"}]}"#,
+        "documents_1.json",
+        r#"[{"id":"z","title":"あ"},{"id":"a","title":"い"}]"#,
     )]))
     .unwrap();
-    assert_eq!(listing.documents.len(), 1);
+    assert_eq!(ids(&listing), ["z", "a"]);
 }
 
 #[test]
 fn a_numeric_revision_is_read_as_a_string() {
-    // Revisions arrive as numbers in some records and strings in others.
-    let listing = parse(archive(&[("x.json", r#"[{"id":"a","contentsRevision":17}]"#)])).unwrap();
+    let listing =
+        parse(archive(&[("documents_1.json", r#"[{"id":"a","contentsRevision":17}]"#)])).unwrap();
     assert_eq!(listing.documents[0].revision.as_deref(), Some("17"));
-}
-
-#[test]
-fn non_json_entries_are_named_rather_than_ignored() {
-    // An archive holding more than this understands is worth saying so about;
-    // silently showing fewer notes than the class has is not.
-    let listing = parse(archive(&[
-        ("docinfo.json", r#"[{"id":"a"}]"#),
-        ("thumbnail.png", "not json"),
-    ]))
-    .unwrap();
-
-    assert_eq!(listing.documents.len(), 1);
-    assert_eq!(listing.unrecognised, ["thumbnail.png"]);
 }
 
 #[test]
 fn an_empty_archive_is_empty_rather_than_an_error() {
     let listing = parse(archive(&[])).unwrap();
     assert!(listing.documents.is_empty());
+    assert!(listing.folders.is_empty());
     assert_eq!(listing.record_count, 0);
 }
 

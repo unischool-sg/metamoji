@@ -290,6 +290,8 @@ export const en: Record<string, string> = {
     "You do not belong to any class yet — join one below.",
   "クラスボックスのノート": "Notes in the class box",
   "ノートはまだありません。": "No notes yet.",
+  "このフォルダは空です。": "This folder is empty.",
+  "最上位": "Top",
   "中身を解釈できませんでした({count} 件のレコード、未知の項目: {types})。":
     "Could not read the contents ({count} records; unrecognised entries: {types}).",
   "端末に複製して開きます": "Opens as a copy on this device",

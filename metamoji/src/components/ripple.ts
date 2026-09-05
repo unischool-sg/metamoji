@@ -28,6 +28,8 @@ const RIPPLE_TARGETS = [
   ".shape-btn",
   ".page-strip__add",
   ".note-card__open",
+  ".folder-card",
+  ".breadcrumbs__crumb",
 ].join(",");
 
 const DURATION_MS = 450;

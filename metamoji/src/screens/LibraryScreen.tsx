@@ -70,6 +70,7 @@ export function LibraryScreen() {
   const boxListing = useClassroomStore((s) => s.listing);
   const openingBox = useClassroomStore((s) => s.openingBox);
   const listingError = useClassroomStore((s) => s.listingError);
+  const boxPath = useClassroomStore((s) => s.boxPath);
   const loadingBoxes = useClassroomStore((s) => s.loadingBoxes);
   const boxesError = useClassroomStore((s) => s.boxesError);
 
@@ -497,6 +498,8 @@ export function LibraryScreen() {
               listing={boxListing}
               loading={openingBox}
               error={listingError}
+              path={boxPath}
+              onNavigate={(next) => useClassroomStore.getState().setBoxPath(next)}
               onRetry={() => void useClassroomStore.getState().openBox()}
               onOpen={(id, title) => void openClassNote(id, title)}
             />
@@ -724,36 +727,31 @@ function NoteCard({
   );
 }
 
-function formatDate(iso: string): string {
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return "";
-  return new Intl.DateTimeFormat("ja-JP", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(date);
-}
-
 /**
- * The notes inside a class box.
+ * The notes inside a class box, one folder at a time.
  *
  * Separate from the local grid because almost nothing is shared: these come
  * from a different server, have no local catalog row, and open as a copy —
  * there is no rename, no trash, no drag to a folder. Reusing `NoteCard` would
  * mean disabling most of it.
+ *
+ * Folders here are *paths*, not ids (`SdMOFolder` is keyed by `absPath`), so
+ * navigation is string manipulation and needs no lookup table.
  */
 function ClassBoxGrid({
   listing,
   loading,
   error,
+  path,
+  onNavigate,
   onRetry,
   onOpen,
 }: {
   listing: ClassBoxListing | null;
   loading: boolean;
   error: string | null;
+  path: string;
+  onNavigate: (path: string) => void;
   onRetry: () => void;
   onOpen: (documentId: string, title: string | null) => void;
 }) {
@@ -785,11 +783,16 @@ function ClassBoxGrid({
     );
   }
 
-  if (listing.documents.length === 0) {
+  const here = listing.folders.filter((f) => (f.parentPath ?? "/") === path);
+  const notes = listing.documents.filter((d) => d.folderPath === path);
+  const crumbs = breadcrumbs(path);
+
+  if (here.length === 0 && notes.length === 0) {
     return (
       <div className="library__empty">
+        {crumbs.length > 0 && <Breadcrumbs crumbs={crumbs} onNavigate={onNavigate} />}
         <Icon name="school" size={48} />
-        <p>{t("ノートはまだありません。")}</p>
+        <p>{path === "/" ? t("ノートはまだありません。") : t("このフォルダは空です。")}</p>
         {listing.unrecognised.length > 0 && (
           // An unreadable class box and an empty one mean very different
           // things; saying "empty" for both would send a teacher looking for
@@ -809,24 +812,96 @@ function ClassBoxGrid({
   }
 
   return (
-    <div className="library__grid">
-      {listing.documents.map((doc) => (
-        <div key={doc.documentId} className="note-card">
+    <>
+      {crumbs.length > 0 && <Breadcrumbs crumbs={crumbs} onNavigate={onNavigate} />}
+      <div className="library__grid">
+        {here.map((folder) => (
+          <button
+            key={folder.absPath}
+            type="button"
+            className="folder-card"
+            onClick={() => onNavigate(folder.absPath)}
+          >
+            <Icon name="folder" size={32} />
+            <span className="folder-card__name">{folder.name}</span>
+          </button>
+        ))}
+        {notes.map((doc) => (
+          <div key={doc.documentId} className="note-card">
+            <button
+              type="button"
+              className="note-card__open"
+              onClick={() => onOpen(doc.documentId, doc.title)}
+            >
+              <div className="note-card__thumb" />
+            </button>
+            <div className="note-card__body">
+              <div className="note-card__title" title={doc.title ?? doc.documentId}>
+                {doc.title ?? doc.documentId}
+              </div>
+              <div className="note-card__meta">{t("端末に複製して開きます")}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </>
+  );
+}
+
+/** `/算数/4月/` → the trail back to the top. Empty at the top itself. */
+export function breadcrumbs(path: string): { name: string; path: string }[] {
+  const segments = path.split("/").filter(Boolean);
+  if (segments.length === 0) return [];
+
+  const trail: { name: string; path: string }[] = [];
+  let accumulated = "/";
+  for (const segment of segments) {
+    accumulated += `${segment}/`;
+    trail.push({ name: segment, path: accumulated });
+  }
+  return trail;
+}
+
+function Breadcrumbs({
+  crumbs,
+  onNavigate,
+}: {
+  crumbs: { name: string; path: string }[];
+  onNavigate: (path: string) => void;
+}) {
+  const { t } = useTranslation();
+  return (
+    <nav className="breadcrumbs" aria-label={t("フォルダ")}>
+      <button type="button" className="breadcrumbs__crumb" onClick={() => onNavigate("/")}>
+        <Icon name="school" size={18} />
+        {t("最上位")}
+      </button>
+      {crumbs.map((crumb, index) => (
+        <span key={crumb.path} className="breadcrumbs__step">
+          <Icon name="keyboard_arrow_right" size={18} />
           <button
             type="button"
-            className="note-card__open"
-            onClick={() => onOpen(doc.documentId, doc.title)}
+            className="breadcrumbs__crumb"
+            // The last crumb is where we already are.
+            disabled={index === crumbs.length - 1}
+            onClick={() => onNavigate(crumb.path)}
           >
-            <div className="note-card__thumb" />
+            {crumb.name}
           </button>
-          <div className="note-card__body">
-            <div className="note-card__title" title={doc.title ?? doc.documentId}>
-              {doc.title ?? doc.documentId}
-            </div>
-            <div className="note-card__meta">{t("端末に複製して開きます")}</div>
-          </div>
-        </div>
+        </span>
       ))}
-    </div>
+    </nav>
   );
+}
+
+function formatDate(iso: string): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "";
+  return new Intl.DateTimeFormat("ja-JP", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
 }

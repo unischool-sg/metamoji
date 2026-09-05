@@ -160,11 +160,22 @@ Map のキーで、その値の文字列が `application/json` のボディそ�
 ただし書き戻せないので、開くときは端末へ複製する ── 同期しているふりはしない。
 
 **中身の zip はモデルコンテナではなく、JSON の詰め合わせ。**
-`SdDriveSyncProcess.doMergeDriveDataFromArchive` は zip を開いて
-`.json` で終わるエントリだけを取り出し、それぞれを
-`doMergeDocumentInfoWithData(JSONArray, File)` に渡す ── つまり各エントリは
-ドキュメントレコードの配列。キーは `SdMODocument` のもので
-`id` / `title` / `contentsRevision` / `lastUpdate` / `deleteFlag`。
+`SdDriveSyncProcess.doMergeDriveDataFromArchive` は zip を開き、
+エントリ名の接頭辞で振り分ける:
+
+| エントリ | 中身 |
+|---|---|
+| `documents_N.json` | ノート ── `id` / `title` / `contentsRevision` / `deleteFlag` |
+| `folderdefs_N.json` | フォルダ ── `absPath` / `childrenOrder` |
+| `childrenorders_N.json` | 並び順 |
+| `tagdefs_N.json`, `tagorder.json` | タグ |
+| `drive.json`, `meta.json` | ドライブの属性 |
+
+**フォルダは ID ではなくパス。** `SdMOFolder` は `absPath` で識別されるので、
+階層は文字列の中にあり、結合する必要がない。所属は逆向きで、フォルダの
+`childrenOrder` が子を `/` 区切りで並べる(`SdUtils.tagsFromPath` が
+両端のスラッシュを落として分割する)。どのフォルダにも拾われなかった
+ノートは最上位に置く ── 隠すよりましなので。
 
 「このアプリのものは何でもモデルコンテナだろう」と決めつけて `.atdoc`
 インポータに通していたが、症状は

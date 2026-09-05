@@ -577,10 +577,22 @@ export interface DriveDocument {
   title: string | null;
   revision: string | null;
   updatedAt: string | null;
+  /** The folder that claims it, as an absolute path. `/` for the top level. */
+  folderPath: string;
+}
+
+/** One folder in a class box. Folders are keyed by path, not by id. */
+export interface DriveFolder {
+  /** `/算数/4月/` — slash-delimited, with a slash at each end. */
+  absPath: string;
+  name: string;
+  parentPath: string | null;
+  depth: number;
 }
 
 export interface ClassBoxListing {
   documents: DriveDocument[];
+  folders: DriveFolder[];
   /**
    * Entries in the archive that were not document JSON. Non-empty means the
    * archive holds more than the decoder understands — an unreadable class box
