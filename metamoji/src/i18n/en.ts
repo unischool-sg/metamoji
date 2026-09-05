@@ -88,6 +88,12 @@ export const en: Record<string, string> = {
   "A4 横": "A4 landscape",
   "A5 縦": "A5 portrait",
   "レイヤー": "Layers",
+  "ヘッダー・フッター": "Header & footer",
+  "ヘッダー": "Header",
+  "フッター": "Footer",
+  "ヘッダー・フッターを変更": "Change header & footer",
+  "{page} でページ番号、{pages} で総ページ数になります。":
+    "Use {page} for the page number and {pages} for the total.",
   "+ レイヤーを追加": "+ Add layer",
   "非表示にする": "Hide",
   "表示する": "Show",

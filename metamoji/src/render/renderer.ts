@@ -30,6 +30,9 @@ export interface AssetResolver {
 
 export interface RenderOptions {
   viewport: Viewport;
+  /** 1-based page number and total, for header/footer placeholders. */
+  pageNumber?: number;
+  pageCount?: number;
   /** Canvas size in CSS pixels. */
   viewWidth: number;
   viewHeight: number;
@@ -64,6 +67,9 @@ export function renderPage(
     if (!layer.visible) continue;
     drawLayer(ctx, layer, visible, opts);
   }
+
+  // Drawn last so page content cannot obscure the running head and foot.
+  drawFurniture(ctx, page, opts);
 
   ctx.restore();
 }
@@ -140,6 +146,43 @@ export function drawPaper(ctx: CanvasRenderingContext2D, page: Page): void {
       break;
   }
 
+  ctx.restore();
+}
+
+/**
+ * Header and footer text.
+ *
+ * `{page}` and `{pages}` are expanded here rather than stored per page, so
+ * inserting a page renumbers the whole document for free.
+ */
+export function drawFurniture(
+  ctx: CanvasRenderingContext2D,
+  page: Page,
+  opts: Pick<RenderOptions, "pageNumber" | "pageCount">,
+): void {
+  const furniture = page.furniture;
+  if (!furniture?.show) return;
+  if (!furniture.header && !furniture.footer) return;
+
+  const expand = (template: string) =>
+    template
+      .replace(/\{page\}/g, String(opts.pageNumber ?? 1))
+      .replace(/\{pages\}/g, String(opts.pageCount ?? 1));
+
+  ctx.save();
+  ctx.fillStyle = "rgba(60, 70, 85, 0.65)";
+  ctx.font = "400 16px system-ui";
+  ctx.textAlign = "center";
+
+  const margin = 34;
+  if (furniture.header) {
+    ctx.textBaseline = "top";
+    ctx.fillText(expand(furniture.header), page.paperWidth / 2, margin);
+  }
+  if (furniture.footer) {
+    ctx.textBaseline = "bottom";
+    ctx.fillText(expand(furniture.footer), page.paperWidth / 2, page.paperHeight - margin);
+  }
   ctx.restore();
 }
 

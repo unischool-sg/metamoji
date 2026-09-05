@@ -26,6 +26,7 @@ import type {
   ModelId,
   NoteDocument,
   Page,
+  PageFurniture,
   PaperStyle,
   PenAttributes,
   ShapeKind,
@@ -87,6 +88,7 @@ interface EditorState {
   setPaperStyle: (style: PaperStyle) => void;
   setPaperColor: (color: string) => void;
   setPaperSize: (width: number, height: number) => void;
+  setFurniture: (furniture: PageFurniture) => void;
 
   // -- layers -------------------------------------------------------------
   addLayer: () => void;
@@ -307,6 +309,20 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         pageId: page.id,
         before: { paperWidth: page.paperWidth, paperHeight: page.paperHeight },
         after: { paperWidth, paperHeight },
+      });
+    });
+  },
+
+  setFurniture: (furniture) => {
+    const { session, doc, pageIndex } = get();
+    const page = doc?.pages[pageIndex];
+    if (!session || !page) return;
+    session.transact("ヘッダー・フッターを変更", () => {
+      session.record({
+        kind: "page.update",
+        pageId: page.id,
+        before: { furniture: page.furniture },
+        after: { furniture },
       });
     });
   },

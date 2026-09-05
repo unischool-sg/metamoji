@@ -50,6 +50,7 @@ export function Inspector() {
       {activeTool === "sticky" && <StickySection />}
       {activeTool === "laser" && <LaserSection />}
       <PaperSection />
+      <FurnitureSection />
       <LayerSection />
     </aside>
   );
@@ -506,6 +507,52 @@ function PaperSection() {
           </button>
         ))}
       </div>
+    </>
+  );
+}
+
+function FurnitureSection() {
+  const { t } = useTranslation();
+  const doc = useEditorStore((s) => s.doc);
+  const pageIndex = useEditorStore((s) => s.pageIndex);
+  const setFurniture = useEditorStore((s) => s.setFurniture);
+  const page = doc?.pages[pageIndex];
+
+  if (!page) return null;
+  const current = page.furniture ?? { header: "", footer: "", show: false };
+
+  return (
+    <>
+      <h2>{t("ヘッダー・フッター")}</h2>
+      <div className="setting-row" style={{ padding: "4px 0" }}>
+        <label htmlFor="furniture-show">{t("表示する")}</label>
+        <input
+          id="furniture-show"
+          type="checkbox"
+          checked={current.show}
+          onChange={(e) => setFurniture({ ...current, show: e.target.checked })}
+        />
+      </div>
+
+      <div className="field">
+        <label htmlFor="header">{t("ヘッダー")}</label>
+        <input
+          id="header"
+          type="text"
+          value={current.header}
+          onChange={(e) => setFurniture({ ...current, header: e.target.value })}
+        />
+      </div>
+      <div className="field">
+        <label htmlFor="footer">{t("フッター")}</label>
+        <input
+          id="footer"
+          type="text"
+          value={current.footer}
+          onChange={(e) => setFurniture({ ...current, footer: e.target.value })}
+        />
+      </div>
+      <p className="setting-note">{t("{page} でページ番号、{pages} で総ページ数になります。")}</p>
     </>
   );
 }

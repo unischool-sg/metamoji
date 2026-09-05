@@ -275,3 +275,31 @@ describe("searchableText", () => {
     expect(searchableText(doc)).toBe("空");
   });
 });
+
+describe("header and footer", () => {
+  it("round-trips through the generic tree", () => {
+    const doc = createDocument("furniture");
+    doc.pages[0].furniture = { header: "第 {page} 章", footer: "{page} / {pages}", show: true };
+
+    const page = fromGeneric(toGeneric(doc)).pages[0];
+    expect(page.furniture).toEqual({
+      header: "第 {page} 章",
+      footer: "{page} / {pages}",
+      show: true,
+    });
+  });
+
+  it("is absent on a page that never had one, rather than an empty object", () => {
+    const page = fromGeneric(toGeneric(createDocument())).pages[0];
+    expect(page.furniture).toBeUndefined();
+  });
+
+  it("survives a page that only disabled it, so the text is not lost", () => {
+    const doc = createDocument();
+    doc.pages[0].furniture = { header: "見出し", footer: "", show: false };
+
+    const page = fromGeneric(toGeneric(doc)).pages[0];
+    expect(page.furniture?.header).toBe("見出し");
+    expect(page.furniture?.show).toBe(false);
+  });
+});

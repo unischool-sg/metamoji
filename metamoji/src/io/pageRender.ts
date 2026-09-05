@@ -9,7 +9,7 @@
 
 import type { NoteDocument, Page } from "../model/types";
 import type { AssetResolver } from "../render/renderer";
-import { drawPaper, renderPage } from "../render/renderer";
+import { renderPage } from "../render/renderer";
 
 /** Export resolutions, in dots per inch. Document units are px at 150 dpi. */
 export const DOC_DPI = 150;
@@ -17,6 +17,9 @@ export const EXPORT_DPI = { screen: 150, print: 300 } as const;
 
 export interface RenderPageOptions {
   assets: AssetResolver;
+  /** 1-based page number and total, for header/footer placeholders. */
+  pageNumber?: number;
+  pageCount?: number;
   /** Output scale relative to document units. 1 = 150 dpi. */
   scale?: number;
   /** Draw the paper background. Off produces a transparent PNG. */
@@ -25,7 +28,7 @@ export interface RenderPageOptions {
 
 export function renderPageToCanvas(
   page: Page,
-  { assets, scale = 1, paper = true }: RenderPageOptions,
+  { assets, scale = 1, paper = true, pageNumber, pageCount }: RenderPageOptions,
 ): HTMLCanvasElement {
   const canvas = document.createElement("canvas");
   canvas.width = Math.max(1, Math.round(page.paperWidth * scale));
@@ -34,21 +37,19 @@ export function renderPageToCanvas(
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("could not create a 2D context for export");
 
-  if (paper) {
-    ctx.save();
-    ctx.scale(scale, scale);
-    drawPaper(ctx, page);
-    ctx.restore();
-  }
-
+  // The paper must be drawn by `renderPage` itself, not before it: `renderPage`
+  // begins by clearing the canvas, so anything painted first is wiped. Getting
+  // this wrong is invisible on screen — the page strip puts a white CSS
+  // background behind its thumbnails — but produces an all-black PDF, because
+  // a transparent PNG is flattened onto black when converted to RGB.
   renderPage(ctx, page, {
     viewport: { scale, tx: 0, ty: 0 },
     viewWidth: canvas.width,
     viewHeight: canvas.height,
     assets,
-    // The paper is drawn above, unscaled by the viewport, so the renderer
-    // must not draw it a second time.
-    paper: false,
+    pageNumber,
+    pageCount,
+    paper,
   });
 
   return canvas;
@@ -74,7 +75,7 @@ export interface ExportPagePayload {
  *
  * `pageIndices` selects a subset; omitting it exports the whole note. Rendering
  * happens one page at a time and each canvas is released immediately, because a
- * 40-page note at 300 dpi would otherwise hold ~2 GB of bitmaps at once.
+ * 40-page note at 300 dpi would otherwise hold gigabytes of bitmaps at once.
  */
 export function renderPagesForExport(
   doc: NoteDocument,
@@ -90,7 +91,12 @@ export function renderPagesForExport(
     const page = doc.pages[index];
     if (!page) continue;
     out.push({
-      dataUrl: renderPageToDataUrl(page, { assets, scale }),
+      dataUrl: renderPageToDataUrl(page, {
+        assets,
+        scale,
+        pageNumber: index + 1,
+        pageCount: doc.pages.length,
+      }),
       width: page.paperWidth,
       height: page.paperHeight,
     });

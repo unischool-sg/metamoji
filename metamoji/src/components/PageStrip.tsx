@@ -57,11 +57,13 @@ export function PageStrip({
       renderedRevision.current = doc.revision;
 
       const next: Record<string, string> = {};
-      for (const page of doc.pages) {
+      for (const [index, page] of doc.pages.entries()) {
         try {
           next[page.id] = renderPageToDataUrl(page, {
             assets,
             scale: thumbnailScale(page, THUMB_MAX_EDGE),
+            pageNumber: index + 1,
+            pageCount: doc.pages.length,
           });
         } catch {
           // A thumbnail is a convenience; failing to draw one must not take

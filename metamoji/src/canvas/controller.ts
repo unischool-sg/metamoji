@@ -375,6 +375,8 @@ export class CanvasController {
       viewWidth: scene.clientWidth,
       viewHeight: scene.clientHeight,
       assets: this.assets,
+      pageNumber: this.pageIndex + 1,
+      pageCount: this.doc?.pages.length ?? 1,
     });
   }
 
@@ -1079,6 +1081,8 @@ export class CanvasController {
       viewWidth: canvas.width,
       viewHeight: canvas.height,
       assets: this.assets,
+      pageNumber: this.pageIndex + 1,
+      pageCount: this.doc?.pages.length ?? 1,
     });
     return canvas.toDataURL("image/png");
   }

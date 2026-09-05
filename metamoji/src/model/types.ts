@@ -287,6 +287,17 @@ export interface Layer {
 
 export type PaperStyle = "blank" | "lines" | "grid" | "dots";
 
+/**
+ * Running header/footer text, repeated on every page that enables it.
+ * `{page}` and `{pages}` expand at draw time, which is what makes page
+ * numbering possible without storing a different string per page.
+ */
+export interface PageFurniture {
+  header: string;
+  footer: string;
+  show: boolean;
+}
+
 export interface Page {
   id: ModelId;
   /** Paper size in document units (1 unit = 1 CSS px at 100% zoom). */
@@ -297,6 +308,7 @@ export interface Page {
   layers: Layer[];
   /** Id of the layer that receives new units. */
   currentLayerId: ModelId;
+  furniture?: PageFurniture;
 }
 
 export interface NoteMeta {

@@ -112,6 +112,13 @@ export function toGeneric(doc: NoteDocument): GenericTree {
         paperStyle: page.paperStyle,
         paperColor: page.paperColor,
         currentLayer: { $ref: page.currentLayerId },
+        ...(page.furniture
+          ? {
+              header: page.furniture.header,
+              footer: page.furniture.footer,
+              showFurniture: page.furniture.show,
+            }
+          : {}),
       },
     });
 
@@ -324,6 +331,10 @@ function pageFromGeneric(tree: GenericTree, node: GenericModel): Page {
       ? (currentRef as { $ref: string }).$ref
       : layers[0].id;
 
+  const header = getString(node.props, "header", "");
+  const footer = getString(node.props, "footer", "");
+  const showFurniture = getBool(node.props, "showFurniture", false);
+
   return {
     id: node.id,
     paperWidth: getNumber(node.props, "paperWidth", 1240),
@@ -332,6 +343,9 @@ function pageFromGeneric(tree: GenericTree, node: GenericModel): Page {
     paperColor: getString(node.props, "paperColor", "#ffffff"),
     layers,
     currentLayerId: layers.some((l) => l.id === currentLayerId) ? currentLayerId : layers[0].id,
+    ...(header || footer || showFurniture
+      ? { furniture: { header, footer, show: showFurniture } }
+      : {}),
   };
 }
 
