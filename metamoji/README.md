@@ -44,6 +44,9 @@ bun run tauri dev
 | `bun run tauri build` | 配布用ビルド |
 | `bun run test` | フロントエンドのテスト |
 | `bun run typecheck` | 型チェック |
+| `bun run gen:tokens` | Material のカラートークンを再生成 |
+| `bun run gen:icons` | 使用アイコンのパスデータを再生成 |
+| `bun run gen:icon` | アプリアイコン(`.icns`/`.ico`/PNG)を再生成 |
 | `cd src-tauri && cargo test` | Rust のテスト(`.atdoc` パーサ含む) |
 | `cd ../server && bun run start` | 同期・教室のバックエンド |
 | `cd ../server && bun test` | サーバーのテスト |
@@ -89,6 +92,39 @@ bun run tauri dev
   ここでは配信するかどうかを Unit 側が知る必要がない。
 - `canUndo`/`canRedo` は購読可能な状態で、ボタンは明示的な更新なしに追従する
 
+### 見た目 — Material 3
+
+UI は Material Design 3 に従っている。元アプリの UI は 531 個のカスタムレイアウト
+でできており、Android のドローアブルも流用できない(`docs/02` §4)。どのみち
+一から作る必要があったので、独自のルック&フィールを発明するより、仕様が公開されて
+いて検証もできる体系に乗せた。
+
+**色は手で選んでいない。** `scripts/gen-tokens.ts` が Google の
+`material-color-utilities` にシード色を渡し、`--md-sys-color-*` の全ロールを
+生成して `src/styles/tokens.css` を書き出す。シードは元アプリのアクセント
+`#32a5ff`(`docs/09` §5)なので、Material の既定の紫ではなく MetaMoJi の青のまま。
+
+- 既定の *tonal spot* ではなく *fidelity* スキームを使っている。tonal spot は
+  シードを意図的にくすませ、`#32a5ff` が `#33618d` になってしまう。fidelity は
+  ブランド色をそのままロールとして残す(明暗どちらでも `primary-container`)。
+- on/container の組み合わせはすべて 4.5:1 以上を確認済み。仕様どおりの生成物
+  なので、これは偶然ではなく構造的にそうなる。
+- **`tokens.css` は生成物なので手で編集しない。** シードを変えたら
+  `bun run gen:tokens`。
+
+**アイコンは Material Symbols**(outlined / weight 400)。`scripts/gen-icons.ts`
+が `@material-symbols/svg-400` から必要な分だけパスデータを抜き出して
+`src/components/icons.generated.ts` を作る。アイコンフォントを読み込まないので
+FOUT もネットワークアクセスも無い。
+
+**コンポーネントは `global.css` に自前で書いている**。`@material/web` は
+Web Components で、自前で DOM を持つ React ツリー(特にキャンバス)に
+Shadow DOM を混ぜると得より面倒が多い。ステートレイヤー・エレベーション・
+シェイプスケール・タイプスケールはトークンから引いている。
+
+リップルだけは CSS で書けない — 押した位置が中心になるため。
+`components/ripple.ts` が一箇所の委譲リスナーとして入れている。
+
 ### 描画
 
 `docs/10` の Sprite/Layer/Stage シーングラフは**再現していない**。あれは
@@ -102,6 +138,18 @@ bun run tauri dev
   `overlay` に単独で描く。ポインタ移動が React にも確定インクにも触れないため、
   ストローク遅延がページの内容量に依存しない
 - 画面・サムネイル・書き出しが同じ描画関数を通る(`docs/10` §7 の `Context` の seam)
+
+`renderPage` は**最初にキャンバスをクリアする**。したがって台紙・用紙の影・
+作業領域の色は、呼び出し側が先に塗るのではなく `renderPage` のオプションとして
+渡す。ここを間違えても画面上は「ちょっと暗い背景」にしか見えないため気づけない
+(不透明キャンバスのクリアは黒になる)。PDF 書き出しが真っ黒になったのも
+同じ罠で、いまは `render/renderer.test.ts` と `io/pageRender.test.ts` の
+両方が順序を固定している。
+
+キャンバスの**内容**(用紙の色、罫線、ヘッダー・フッター)はトークンを使わず
+リテラルのまま。同じ関数が画面・サムネイル・PDF を描くので、ダークモードで
+書き出した PDF が黒くなっては困る。テーマに追従するのは選択枠やレーザーなどの
+**クローム**だけで、それは `canvas/theme.ts` がトークンから読む。
 
 線幅可変のインクは**アウトライン多角形を1回 fill** する。サンプルごとに円を
 スタンプする方式は、半透明のマーカーが重なりで濁るうえ描画呼び出しが

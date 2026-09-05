@@ -264,6 +264,15 @@ button {
   flex: 1;
 }
 
+/*
+ * Top app bar actions are `on-surface-variant`, the same as the icon buttons
+ * beside them — Material reserves `primary` on this surface for the one action
+ * that deserves it, and a row of five primary-blue labels has no hierarchy.
+ */
+.topbar .btn {
+  color: var(--md-sys-color-on-surface-variant);
+}
+
 /* --- buttons ------------------------------------------------------------ */
 
 /*
