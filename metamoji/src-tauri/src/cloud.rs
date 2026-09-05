@@ -41,12 +41,18 @@ const REST_BASE_PATH: &str = "mmjeditor2/2.0";
 
 /// Wire constants from `CsHttpClient`/`CsCloudServiceContext`.
 ///
-/// These identify the *protocol*, not the platform: the server routes and gates
-/// on `productName`, so sending something else risks being turned away at the
-/// door for reasons that would be impossible to diagnose from here. What this
-/// client actually is shows up in `deviceName`, which carries the real machine
-/// name, and in `productVersion`, which is this app's version.
+/// These identify the *protocol*, not the platform. The server checks them:
+/// sending this app's own version instead of the client's got the login refused
+/// with "The product version is not supported", which is the server saying the
+/// version is part of the contract rather than telemetry. `productVersion` is
+/// the analysed APK's `versionName` (`CmUtils.getProductVersion` reads
+/// `PackageInfo.versionName`; `apk/apktool.yml`), so it will need bumping when
+/// MetaMoJi retires that release.
+///
+/// What this client actually is travels in `deviceName`, which is the field a
+/// school administrator sees in a device list — see `device_name` in `lib.rs`.
 const PRODUCT_NAME: &str = "Android-Share-G-ClassRoom";
+const PRODUCT_VERSION: &str = "3.15.1.0";
 const USER_AGENT: &str = "MMJCmCloudService/1.0";
 const DM_APP_VERSION: &str = "MMJDmCloudService/2.0";
 
@@ -119,7 +125,6 @@ pub struct CloudClient {
     http: reqwest::Client,
     inner: Mutex<Inner>,
     device_name: String,
-    product_version: String,
     locale: String,
     timezone: String,
 }
@@ -144,7 +149,6 @@ impl CloudClient {
                 session: None,
             }),
             device_name,
-            product_version: env!("CARGO_PKG_VERSION").to_string(),
             locale,
             timezone,
         })
@@ -172,7 +176,7 @@ impl CloudClient {
         let mut map = Map::new();
         map.insert("deviceName".into(), json!(self.device_name));
         map.insert("productName".into(), json!(PRODUCT_NAME));
-        map.insert("productVersion".into(), json!(self.product_version));
+        map.insert("productVersion".into(), json!(PRODUCT_VERSION));
         map.insert("locale".into(), json!(self.locale));
         map.insert("timezone".into(), json!(self.timezone));
         map
@@ -189,7 +193,7 @@ impl CloudClient {
         put("x-dm-appversion", DM_APP_VERSION);
         put("x-dm-locale", &self.locale);
         put("x-dm-productname", PRODUCT_NAME);
-        put("x-dm-productversion", &self.product_version);
+        put("x-dm-productversion", PRODUCT_VERSION);
         headers
     }
 
@@ -580,6 +584,24 @@ mod tests {
             Value::Object(map) => map,
             _ => unreachable!(),
         }
+    }
+
+    /// The constant has to match the APK the protocol was read from. If the
+    /// checkout has no `apk/`, there is nothing to compare against and the
+    /// check is skipped rather than failed.
+    #[test]
+    fn the_product_version_matches_the_analysed_apk() {
+        let apktool = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../apk/apktool.yml");
+        let Ok(text) = std::fs::read_to_string(apktool) else {
+            return;
+        };
+        let version = text
+            .lines()
+            .find_map(|line| line.trim().strip_prefix("versionName:"))
+            .map(str::trim)
+            .expect("apktool.yml has no versionName");
+        assert_eq!(PRODUCT_VERSION, version);
     }
 
     #[test]

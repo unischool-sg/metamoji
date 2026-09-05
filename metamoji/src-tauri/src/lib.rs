@@ -60,15 +60,22 @@ fn export_pdf(
     export::write_pdf(&path, &title, &pages)
 }
 
-/// The three environment values the ClassShare protocol wants on every
-/// request. All three are best-effort: the server treats them as telemetry, so
-/// a wrong guess costs nothing and an error would cost a sign-in.
+/// The environment values the ClassShare protocol wants on every request.
+/// Best-effort: unlike `productName`/`productVersion`, the server treats these
+/// as telemetry, so a wrong guess costs nothing and an error would cost a
+/// sign-in.
+///
+/// `deviceName` is also where this client owns up to what it is. The protocol
+/// constants have to claim to be the Android app or the server refuses the
+/// login, so this is the one field a school administrator can look at and see
+/// a desktop client rather than a phone.
 fn device_name() -> String {
-    std::env::var("HOSTNAME")
+    let host = std::env::var("HOSTNAME")
         .or_else(|_| std::env::var("COMPUTERNAME"))
         .ok()
         .filter(|s| !s.is_empty())
-        .unwrap_or_else(|| "desktop".to_string())
+        .unwrap_or_else(|| "desktop".to_string());
+    format!("{host} (MetaMoJi Desktop {})", env!("CARGO_PKG_VERSION"))
 }
 
 fn locale() -> String {

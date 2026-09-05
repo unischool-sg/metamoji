@@ -249,7 +249,10 @@ async fn login_posts_the_documented_envelope_to_the_tenant() {
         login.header("x-dm-productname"),
         Some("Android-Share-G-ClassRoom")
     );
-    assert!(login.header("x-dm-productversion").is_some());
+    // Pinned, not merely present. Sending this app's own version here got the
+    // login refused with "The product version is not supported" — the server
+    // validates it, so it is part of the contract, not telemetry.
+    assert_eq!(login.header("x-dm-productversion"), Some("3.15.1.0"));
     assert_eq!(login.header("user-agent"), Some("MMJCmCloudService/1.0"));
 
     let body = login.json();
@@ -261,7 +264,7 @@ async fn login_posts_the_documented_envelope_to_the_tenant() {
     assert_eq!(body["productName"], "Android-Share-G-ClassRoom");
     assert_eq!(body["locale"], "ja_JP");
     assert_eq!(body["timezone"], "Asia/Tokyo");
-    assert!(body["productVersion"].is_string());
+    assert_eq!(body["productVersion"], "3.15.1.0");
 
     // `uuid`, not `userId`.
     assert_eq!(session.user_id, "u-1");

@@ -71,6 +71,19 @@ B と C のサーバーは [`../server/`](../server/) の参照実装。
 `{name, message, data:{errorCode}}` と入れ子になっており、トップレベルの
 `errorCode` は `RequestServlet` だけの形。
 
+### `productName` / `productVersion` はプロトコル定数
+
+サーバーはこの2つを**検証している**。自前のバージョン(`0.1.0`)を送ったところ
+「The product version is not supported」でログインを拒否された。したがって
+`Android-Share-G-ClassRoom` / `3.15.1.0`(解析対象 APK の `versionName`)を
+そのまま送る。テレメトリではなく契約の一部で、MetaMoJi 社がこのリリースの
+サポートを打ち切ったら上げ直す必要がある ── `apk/apktool.yml` と定数が
+ずれないようテストで固定してある。
+
+このクライアントの正体は `deviceName` に入れてある
+(`ホスト名 (MetaMoJi Desktop 0.1.0)`)。学校の管理者が端末一覧で見るのは
+この欄なので、Android 端末のふりをしたまま黙っていることにはならない。
+
 ### 検証について
 
 学校のアカウントを持っていないため、**サインインそのものは実サーバーで確認できていない。**
