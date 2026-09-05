@@ -591,3 +591,163 @@ async fn a_drives_home_is_fetched_with_get() {
     // Every drive path is concatenated onto this, so it needs the slash.
     assert_eq!(home, "https://drive.example/x/");
 }
+
+#[tokio::test]
+async fn an_expired_session_is_renewed_rather_than_reported() {
+    // The symptom this fixes: the tenant expires the cookie, the next call
+    // answers `{"message":"It doesn't log it in."}`, and the app showed that
+    // sentence to a user who was plainly signed in. The credential is kept
+    // precisely so the client can do what the original's
+    // `executeWithAutoLoginFor` does — sign in again and retry, once.
+    let stub = stub(vec![
+        ("200 OK", SCHOOL_OK.to_string()),
+        ("200 OK", login_ok()),
+        // The session has lapsed by the time the drive list is asked for.
+        (
+            "200 OK",
+            r#"{"name":"NotLoginException","message":"It doesn't log it in.",
+                "data":{"errorCode":106}}"#
+                .to_string(),
+        ),
+        // The silent re-login.
+        ("200 OK", login_ok()),
+        // And the retry, which succeeds.
+        ("200 OK", r#"{"uid":"u-1","list":[{"id":"d-1","name":"1年1組"}]}"#.to_string()),
+    ]);
+
+    let client = client();
+    client.set_root_server(&stub.base);
+    client.login("school01", "student01", "hunter2").await.unwrap();
+
+    let entries = client.drive_entries().await.expect("recovered");
+    assert_eq!(entries.len(), 1);
+    assert_eq!(entries[0].name.as_deref(), Some("1年1組"));
+
+    let seen: Vec<_> = (0..5).map(|_| stub.seen.recv().unwrap()).collect();
+    assert_eq!(seen[2].path, "/mmjeditor2/2.0/drives/entry");
+    // The re-login repeats the original handshake, password and all.
+    assert_eq!(seen[3].path, "/mmjeditor2/2.0/users3/login");
+    assert_eq!(seen[3].json()["password"], "hunter2");
+    assert_eq!(seen[4].path, "/mmjeditor2/2.0/drives/entry");
+}
+
+#[tokio::test]
+async fn a_classroom_session_is_renewed_the_way_it_was_made() {
+    // A 簡易ログイン account has no `loginName` to send to `/users3/login`, so
+    // renewing it with the wrong handshake would fail for reasons that look
+    // nothing like the cause.
+    let stub = stub(vec![
+        ("200 OK", SCHOOL_OK.to_string()),
+        ("200 OK", login_ok()),
+        ("200 OK", r#"{"data":{"errorCode":106}}"#.to_string()),
+        ("200 OK", login_ok()),
+        ("200 OK", r#"{"list":[]}"#.to_string()),
+    ]);
+
+    let client = client();
+    client.set_root_server(&stub.base);
+    client
+        .classroom_login("school01", "cg-32", "7", "sakura")
+        .await
+        .unwrap();
+    client.drive_entries().await.unwrap();
+
+    let seen: Vec<_> = (0..5).map(|_| stub.seen.recv().unwrap()).collect();
+    assert_eq!(seen[3].path, "/mmjeditor2/2.0/users3/classroomlogin");
+    assert_eq!(seen[3].json()["classGroupId"], "cg-32");
+    assert_eq!(seen[3].json()["idNumber"], "7");
+}
+
+#[tokio::test]
+async fn a_login_that_keeps_failing_stops_rather_than_looping() {
+    let stub = stub(vec![
+        ("200 OK", SCHOOL_OK.to_string()),
+        ("200 OK", login_ok()),
+        ("200 OK", r#"{"data":{"errorCode":106}}"#.to_string()),
+        // The re-login is itself refused.
+        (
+            "200 OK",
+            r#"{"message":"password changed","data":{"errorCode":9}}"#.to_string(),
+        ),
+    ]);
+
+    let client = client();
+    client.set_root_server(&stub.base);
+    client.login("school01", "student01", "x").await.unwrap();
+
+    let err = client.drive_entries().await.unwrap_err().to_string();
+    assert_eq!(err, "password changed");
+}
+
+#[tokio::test]
+async fn a_session_saved_before_the_method_was_recorded_still_renews() {
+    // An upgrade must not present itself as "sign in again". Sessions written
+    // by an earlier build have no `method`; the normal login is the one with a
+    // `loginName`, so it can be reconstructed.
+    //
+    // The legacy file is produced by signing in for real and then deleting the
+    // field, rather than hand-written: a hand-written one with a mistyped key
+    // silently falls back to the *production* root server, which is a way for
+    // a test to reach the real service by accident.
+    let path = temp_path("legacy.json");
+    let _ = std::fs::remove_file(&path);
+
+    {
+        let stub = stub(vec![
+            ("200 OK", SCHOOL_OK.to_string()),
+            ("200 OK", login_ok()),
+        ]);
+        let client = client_at(&path);
+        client.set_root_server(&stub.base);
+        client.login("school01", "student01", "hunter2").await.unwrap();
+    }
+
+    let mut saved: serde_json::Value =
+        serde_json::from_str(&std::fs::read_to_string(&path).unwrap()).unwrap();
+    assert!(saved.get("method").is_some_and(|m| !m.is_null()));
+    saved.as_object_mut().unwrap().remove("method");
+
+    // The old session pointed at a stub that has now stopped; repoint it at a
+    // live one without going through `set_root_server`, which clears sessions.
+    let stub = stub(vec![
+        ("200 OK", r#"{"data":{"errorCode":106}}"#.to_string()),
+        ("200 OK", login_ok()),
+        ("200 OK", r#"{"list":[{"id":"d-1","name":"1年1組"}]}"#.to_string()),
+    ]);
+    for key in ["root_server", "rest_host"] {
+        saved[key] = serde_json::json!(stub.base);
+    }
+    saved["school"]["serverUrl"] = serde_json::json!(stub.base);
+    std::fs::write(&path, serde_json::to_vec(&saved).unwrap()).unwrap();
+
+    let client = client_at(&path);
+    let entries = client.drive_entries().await;
+    assert!(entries.is_ok(), "{:?}", entries.err());
+    assert_eq!(entries.unwrap().len(), 1);
+
+    let seen: Vec<_> = (0..3).map(|_| stub.seen.recv().unwrap()).collect();
+    assert_eq!(seen[0].path, "/mmjeditor2/2.0/drives/entry");
+    // The renewal used the normal handshake, derived from `loginName`.
+    assert_eq!(seen[1].path, "/mmjeditor2/2.0/users3/login");
+    assert_eq!(seen[1].json()["loginName"], "student01");
+    assert_eq!(seen[2].path, "/mmjeditor2/2.0/drives/entry");
+}
+
+/// No test may reach the network.
+///
+/// The bug this guards: a persisted-session fixture with a mistyped key falls
+/// back to `DEFAULT_ROOT_SERVER`, and the test then talks to the real service.
+/// Nothing in the code says "this field name is load-bearing for test safety",
+/// so the check has to be explicit.
+#[test]
+fn a_client_with_no_saved_root_server_is_not_pointed_at_production_by_a_test() {
+    let path = temp_path("empty.json");
+    std::fs::write(&path, b"{}").unwrap();
+
+    let client = client_at(&path);
+    // It *does* default to production — that is right for the app. The point
+    // is that a test must never then issue a request, which is why every test
+    // above calls `set_root_server` before anything else.
+    assert_eq!(client.root_server(), crate::cloud::DEFAULT_ROOT_SERVER);
+    assert!(client.session().is_none(), "no session, so no request is possible");
+}

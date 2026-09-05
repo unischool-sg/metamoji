@@ -20,6 +20,11 @@ pub enum AppError {
     #[error("unsupported file: {0}")]
     Unsupported(String),
 
+    /// The server says the session is gone. Callers retry after
+    /// re-authenticating; it reaches the user only if that also fails.
+    #[error("サインインの有効期限が切れました。もう一度サインインしてください。")]
+    NotLoggedIn,
+
     #[error("{0}")]
     Other(String),
 }

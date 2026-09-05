@@ -52,9 +52,12 @@ pub struct DriveFile {
     pub mime_type: Option<String>,
 }
 
+#[derive(Clone)]
 struct Session {
     home_dir: String,
     user_id: String,
+    password: Option<String>,
+    qwd: Option<String>,
 }
 
 pub struct DriveClient {
@@ -146,6 +149,12 @@ impl DriveClient {
         *self.session.lock().unwrap() = Some(Session {
             home_dir: home_dir.to_string(),
             user_id: user_id.to_string(),
+            // Kept so `executeWithAutoLoginFor`'s trick works here too: the
+            // drive session expires on its own schedule, independently of the
+            // tenant one, and an expiry mid-lesson should not become an error
+            // message.
+            password: password.map(str::to_string),
+            qwd: qwd.map(str::to_string),
         });
         Ok(())
     }
@@ -154,7 +163,34 @@ impl DriveClient {
         *self.session.lock().unwrap() = None;
     }
 
+    /// Signs in again with what the last sign-in used.
+    async fn reauthenticate(&self) -> AppResult<()> {
+        let saved = self
+            .session
+            .lock()
+            .unwrap()
+            .clone()
+            .ok_or(AppError::NotLoggedIn)?;
+        self.login(
+            &saved.home_dir,
+            &saved.user_id,
+            saved.password.as_deref(),
+            saved.qwd.as_deref(),
+        )
+        .await
+    }
+
     async fn get_json(&self, path: &str) -> AppResult<Map<String, Value>> {
+        match self.get_json_once(path).await {
+            Err(AppError::NotLoggedIn) => {
+                self.reauthenticate().await?;
+                self.get_json_once(path).await
+            }
+            other => other,
+        }
+    }
+
+    async fn get_json_once(&self, path: &str) -> AppResult<Map<String, Value>> {
         let home = self.require_home()?;
         let response = self
             .http
@@ -171,6 +207,16 @@ impl DriveClient {
     }
 
     async fn get_bytes(&self, path: &str) -> AppResult<DriveFile> {
+        match self.get_bytes_once(path).await {
+            Err(AppError::NotLoggedIn) => {
+                self.reauthenticate().await?;
+                self.get_bytes_once(path).await
+            }
+            other => other,
+        }
+    }
+
+    async fn get_bytes_once(&self, path: &str) -> AppResult<DriveFile> {
         let home = self.require_home()?;
         let response = self
             .http
@@ -311,10 +357,10 @@ pub fn check_error(body: &Map<String, Value>) -> AppResult<()> {
         return Ok(());
     }
 
+    // Its own variant, so the caller re-authenticates instead of showing the
+    // server's phrasing to someone who is plainly signed in.
     if code == NOT_LOGIN_EXCEPTION {
-        return Err(AppError::other(
-            "クラスボックスのセッションが切れました。もう一度開いてください。",
-        ));
+        return Err(AppError::NotLoggedIn);
     }
     if code == REVISION_EXCEPTION {
         return Err(AppError::other(

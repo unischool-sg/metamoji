@@ -17,15 +17,31 @@ import { useTranslation } from "../i18n/useTranslation";
 import { Menu } from "../components/Menu";
 import { AccountButton } from "../components/AccountButton";
 import * as api from "../ipc/api";
-import type { Folder, ImportReport, ListQuery, NoteSort, NoteSummary, Tag } from "../ipc/api";
+import type {
+  ClassBoxListing,
+  Folder,
+  ImportReport,
+  ListQuery,
+  NoteSort,
+  NoteSummary,
+  Tag,
+} from "../ipc/api";
 import { toGeneric } from "../model/converter";
 import { createDocument } from "../model/factory";
 import { newId, newNoteId } from "../model/ids";
 import { markSessionClosed, readInterruptedSession, type OpenSession } from "../store/sessionStore";
+import { useAuthStore } from "../store/authStore";
+import { useClassroomStore } from "../store/classroomStore";
 
 const TAG_COLORS = ["#32a5ff", "#d93025", "#188038", "#f29900", "#9334e6", "#e8710a"];
 
-type View = { kind: "all" } | { kind: "folder"; id: string } | { kind: "tag"; id: string } | { kind: "trash" };
+type View =
+  | { kind: "all" }
+  | { kind: "folder"; id: string }
+  | { kind: "tag"; id: string }
+  | { kind: "trash" }
+  /** A class box: its notes live on the server, not in the local catalog. */
+  | { kind: "classbox"; id: string; name: string };
 
 export function LibraryScreen() {
   const navigate = useNavigate();
@@ -45,6 +61,20 @@ export function LibraryScreen() {
   const [interrupted, setInterrupted] = useState<OpenSession | null>(() =>
     readInterruptedSession(),
   );
+
+  // Class boxes sit in the sidebar with folders and tags because that is what
+  // they are to the user: another place their notes live. That they come from
+  // a different server over a different protocol is not their problem.
+  const session = useAuthStore((s) => s.session);
+  const myBoxes = useClassroomStore((s) => s.myBoxes);
+  const boxListing = useClassroomStore((s) => s.listing);
+  const openingBox = useClassroomStore((s) => s.openingBox);
+  const loadingBoxes = useClassroomStore((s) => s.loadingBoxes);
+  const boxesError = useClassroomStore((s) => s.boxesError);
+
+  useEffect(() => {
+    if (session) void useClassroomStore.getState().loadMyBoxes();
+  }, [session]);
 
   const query = useMemo<ListQuery>(
     () => ({
@@ -151,14 +181,32 @@ export function LibraryScreen() {
     void act(() => api.tagCreate(newId("tag"), name.trim(), color));
   };
 
+  const openClassNote = async (documentId: string, title: string | null) => {
+    if (view.kind !== "classbox") return;
+    setError(null);
+    try {
+      const noteId = newNoteId();
+      const result = await api.classboxOpenNote(view.id, documentId, noteId);
+      const summary = await api.libraryCreate(
+        result.tree,
+        title ?? t("クラスボックスのノート"),
+      );
+      navigate(`/note/${summary.id}`);
+    } catch (err) {
+      setError(String(err));
+    }
+  };
+
   const viewTitle =
     view.kind === "trash"
       ? t("ゴミ箱")
-      : view.kind === "folder"
-        ? (folders.find((f) => f.id === view.id)?.name ?? t("フォルダ"))
-        : view.kind === "tag"
-          ? (tags.find((tag) => tag.id === view.id)?.name ?? t("タグ"))
-          : t("すべてのノート");
+      : view.kind === "classbox"
+        ? view.name
+        : view.kind === "folder"
+          ? (folders.find((f) => f.id === view.id)?.name ?? t("フォルダ"))
+          : view.kind === "tag"
+            ? (tags.find((tag) => tag.id === view.id)?.name ?? t("タグ"))
+            : t("すべてのノート");
 
   return (
     <div className="app">
@@ -284,6 +332,67 @@ export function LibraryScreen() {
             </div>
           ))}
 
+          {session && (
+            <>
+              <div className="sidebar-heading">
+                <span>{t("クラス")}</span>
+                <button
+                  type="button"
+                  className="icon-btn icon-btn--sm"
+                  onClick={() => navigate("/classroom")}
+                  title={t("教室")}
+                >
+                  <Icon name="school" size={20} />
+                  <span className="sr-only">{t("教室")}</span>
+                </button>
+              </div>
+              {loadingBoxes ? (
+                <p className="sidebar-empty">{t("読み込み中…")}</p>
+              ) : boxesError ? (
+                <>
+                  {/*
+                   * The message goes on screen, not only in a tooltip: it is
+                   * the server's own wording and the only thing that says what
+                   * went wrong.
+                   */}
+                  <p className="sidebar-empty" title={boxesError}>
+                    {boxesError}
+                  </p>
+                  <button
+                    type="button"
+                    className="sidebar-item"
+                    onClick={() => void useClassroomStore.getState().loadMyBoxes()}
+                  >
+                    <Icon name="refresh" size={20} />
+                    <span className="sidebar-item__label">{t("再読み込み")}</span>
+                  </button>
+                </>
+              ) : myBoxes === null || myBoxes.length === 0 ? (
+                <p className="sidebar-empty">{t("まだありません")}</p>
+              ) : (
+                myBoxes.map((box) => (
+                  <div key={box.driveId} className="sidebar-row">
+                    <button
+                      type="button"
+                      className="sidebar-item"
+                      aria-current={view.kind === "classbox" && view.id === box.driveId}
+                      onClick={() => {
+                        const name = box.name ?? box.driveId;
+                        setView({ kind: "classbox", id: box.driveId, name });
+                        void useClassroomStore.getState().selectBox(box);
+                      }}
+                    >
+                      <Icon name="school" size={20} />
+                      <span className="sidebar-item__label">
+                        {box.name ?? box.driveId}
+                      </span>
+                    </button>
+                  </div>
+                ))
+              )}
+            </>
+          )}
+
           <div className="sidebar-heading">
             <span>{t("タグ")}</span>
             <button
@@ -337,7 +446,14 @@ export function LibraryScreen() {
         <main className="library">
           <div className="library__header">
             <h1>{viewTitle}</h1>
-            <span className="library__count">{t("{count} 件", { count: notes.length })}</span>
+            <span className="library__count">
+              {t("{count} 件", {
+                count:
+                  view.kind === "classbox"
+                    ? (boxListing?.documents.length ?? 0)
+                    : notes.length,
+              })}
+            </span>
           </div>
 
           {interrupted && (
@@ -375,7 +491,13 @@ export function LibraryScreen() {
             </div>
           )}
 
-          {loading ? (
+          {view.kind === "classbox" ? (
+            <ClassBoxGrid
+              listing={boxListing}
+              loading={openingBox}
+              onOpen={(id, title) => void openClassNote(id, title)}
+            />
+          ) : loading ? (
             <div className="library__empty">{t("読み込み中…")}</div>
           ) : notes.length === 0 ? (
             <div className="library__empty">
@@ -609,4 +731,80 @@ function formatDate(iso: string): string {
     hour: "2-digit",
     minute: "2-digit",
   }).format(date);
+}
+
+/**
+ * The notes inside a class box.
+ *
+ * Separate from the local grid because almost nothing is shared: these come
+ * from a different server, have no local catalog row, and open as a copy —
+ * there is no rename, no trash, no drag to a folder. Reusing `NoteCard` would
+ * mean disabling most of it.
+ */
+function ClassBoxGrid({
+  listing,
+  loading,
+  onOpen,
+}: {
+  listing: ClassBoxListing | null;
+  loading: boolean;
+  onOpen: (documentId: string, title: string | null) => void;
+}) {
+  const { t } = useTranslation();
+
+  if (loading) return <div className="library__empty">{t("読み込み中…")}</div>;
+
+  if (!listing) {
+    return (
+      <div className="library__empty">
+        <Icon name="school" size={48} />
+        <p>{t("クラスを開けませんでした。")}</p>
+      </div>
+    );
+  }
+
+  if (listing.documents.length === 0) {
+    return (
+      <div className="library__empty">
+        <Icon name="school" size={48} />
+        <p>{t("ノートはまだありません。")}</p>
+        {listing.unrecognised.length > 0 && (
+          // An unreadable class box and an empty one mean very different
+          // things; saying "empty" for both would send a teacher looking for
+          // the wrong problem.
+          <div className="notice notice--warning">
+            <Icon name="warning" size={20} />
+            <span>
+              {t("中身を解釈できませんでした({count} 個のモデル、未知の種別: {types})。", {
+                count: listing.modelCount,
+                types: listing.unrecognised.join(", "),
+              })}
+            </span>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="library__grid">
+      {listing.documents.map((doc) => (
+        <div key={doc.documentId} className="note-card">
+          <button
+            type="button"
+            className="note-card__open"
+            onClick={() => onOpen(doc.documentId, doc.title)}
+          >
+            <div className="note-card__thumb" />
+          </button>
+          <div className="note-card__body">
+            <div className="note-card__title" title={doc.title ?? doc.documentId}>
+              {doc.title ?? doc.documentId}
+            </div>
+            <div className="note-card__meta">{t("端末に複製して開きます")}</div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
 }

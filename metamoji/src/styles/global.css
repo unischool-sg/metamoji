@@ -1405,6 +1405,8 @@ input.layer-row__name {
   margin: 0 var(--space-4);
   font-size: var(--md-sys-typescale-body-medium-size);
   color: var(--md-sys-color-on-surface-variant);
+  /* A server error can be a paragraph; the drawer is 240px wide. */
+  overflow-wrap: anywhere;
 }
 
 .library {

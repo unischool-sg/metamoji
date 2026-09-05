@@ -18,13 +18,15 @@ fn a_zero_code_is_success() {
 }
 
 #[test]
-fn an_expired_drive_session_says_what_to_do_about_it() {
+fn an_expired_drive_session_is_its_own_variant_so_it_can_be_retried() {
     // The drive session expires independently of the tenant's, so this is
-    // routine — the message has to suggest reopening, not signing in again.
-    let err = check_error(&body(json!({ "errorCode": 0x2af9 })))
-        .unwrap_err()
-        .to_string();
-    assert!(err.contains("もう一度開いて"), "{err}");
+    // routine. Surfacing it as a message would show the user an error about
+    // being signed out while their own name is in the title bar; the caller
+    // re-authenticates instead.
+    assert!(matches!(
+        check_error(&body(json!({ "errorCode": 0x2af9 }))),
+        Err(crate::error::AppError::NotLoggedIn)
+    ));
 }
 
 #[test]

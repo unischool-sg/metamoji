@@ -36,6 +36,8 @@ interface ClassroomState {
   /** The class boxes this account belongs to. Null until first fetched. */
   myBoxes: DriveEntry[] | null;
   loadingBoxes: boolean;
+  /** Why the last fetch failed, if it did. Distinct from "not fetched yet". */
+  boxesError: string | null;
   box: ClassBox | null;
   /** The class box's contents, or null before it has been opened. */
   listing: ClassBoxListing | null;
@@ -81,6 +83,7 @@ export function canEdit(roles: string[]): boolean {
 export const useClassroomStore = create<ClassroomState>((set, get) => ({
   myBoxes: null,
   loadingBoxes: false,
+  boxesError: null,
   box: null,
   listing: null,
   openingBox: false,
@@ -104,11 +107,13 @@ export const useClassroomStore = create<ClassroomState>((set, get) => ({
    * the server, so asking for it again is the app forgetting, not the user.
    */
   loadMyBoxes: async () => {
-    set({ loadingBoxes: true, error: null });
+    set({ loadingBoxes: true, boxesError: null });
     try {
       set({ myBoxes: await api.classboxList(), loadingBoxes: false });
     } catch (err) {
-      set({ loadingBoxes: false, myBoxes: null, error: message(err) });
+      // Kept separate from `myBoxes: null`. Leaving it null on failure made the
+      // sidebar say "loading" forever, which is the one thing it was not doing.
+      set({ loadingBoxes: false, boxesError: message(err) });
     }
   },
 

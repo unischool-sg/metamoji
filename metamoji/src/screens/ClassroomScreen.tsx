@@ -113,6 +113,18 @@ export function ClassroomScreen() {
             <h2>{t("自分のクラス")}</h2>
             {store.loadingBoxes ? (
               <p className="setting-note">{t("読み込み中…")}</p>
+            ) : store.boxesError ? (
+              <div className="notice notice--error">
+                <Icon name="error" size={20} />
+                <span style={{ flex: 1 }}>{store.boxesError}</span>
+                <button
+                  type="button"
+                  className="btn btn--text"
+                  onClick={() => void store.loadMyBoxes()}
+                >
+                  {t("再読み込み")}
+                </button>
+              </div>
             ) : store.myBoxes === null ? (
               <button
                 type="button"

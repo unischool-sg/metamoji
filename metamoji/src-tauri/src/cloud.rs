@@ -78,6 +78,14 @@ const DM_APP_VERSION: &str = "MMJDmCloudService/2.0";
 const INVALID_EMAIL_EXCEPTION: i64 = 0x67;
 const CAN_NOT_LOGIN_EXCEPTION: i64 = 0x7b;
 
+/// `NOT_LOGIN_EXCEPTION` — the session cookie is gone or stale.
+///
+/// Routine rather than fatal: the server expires sessions on its own schedule,
+/// so any request can meet this. The original answers by re-authenticating
+/// silently from the stored credential and retrying once
+/// (`executeWithAutoLoginFor`), which is why the credential is kept at all.
+const NOT_LOGIN_EXCEPTION: i64 = 0x6a;
+
 // ---------------------------------------------------------------------------
 // Types crossing the IPC boundary
 // ---------------------------------------------------------------------------
@@ -111,6 +119,17 @@ pub enum Credential {
     Password(String),
     /// The pre-shared token a QR code carries.
     Qwd(String),
+}
+
+/// How the session was established.
+///
+/// Kept because re-authenticating has to repeat the *same* handshake: a
+/// classroom account has no `loginName` to send to `/users3/login`, and a
+/// normal account has no class or roll number.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum LoginMethod {
+    Normal { login_name: String },
+    Classroom { class_group_id: String, id_number: String },
 }
 
 /// One drive the user belongs to.
@@ -174,6 +193,7 @@ struct Inner {
     /// virtue of living here rather than on `CloudSession`, so it cannot reach
     /// the webview.
     credential: Option<Credential>,
+    method: Option<LoginMethod>,
     rest_host: Option<String>,
     /// What the root servlet said about the school currently being signed into.
     /// `isClassRoom`, `isOnPremise` and the tenant host all come from here, not
@@ -202,6 +222,7 @@ struct Persisted {
     school: Option<School>,
     session: Option<CloudSession>,
     credential: Option<Credential>,
+    method: Option<LoginMethod>,
     cookies: Option<Value>,
 }
 
@@ -244,6 +265,7 @@ impl CloudClient {
                     .root_server
                     .unwrap_or_else(|| DEFAULT_ROOT_SERVER.to_string()),
                 credential: saved.credential,
+                method: saved.method,
                 rest_host: saved.rest_host,
                 school: saved.school,
                 session: saved.session,
@@ -271,6 +293,7 @@ impl CloudClient {
                 school: inner.school.clone(),
                 session: inner.session.clone(),
                 credential: inner.credential.clone(),
+                method: inner.method.clone(),
                 cookies: {
                     let mut buffer = Vec::new();
                     let store = self.cookies.lock().unwrap();
@@ -309,6 +332,7 @@ impl CloudClient {
         inner.school = None;
         inner.session = None;
         inner.credential = None;
+        inner.method = None;
         drop(inner);
         self.persist();
     }
@@ -434,6 +458,64 @@ impl CloudClient {
             .await
     }
 
+    /// Re-authenticates with the stored credential.
+    ///
+    /// Only useful for a password: `cosmos/*` can present a `qwd` per request,
+    /// but `/users3/login` wants the password it was given.
+    async fn reauthenticate(&self) -> AppResult<()> {
+        let (school, credential, method) = {
+            let inner = self.inner.lock().unwrap();
+            let session = inner.session.clone().ok_or(AppError::NotLoggedIn)?;
+            let school = inner
+                .school
+                .clone()
+                .map(|s| s.co_login_id)
+                .unwrap_or_else(|| session.co_login_id.clone());
+
+            // A session written before this client recorded the method has
+            // none. Rather than refuse — which is what an upgrade would look
+            // like to the user: a sudden demand to sign in again — derive it.
+            // Only the normal login has a `loginName`, so its presence is the
+            // distinguishing fact.
+            let method = inner.method.clone().unwrap_or(LoginMethod::Normal {
+                login_name: session.login_name.clone(),
+            });
+
+            (
+                school,
+                inner.credential.clone().ok_or(AppError::NotLoggedIn)?,
+                method,
+            )
+        };
+
+        if let LoginMethod::Normal { login_name } = &method {
+            if login_name.is_empty() {
+                // A classroom session with no recorded method: there is nothing
+                // to reconstruct the class and roll number from.
+                return Err(AppError::NotLoggedIn);
+            }
+        }
+        let Credential::Password(password) = credential else {
+            // A `qwd` is what `cosmos/*` presents per request; `/users3/login`
+            // wants the password, and this client never saw one.
+            return Err(AppError::NotLoggedIn);
+        };
+
+        match method {
+            LoginMethod::Normal { login_name } => {
+                self.login(&school, &login_name, &password).await?;
+            }
+            LoginMethod::Classroom {
+                class_group_id,
+                id_number,
+            } => {
+                self.classroom_login(&school, &class_group_id, &id_number, &password)
+                    .await?;
+            }
+        }
+        Ok(())
+    }
+
     /// A command with an explicit method.
     ///
     /// The verb is not decoration: `/drives/entry` and `/drives/{id}/home` are
@@ -452,7 +534,34 @@ impl CloudClient {
         // `getRestHost() + contextRoot + command`, exactly as
         // `CsHttpClient.sendRequestWithCommand` builds it.
         let url = format!("{host}{REST_BASE_PATH}{command}");
-        self.send(method, &url, Some(Value::Object(params))).await
+
+        let body = Value::Object(params);
+        match self.send(method.clone(), &url, Some(body.clone())).await {
+            Err(AppError::NotLoggedIn) => {
+                // Once, and only once: a credential the server keeps rejecting
+                // must surface as a sign-in problem rather than loop.
+                self.reauthenticate().await?;
+                self.send(method, &url, Some(body)).await
+            }
+            other => other,
+        }
+    }
+
+    /// A command that does not retry.
+    ///
+    /// The login calls use this. Retrying a login on "not logged in" would be
+    /// circular — and it is also what keeps `command`'s retry from recursing
+    /// through `reauthenticate` back into itself.
+    async fn command_once(
+        &self,
+        co_login_id: &str,
+        command: &str,
+        params: Map<String, Value>,
+    ) -> AppResult<Map<String, Value>> {
+        let host = self.school_for(co_login_id).await?.server_url;
+        let url = format!("{host}{REST_BASE_PATH}{command}");
+        self.send(reqwest::Method::POST, &url, Some(Value::Object(params)))
+            .await
     }
 
     /// One place where transport errors, the JSON envelope and `errorCode`
@@ -515,10 +624,15 @@ impl CloudClient {
         params.insert("password".into(), json!(password));
 
         let school = self.school_for(co_login_id).await?;
-        let body = self.post_command(co_login_id, "/users3/login", params).await?;
+        let body = self.command_once(co_login_id, "/users3/login", params).await?;
         let session = self.finish_login(&school, body)?;
-        self.inner.lock().unwrap().credential =
-            Some(Credential::Password(password.to_string()));
+        {
+            let mut inner = self.inner.lock().unwrap();
+            inner.credential = Some(Credential::Password(password.to_string()));
+            inner.method = Some(LoginMethod::Normal {
+                login_name: login_name.to_string(),
+            });
+        }
         self.persist();
         Ok(session)
     }
@@ -540,11 +654,17 @@ impl CloudClient {
 
         let school = self.school_for(co_login_id).await?;
         let body = self
-            .post_command(co_login_id, "/users3/classroomlogin", params)
+            .command_once(co_login_id, "/users3/classroomlogin", params)
             .await?;
         let session = self.finish_login(&school, body)?;
-        self.inner.lock().unwrap().credential =
-            Some(Credential::Password(password.to_string()));
+        {
+            let mut inner = self.inner.lock().unwrap();
+            inner.credential = Some(Credential::Password(password.to_string()));
+            inner.method = Some(LoginMethod::Classroom {
+                class_group_id: class_group_id.to_string(),
+                id_number: id_number.to_string(),
+            });
+        }
         self.persist();
         Ok(session)
     }
@@ -775,6 +895,7 @@ impl CloudClient {
             let mut inner = self.inner.lock().unwrap();
             inner.session = None;
             inner.credential = None;
+            inner.method = None;
         }
         // Written before the network call: a logout must stick even if the
         // server cannot be told about it.
@@ -836,6 +957,13 @@ fn check_error(status: u16, body: &Map<String, Value>) -> AppResult<()> {
     let http_ok = (200..300).contains(&status);
     if code == 0 && http_ok {
         return Ok(());
+    }
+
+    // Reported as its own variant so the caller can retry rather than show it:
+    // "It doesn't log it in." is the server's phrasing and means nothing to a
+    // user who is looking at their own name in the title bar.
+    if code == NOT_LOGIN_EXCEPTION {
+        return Err(AppError::NotLoggedIn);
     }
 
     if code == INVALID_EMAIL_EXCEPTION || code == CAN_NOT_LOGIN_EXCEPTION {
