@@ -1,5 +1,6 @@
 pub mod atdoc;
 pub mod cloud;
+pub mod collabo;
 #[cfg(test)]
 mod cloud_wire_tests;
 mod commands;
@@ -78,6 +79,35 @@ fn device_name() -> String {
     format!("{host} (MetaMoJi Desktop {})", env!("CARGO_PKG_VERSION"))
 }
 
+/// A stable per-install identity for the collabo relay.
+///
+/// Written next to the library rather than derived from the machine: a
+/// hardware identifier would follow the user to a reinstall, and there is no
+/// reason for the relay to be able to correlate those.
+fn device_identity(data_dir: &std::path::Path) -> AppResult<(String, String)> {
+    let path = data_dir.join("device.json");
+    if let Ok(text) = std::fs::read_to_string(&path) {
+        if let Ok(saved) = serde_json::from_str::<serde_json::Value>(&text) {
+            let get = |key: &str| {
+                saved
+                    .get(key)
+                    .and_then(|v| v.as_str())
+                    .filter(|s| !s.is_empty())
+                    .map(str::to_string)
+            };
+            if let (Some(id), Some(code)) = (get("deviceId"), get("deviceCode")) {
+                return Ok((id, code));
+            }
+        }
+    }
+
+    let id = uuid::Uuid::new_v4().to_string();
+    let code = uuid::Uuid::new_v4().to_string();
+    let json = serde_json::json!({ "deviceId": id, "deviceCode": code });
+    std::fs::write(&path, serde_json::to_vec_pretty(&json)?)?;
+    Ok((id, code))
+}
+
 fn locale() -> String {
     std::env::var("LANG")
         .ok()
@@ -108,6 +138,7 @@ pub fn run() {
             // singletons, per docs/14 §4's recommendation.
             let data_dir = app.path().app_data_dir()?;
             std::fs::create_dir_all(&data_dir)?;
+            let state_dir = data_dir.clone();
 
             let state = AppState::boot(data_dir)?;
             let status = state.status();
@@ -121,6 +152,12 @@ pub fn run() {
                 locale(),
                 timezone(),
             )?);
+
+            // The relay recognises a returning device by these, so they are
+            // generated once and kept — the original stores the same pair
+            // under `CollaboDeviceId` / `CollaboDeviceCode`.
+            let (device_id, device_code) = device_identity(&state_dir)?;
+            app.manage(collabo::session::ClassroomState::new(device_id, device_code));
 
             // The frontend gates on this exactly as the original gated on
             // `StartupViewModel.isNeedLogin` (docs/14 §3).
@@ -164,6 +201,17 @@ pub fn run() {
             commands::cloud_classroom_login,
             commands::cloud_logout,
             commands::cloud_session,
+            commands::classroom_create_box,
+            commands::classroom_join_box,
+            commands::classroom_box_code,
+            commands::classroom_update_box,
+            commands::classroom_create_room,
+            commands::classroom_enter,
+            commands::classroom_leave,
+            commands::classroom_members,
+            commands::classroom_attach_booth,
+            commands::classroom_detach_booth,
+            commands::classroom_current_room,
             atdoc_import,
             atdoc_probe,
             export_pdf,

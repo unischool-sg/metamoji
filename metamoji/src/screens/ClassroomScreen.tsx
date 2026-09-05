@@ -1,344 +1,322 @@
 /**
- * The classroom screen.
+ * The classroom.
  *
- * Covers the teacher controls docs/02 §3 catalogues — 注目 (attention),
- * 締切/ロック (deadline and lock), モニタリング (monitoring) and 配信
- * (distribution) — over the reference backend.
+ * Two steps, because MetaMoJi's model has two: a **class box** is the shared
+ * drive a class works in, joined once with a code the teacher reads out; a
+ * **room** is a live session inside it, opened and closed per lesson.
  *
- * Monitoring is a grid of page numbers and thumbnails, not a video feed.
- * docs/01 §11 records that the original works the same way and calls the choice
- * out explicitly: a lightweight periodic collection rather than streaming.
+ * What is live here is presence, roles and the teacher's messages. Strokes are
+ * not: see `store/classroomStore.ts` for why, and for the counter that keeps
+ * that gap visible instead of silent.
  */
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 
 import { Icon } from "../components/Icon";
 import { useTranslation } from "../i18n/useTranslation";
-import * as api from "../ipc/api";
-import type { Room } from "../sync/client";
-import { referenceBackendAvailable, referenceClient } from "../sync/referenceBackend";
 import { useAuthStore } from "../store/authStore";
-import { useClassroomStore } from "../store/classroomStore";
-
-const PRESENCE_POLL_MS = 5000;
+import { canEdit, useClassroomStore } from "../store/classroomStore";
 
 export function ClassroomScreen() {
   const navigate = useNavigate();
   const { t } = useTranslation();
 
   const session = useAuthStore((s) => s.session);
-  const client = referenceClient;
-
-  const room = useClassroomStore((s) => s.room);
-  const role = useClassroomStore((s) => s.role);
-  const connection = useClassroomStore((s) => s.connection);
-  const attention = useClassroomStore((s) => s.attention);
-  const notice = useClassroomStore((s) => s.lastNotice);
-  const enter = useClassroomStore((s) => s.enter);
-  const leave = useClassroomStore((s) => s.leave);
-  const setLocked = useClassroomStore((s) => s.setLocked);
-  const setAttention = useClassroomStore((s) => s.setAttention);
-  const refreshPresence = useClassroomStore((s) => s.refreshPresence);
-  const clearNotice = useClassroomStore((s) => s.clearNotice);
-  const monitorEntries = useClassroomStore((s) => s.monitorEntries);
-
-  const [rooms, setRooms] = useState<Room[]>([]);
+  const store = useClassroomStore();
+  const [boxName, setBoxName] = useState("");
   const [joinCode, setJoinCode] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
+  const [roomTitle, setRoomTitle] = useState("");
 
-  const loadRooms = useCallback(async () => {
-    if (!referenceBackendAvailable()) return;
-    try {
-      setRooms((await client.rooms()).rooms);
-      setError(null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-    }
-  }, [client]);
+  const nickname = session?.name || session?.loginName || "";
 
   useEffect(() => {
-    void loadRooms();
-  }, [loadRooms]);
+    let cancelled = false;
+    let off: (() => void) | undefined;
+    void useClassroomStore
+      .getState()
+      .subscribe()
+      .then((fn) => {
+        if (cancelled) fn();
+        else off = fn;
+      });
+    return () => {
+      cancelled = true;
+      off?.();
+    };
+  }, []);
 
-  // Monitoring polls rather than streams; see the file comment.
+  // The roster call is the only way to learn about people who joined before
+  // us; the socket only reports changes from now on.
   useEffect(() => {
-    if (!room || role !== "teacher") return;
-    void refreshPresence();
-    const timer = setInterval(() => void refreshPresence(), PRESENCE_POLL_MS);
+    if (store.connection !== "online") return;
+    const timer = setInterval(() => void useClassroomStore.getState().refreshMembers(), 15000);
     return () => clearInterval(timer);
-  }, [room, role, refreshPresence]);
+  }, [store.connection]);
 
-  const act = async (fn: () => Promise<unknown>) => {
-    setBusy(true);
-    setError(null);
-    try {
-      await fn();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const create = () => {
-    const name = window.prompt(t("教室名"));
-    if (!name?.trim()) return;
-    void act(async () => {
-      const { room: made } = await client.createRoom(name.trim());
-      await loadRooms();
-      await enter(made.id);
-    });
-  };
-
-  const join = () =>
-    void act(async () => {
-      const { room: joined } = await client.joinRoom(joinCode.trim());
-      setJoinCode("");
-      await loadRooms();
-      await enter(joined.id);
-    });
-
-  const distributeCurrent = () =>
-    void act(async () => {
-      if (!room) return;
-      const notes = await api.libraryList({});
-      if (notes.length === 0) throw new Error(t("配信できるノートがありません"));
-
-      // Distribute the most recently updated note, which is what the teacher
-      // was just working on.
-      const note = notes[0];
-      const tree = await api.noteLoad(note.id);
-      await client.distribute(room.id, note.id, note.title, JSON.stringify(tree));
-    });
-
-  if (!referenceBackendAvailable()) {
+  if (!session) {
     return (
       <Shell title={t("教室")} onBack={() => navigate("/")}>
         <div className="library__empty">
           <Icon name="school" size={48} />
-          <p>
-            {t(
-              "教室機能はこのビルドの参照バックエンド向けに作られており、MetaMoJi のサーバーの協働編集 API は実装していません。",
-            )}
-          </p>
-          <p className="setting-note">
-            {session
-              ? t("サインイン中のアカウントでは教室に参加できません。")
-              : t("サインインしても教室は利用できません。")}
-          </p>
+          <p>{t("教室を使うにはサインインが必要です。")}</p>
+          <button type="button" className="btn btn--primary" onClick={() => navigate("/login")}>
+            <Icon name="login" size={18} />
+            {t("サインイン")}
+          </button>
         </div>
       </Shell>
     );
   }
 
-  if (!room) {
+  const banner = (
+    <>
+      {store.notice && (
+        <div className="notice resume">
+          <Icon name="campaign" size={20} />
+          <span style={{ flex: 1 }}>{store.notice}</span>
+          <button type="button" className="btn btn--text" onClick={store.clearNotice}>
+            {t("閉じる")}
+          </button>
+        </div>
+      )}
+      {store.error && (
+        <div className="notice notice--error">
+          <Icon name="error" size={20} />
+          <span style={{ flex: 1 }}>{store.error}</span>
+          <button type="button" className="btn btn--text" onClick={store.clearError}>
+            {t("閉じる")}
+          </button>
+        </div>
+      )}
+    </>
+  );
+
+  // -- step 1: a class box -------------------------------------------------
+
+  if (!store.box) {
     return (
       <Shell title={t("教室")} onBack={() => navigate("/")}>
-        <section className="settings" style={{ maxWidth: 640 }}>
-          <h2>{t("参加する")}</h2>
-          <div className="setting-row field" style={{ flexDirection: "row", alignItems: "center" }}>
-            <input
-              type="text"
-              inputMode="numeric"
-              placeholder={t("参加コード")}
-              value={joinCode}
-              onChange={(e) => setJoinCode(e.target.value)}
-              style={{ flex: 1 }}
-            />
+        <main className="settings" style={{ maxWidth: 640 }}>
+          {banner}
+
+          <section>
+            <h2>{t("参加する")}</h2>
+            <div className="field">
+              <label htmlFor="joinCode">{t("参加コード")}</label>
+              <input
+                id="joinCode"
+                type="text"
+                inputMode="numeric"
+                value={joinCode}
+                onChange={(e) => setJoinCode(e.target.value)}
+              />
+            </div>
             <button
               type="button"
               className="btn btn--primary"
-              disabled={busy || joinCode.trim().length === 0}
-              onClick={join}
+              disabled={store.busy || joinCode.trim().length === 0}
+              onClick={() => void store.joinBox(joinCode.trim())}
             >
+              <Icon name="login" size={18} />
               {t("参加")}
             </button>
-          </div>
+          </section>
 
-          <h2>{t("自分の教室")}</h2>
-          {rooms.length === 0 && <p className="setting-note">{t("まだありません")}</p>}
-          <div className="pen-list">
-            {rooms.map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                className="pen-row"
-                onClick={() => void act(() => enter(item.id))}
-              >
-                {item.name}
-                <span style={{ marginLeft: "auto", color: "var(--md-sys-color-on-surface-variant)" }}>
-                  {item.joinCode}
-                </span>
-              </button>
-            ))}
-          </div>
-
-          <button type="button" className="btn" style={{ width: "100%" }} onClick={create}>
-            <Icon name="add" size={18} />
-            {t("教室を作る")}
-          </button>
-
-          {error && (
-            <div className="notice notice--error">
-              <Icon name="error" size={20} />
-              <span>{error}</span>
+          <section>
+            <h2>{t("教室を作る")}</h2>
+            <div className="field">
+              <label htmlFor="boxName">{t("教室名")}</label>
+              <input
+                id="boxName"
+                type="text"
+                value={boxName}
+                onChange={(e) => setBoxName(e.target.value)}
+              />
             </div>
-          )}
-        </section>
+            <button
+              type="button"
+              className="btn"
+              disabled={store.busy || boxName.trim().length === 0}
+              onClick={() => void store.createBox(boxName.trim())}
+            >
+              <Icon name="add" size={18} />
+              {t("教室を作る")}
+            </button>
+            <p className="setting-note">
+              {t("先生が作成し、表示される参加コードを生徒に伝えます。")}
+            </p>
+          </section>
+        </main>
       </Shell>
     );
   }
 
-  const entries = monitorEntries();
+  // -- step 2: a room inside it --------------------------------------------
+
+  const online = store.members.filter((m) => m.online);
 
   return (
     <Shell
-      title={room.name}
-      onBack={() => {
-        leave();
-        navigate("/");
-      }}
+      title={store.box.name ?? t("教室")}
+      onBack={() => navigate("/")}
       extra={
         <>
-          <span className="save-chip" data-state={connection === "online" ? undefined : "dirty"}>
+          <span
+            className="save-chip"
+            data-state={store.connection === "online" ? undefined : "dirty"}
+          >
             <Icon
               name={
-                connection === "online"
+                store.connection === "online"
                   ? "check_circle"
-                  : connection === "connecting"
+                  : store.connection === "connecting"
                     ? "pending"
                     : "cloud_off"
               }
               size={16}
             />
-            {connection === "online"
+            {store.connection === "online"
               ? t("接続中")
-              : connection === "connecting"
+              : store.connection === "connecting"
                 ? t("接続しています…")
                 : t("オフライン")}
           </span>
-          <span className="save-chip">
-            {t("参加コード")}: {room.joinCode}
-          </span>
+          {store.box.joinCode && (
+            <span className="save-chip">
+              {t("参加コード")}: {store.box.joinCode}
+            </span>
+          )}
         </>
       }
     >
       <main className="settings" style={{ maxWidth: 900 }}>
-        {notice && (
-          <div className="notice resume">
-            <Icon name="campaign" size={20} />
-            <span style={{ flex: 1 }}>{notice}</span>
-            <button type="button" className="btn btn--text" onClick={clearNotice}>
-              {t("閉じる")}
-            </button>
-          </div>
-        )}
-        {error && (
-          <div className="notice notice--error">
-            <Icon name="error" size={20} />
-            <span>{error}</span>
-          </div>
-        )}
+        {banner}
 
-        {role === "teacher" && (
+        {store.connection === "offline" ? (
           <section>
-            <h2>{t("教師用の操作")}</h2>
+            <h2>{t("授業を始める")}</h2>
+            <div className="field">
+              <label htmlFor="roomTitle">{t("授業名")}</label>
+              <input
+                id="roomTitle"
+                type="text"
+                value={roomTitle}
+                onChange={(e) => setRoomTitle(e.target.value)}
+              />
+            </div>
+            <button
+              type="button"
+              className="btn btn--primary"
+              disabled={store.busy || roomTitle.trim().length === 0}
+              onClick={() => void store.enterRoom(roomTitle.trim(), nickname)}
+            >
+              <Icon name="co_present" size={18} />
+              {t("授業を開く")}
+            </button>
+          </section>
+        ) : (
+          <section>
+            <h2>{store.roomTitle ?? t("授業中")}</h2>
             <div className="button-grid">
               <button
                 type="button"
                 className="btn"
-                disabled={busy}
-                onClick={() => void act(() => setLocked(!room.locked))}
-              >
-                <Icon name={room.locked ? "lock_open" : "lock_clock"} size={18} />
-                {room.locked ? t("ロックを解除") : t("締切・ロック")}
-              </button>
-              <button
-                type="button"
-                className="btn"
-                disabled={busy}
-                onClick={() => void act(() => setAttention(attention ? null : "*"))}
-              >
-                <Icon name="front_hand" size={18} />
-                {attention ? t("注目を解除") : t("注目させる")}
-              </button>
-              <button type="button" className="btn" disabled={busy} onClick={distributeCurrent}>
-                <Icon name="co_present" size={18} />
-                {t("ノートを配信")}
-              </button>
-              <button
-                type="button"
-                className="btn"
-                disabled={busy}
-                onClick={() => void act(() => refreshPresence())}
+                onClick={() => void store.refreshMembers()}
               >
                 <Icon name="refresh" size={18} />
                 {t("更新")}
               </button>
+              <button
+                type="button"
+                className="btn btn--danger"
+                onClick={() => void store.leaveRoom()}
+              >
+                <Icon name="logout" size={18} />
+                {t("授業を終える")}
+              </button>
             </div>
             <p className="setting-note">
-              {room.locked
-                ? t("生徒の編集は停止しています。")
-                : t("生徒は自由に編集できます。")}
+              {canEdit(store.roles)
+                ? t("あなたは編集できる役割です({roles})。", {
+                    roles: store.roles.join(", "),
+                  })
+                : t("あなたは閲覧のみの役割です。")}
             </p>
           </section>
         )}
 
-        {role === "teacher" && (
-          <section>
-            <h2>{t("モニタリング")}</h2>
-            {entries.length === 0 ? (
-              <p className="setting-note">{t("参加している生徒はいません。")}</p>
-            ) : (
-              <div className="monitor-grid">
-                {entries.map((entry) => (
-                  <div
-                    key={entry.userId}
-                    className="monitor-cell"
-                    data-online={entry.online ? "true" : undefined}
-                  >
-                    {entry.thumbnail ? (
-                      <img src={entry.thumbnail} alt="" />
-                    ) : (
-                      <div className="monitor-cell__blank" />
-                    )}
-                    <div className="monitor-cell__label">
-                      <span>{entry.displayName}</span>
-                      <span>{t("{n} ページ目", { n: entry.pageIndex + 1 })}</span>
-                    </div>
-                    <button
-                      type="button"
-                      className="btn btn--text"
-                      onClick={() => void act(() => setAttention(entry.userId))}
-                    >
-                      <Icon name="front_hand" size={18} />
-                      {t("注目")}
-                    </button>
+        <section>
+          <h2>
+            {t("参加者")} ({online.length} / {store.members.length})
+          </h2>
+          {store.members.length === 0 ? (
+            <p className="setting-note">{t("参加している人はいません。")}</p>
+          ) : (
+            <div className="monitor-grid">
+              {store.members.map((member) => (
+                <div
+                  key={member.userId}
+                  className="monitor-cell"
+                  data-online={member.online ? "true" : undefined}
+                >
+                  <div className="monitor-cell__blank" style={{ display: "grid", placeItems: "center" }}>
+                    <Icon name="person" size={32} />
                   </div>
-                ))}
-              </div>
-            )}
-            <p className="setting-note">
-              {t("画面は動画ではなく、ページ番号とサムネイルを定期的に集めて表示しています。")}
-            </p>
-          </section>
-        )}
+                  <div className="monitor-cell__label">
+                    <span>{member.name ?? member.userId}</span>
+                    <span>{member.role ?? ""}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
 
-        {role === "student" && (
-          <section>
-            <h2>{t("この教室")}</h2>
+        <section>
+          <h2>{t("共同編集")}</h2>
+          <p className="setting-note">
+            {t(
+              "この版では編集内容の送受信に対応していません。ノートの編集は端末内にとどまります。",
+            )}
+          </p>
+          {store.receivedDirections > 0 && (
             <p className="setting-note">
-              {room.locked
-                ? t("先生が編集を停止しています。")
-                : t("ノートを開くと、編集内容が教室に共有されます。")}
+              {t("受信した編集: {count} 件(未適用)", {
+                count: store.receivedDirections,
+              })}
             </p>
-            <button type="button" className="btn btn--primary" onClick={() => navigate("/")}>
-              {t("ノートを開く")}
+          )}
+        </section>
+
+        <section>
+          <h2>{t("参加コード")}</h2>
+          <div className="setting-row">
+            <label>{t("参加コード")}</label>
+            <code className="setting-value">{store.box.joinCode ?? "—"}</code>
+          </div>
+          <div className="button-grid">
+            <button
+              type="button"
+              className="btn"
+              onClick={() => void store.refreshCode(true)}
+            >
+              <Icon name="refresh" size={18} />
+              {t("コードを作り直す")}
             </button>
-          </section>
-        )}
+            <button
+              type="button"
+              className="btn"
+              onClick={() => void store.setJoinEnabled(!store.box?.joinEnabled)}
+            >
+              <Icon name={store.box.joinEnabled ? "lock" : "lock_open"} size={18} />
+              {store.box.joinEnabled ? t("参加を締め切る") : t("参加を再開する")}
+            </button>
+          </div>
+          <p className="setting-note">
+            {t("コードを作り直すと、以前のコードでは参加できなくなります。")}
+          </p>
+        </section>
       </main>
     </Shell>
   );
@@ -364,6 +342,7 @@ function Shell({
           <span className="sr-only">{t("ノート一覧に戻る")}</span>
         </button>
         <span className="topbar__title">{title}</span>
+        <div className="topbar__spacer" />
         {extra}
       </header>
       {children}

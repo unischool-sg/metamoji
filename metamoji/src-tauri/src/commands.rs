@@ -10,7 +10,8 @@ use std::path::PathBuf;
 use base64::Engine as _;
 use tauri::State;
 
-use crate::cloud::{ClassGroup, CloudClient, CloudSession, School};
+use crate::cloud::{ClassBox, ClassGroup, CloudClient, CloudSession, School};
+use crate::collabo::session::{ClassroomState, CollaboMember, CollaboRoom, EnterResult};
 use crate::error::{AppError, AppResult};
 use crate::model::{AppStatus, GenericTree, NoteSummary};
 use crate::state::AppState;
@@ -523,4 +524,124 @@ pub async fn cloud_logout(cloud: State<'_, CloudClient>) -> AppResult<()> {
 #[tauri::command]
 pub fn cloud_session(cloud: State<'_, CloudClient>) -> Option<CloudSession> {
     cloud.session()
+}
+
+// ---------------------------------------------------------------------------
+// Classroom
+// ---------------------------------------------------------------------------
+//
+// Two halves. Class boxes (`/users3/crbox/*`) are storage: a drive the class
+// shares, with a join code. Rooms (`cosmos/*` plus the relay socket) are the
+// live session inside one.
+//
+// Sending an edit is deliberately absent. A Direction's payload is a
+// serialised `direction` model in the same `IModel` format as `.atdoc`
+// (`collabo-socket-protocol.md` §6.1), and this build has a reader for that
+// format but no writer — see `atdoc/`. Receiving works; sending needs the
+// writer first.
+
+#[tauri::command]
+pub async fn classroom_create_box(
+    cloud: State<'_, CloudClient>,
+    name: String,
+) -> AppResult<ClassBox> {
+    cloud.create_class_box(&name).await
+}
+
+#[tauri::command]
+pub async fn classroom_join_box(
+    cloud: State<'_, CloudClient>,
+    join_code: String,
+) -> AppResult<ClassBox> {
+    cloud.join_class_box(&join_code).await
+}
+
+#[tauri::command]
+pub async fn classroom_box_code(
+    cloud: State<'_, CloudClient>,
+    drive_id: String,
+    regenerate: bool,
+) -> AppResult<ClassBox> {
+    cloud.class_code(&drive_id, regenerate).await
+}
+
+#[tauri::command]
+pub async fn classroom_update_box(
+    cloud: State<'_, CloudClient>,
+    drive_id: String,
+    name: Option<String>,
+    join_enabled: Option<bool>,
+) -> AppResult<()> {
+    cloud
+        .update_class_box(&drive_id, name.as_deref(), join_enabled)
+        .await
+}
+
+#[tauri::command]
+pub async fn classroom_create_room(
+    cloud: State<'_, CloudClient>,
+    classroom: State<'_, ClassroomState>,
+    title: String,
+    room_type: String,
+) -> AppResult<CollaboRoom> {
+    classroom.rest(&cloud).create_room(&title, &room_type).await
+}
+
+#[tauri::command]
+pub async fn classroom_enter(
+    app: tauri::AppHandle,
+    cloud: State<'_, CloudClient>,
+    classroom: State<'_, ClassroomState>,
+    room_id: String,
+    drive_id: String,
+    nickname: String,
+    room_password: Option<String>,
+) -> AppResult<EnterResult> {
+    classroom
+        .enter(
+            &app,
+            &cloud,
+            &room_id,
+            &drive_id,
+            &nickname,
+            room_password.as_deref(),
+        )
+        .await
+}
+
+#[tauri::command]
+pub async fn classroom_leave(classroom: State<'_, ClassroomState>) -> AppResult<()> {
+    classroom.leave().await;
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn classroom_members(
+    cloud: State<'_, CloudClient>,
+    classroom: State<'_, ClassroomState>,
+    room_id: String,
+) -> AppResult<Vec<CollaboMember>> {
+    classroom.rest(&cloud).member_list(&room_id).await
+}
+
+#[tauri::command]
+pub async fn classroom_attach_booth(
+    classroom: State<'_, ClassroomState>,
+    booth_id: String,
+    last_sequence: i64,
+) -> AppResult<()> {
+    classroom.attach_booth(&booth_id, last_sequence).await
+}
+
+#[tauri::command]
+pub async fn classroom_detach_booth(
+    classroom: State<'_, ClassroomState>,
+    booth_id: String,
+) -> AppResult<()> {
+    classroom.detach_booth(&booth_id).await
+}
+
+#[tauri::command]
+pub fn classroom_current_room(classroom: State<'_, ClassroomState>) -> Option<String> {
+    classroom.room_id()
 }

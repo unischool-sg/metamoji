@@ -51,8 +51,8 @@ const REST_BASE_PATH: &str = "mmjeditor2/2.0";
 ///
 /// What this client actually is travels in `deviceName`, which is the field a
 /// school administrator sees in a device list — see `device_name` in `lib.rs`.
-const PRODUCT_NAME: &str = "Android-Share-G-ClassRoom";
-const PRODUCT_VERSION: &str = "3.15.1.0";
+pub const PRODUCT_NAME: &str = "Android-Share-G-ClassRoom";
+pub const PRODUCT_VERSION: &str = "3.15.1.0";
 const USER_AGENT: &str = "MMJCmCloudService/1.0";
 const DM_APP_VERSION: &str = "MMJDmCloudService/2.0";
 
@@ -87,6 +87,26 @@ pub struct ClassGroup {
     pub id_numbers: Vec<String>,
 }
 
+/// What `cosmos/*` puts in its `authInfo` part.
+#[derive(Debug, Clone)]
+pub enum Credential {
+    Password(String),
+    /// The pre-shared token a QR code carries.
+    Qwd(String),
+}
+
+/// A class box — the original's 「クラスボックス」, an online lesson room that
+/// owns a drive the whole class writes into.
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ClassBox {
+    pub drive_id: String,
+    pub group_id: Option<String>,
+    pub name: Option<String>,
+    pub join_code: Option<String>,
+    pub join_enabled: Option<bool>,
+}
+
 /// A signed-in identity.
 ///
 /// Deliberately no `qwd`: that is the original's silent-re-login credential,
@@ -113,6 +133,17 @@ pub struct CloudSession {
 
 struct Inner {
     root_server: String,
+    /// The credential `cosmos/*` needs in its `authInfo` part.
+    ///
+    /// Held because the collabo service is a separate system that authenticates
+    /// *per request* rather than by session cookie — `createAuthInfoParam`
+    /// builds a JSON part containing `userPassword` or `qwd` every time. There
+    /// is no cookie-only path to fall back on.
+    ///
+    /// Process memory only: never persisted, and `#[serde(skip)]`-equivalent by
+    /// virtue of living here rather than on `CloudSession`, so it cannot reach
+    /// the webview.
+    credential: Option<Credential>,
     rest_host: Option<String>,
     /// What the root servlet said about the school currently being signed into.
     /// `isClassRoom`, `isOnPremise` and the tenant host all come from here, not
@@ -144,6 +175,7 @@ impl CloudClient {
             http,
             inner: Mutex::new(Inner {
                 root_server: DEFAULT_ROOT_SERVER.to_string(),
+                credential: None,
                 rest_host: None,
                 school: None,
                 session: None,
@@ -165,10 +197,26 @@ impl CloudClient {
         inner.rest_host = None;
         inner.school = None;
         inner.session = None;
+        inner.credential = None;
     }
 
     pub fn session(&self) -> Option<CloudSession> {
         self.inner.lock().unwrap().session.clone()
+    }
+
+    /// The credential and identity `cosmos/*` needs. `None` when signed out.
+    pub fn collabo_identity(&self) -> Option<(CloudSession, Credential)> {
+        let inner = self.inner.lock().unwrap();
+        Some((inner.session.clone()?, inner.credential.clone()?))
+    }
+
+    /// The shared HTTP client, so the collabo calls reuse the cookie jar.
+    pub fn http(&self) -> reqwest::Client {
+        self.http.clone()
+    }
+
+    pub fn locale(&self) -> &str {
+        &self.locale
     }
 
     /// The five fields `CsParamBaseAbstract#stringify()` adds to every request.
@@ -327,7 +375,10 @@ impl CloudClient {
 
         let school = self.school_for(co_login_id).await?;
         let body = self.post_command(co_login_id, "/users3/login", params).await?;
-        self.finish_login(&school, body)
+        let session = self.finish_login(&school, body)?;
+        self.inner.lock().unwrap().credential =
+            Some(Credential::Password(password.to_string()));
+        Ok(session)
     }
 
     /// 学校ID + クラス + 出席番号 + パスワード — `SimpleLoginDriver`, the
@@ -349,7 +400,10 @@ impl CloudClient {
         let body = self
             .post_command(co_login_id, "/users3/classroomlogin", params)
             .await?;
-        self.finish_login(&school, body)
+        let session = self.finish_login(&school, body)?;
+        self.inner.lock().unwrap().credential =
+            Some(Credential::Password(password.to_string()));
+        Ok(session)
     }
 
     /// Builds the session from a successful login response.
@@ -404,6 +458,115 @@ impl CloudClient {
         Ok(parse_class_groups(body.get("alllist")))
     }
 
+    // -- class boxes ---------------------------------------------------------
+
+    /// The 学校ID of the signed-in session, or an error naming what is missing.
+    ///
+    /// Every class-box call is relative to the tenant the session belongs to,
+    /// so there is no sensible behaviour without one.
+    fn signed_in_school(&self) -> AppResult<String> {
+        self.inner
+            .lock()
+            .unwrap()
+            .session
+            .as_ref()
+            .map(|s| s.co_login_id.clone())
+            .ok_or_else(|| AppError::other("サインインしていません"))
+    }
+
+    /// Creates a class box. The teacher's side of 「教室を作る」.
+    pub async fn create_class_box(&self, group_name: &str) -> AppResult<ClassBox> {
+        let co_login_id = self.signed_in_school()?;
+        let mut params = self.base_params();
+        params.insert("groupName".into(), json!(group_name));
+
+        let body = self
+            .post_command(&co_login_id, "/users3/crbox/create", params)
+            .await?;
+
+        let drive_id = required_str(&body, "driveId")?;
+        // The create response carries no join code; the teacher needs one to
+        // read out, so fetch it rather than making them press a second button.
+        let code = self.class_code(&drive_id, false).await.ok();
+
+        Ok(ClassBox {
+            drive_id,
+            group_id: opt_str(&body, "groupId"),
+            name: Some(group_name.to_string()),
+            join_code: code.as_ref().and_then(|c| c.join_code.clone()),
+            join_enabled: code.and_then(|c| c.join_enabled),
+        })
+    }
+
+    /// Joins a class box with the code the teacher read out.
+    pub async fn join_class_box(&self, join_code: &str) -> AppResult<ClassBox> {
+        let co_login_id = self.signed_in_school()?;
+        let mut params = self.base_params();
+        params.insert("joinCode".into(), json!(join_code));
+
+        let body = self
+            .post_command(&co_login_id, "/users3/crbox/join", params)
+            .await?;
+
+        Ok(ClassBox {
+            drive_id: required_str(&body, "driveId")?,
+            group_id: None,
+            name: None,
+            join_code: Some(join_code.to_string()),
+            join_enabled: None,
+        })
+    }
+
+    /// The join code for a class box.
+    ///
+    /// `regenerate` asks the server for a fresh one, which is how a teacher
+    /// shuts out a code that has escaped the classroom.
+    pub async fn class_code(&self, drive_id: &str, regenerate: bool) -> AppResult<ClassBox> {
+        let co_login_id = self.signed_in_school()?;
+        let mut params = self.base_params();
+        params.insert("driveId".into(), json!(drive_id));
+        params.insert("updateJoinCode".into(), json!(regenerate));
+
+        let body = self
+            .post_command(&co_login_id, "/users3/crbox/get/joincode", params)
+            .await?;
+
+        Ok(ClassBox {
+            drive_id: drive_id.to_string(),
+            group_id: None,
+            name: None,
+            join_code: opt_str(&body, "joinCode"),
+            join_enabled: body.get("joinEnabled").and_then(Value::as_bool),
+        })
+    }
+
+    /// Renames a class box or opens/closes it to new joiners.
+    pub async fn update_class_box(
+        &self,
+        drive_id: &str,
+        name: Option<&str>,
+        join_enabled: Option<bool>,
+    ) -> AppResult<()> {
+        let co_login_id = self.signed_in_school()?;
+        let mut params = self.base_params();
+        params.insert("driveId".into(), json!(drive_id));
+        if let Some(name) = name {
+            params.insert("name".into(), json!(name));
+        }
+        if let Some(enabled) = join_enabled {
+            // A tri-state on the wire: the third value means "leave it alone",
+            // which is what omitting the field would have meant anyway.
+            params.insert(
+                "joinEnabled".into(),
+                json!(if enabled { "ENABLED" } else { "DISABLED" }),
+            );
+        }
+
+        self.post_command(&co_login_id, "/users3/crbox/update", params)
+            .await?;
+        Ok(())
+    }
+
     pub async fn logout(&self) -> AppResult<()> {
         let (host, co_login_id) = {
             let inner = self.inner.lock().unwrap();
@@ -418,6 +581,7 @@ impl CloudClient {
         {
             let mut inner = self.inner.lock().unwrap();
             inner.session = None;
+            inner.credential = None;
         }
 
         if let (Some(host), Some(co_login_id)) = (host, co_login_id) {
@@ -549,6 +713,18 @@ fn parse_class_groups(all_list: Option<&Value>) -> Vec<ClassGroup> {
             })
         })
         .collect()
+}
+
+fn opt_str(body: &Map<String, Value>, key: &str) -> Option<String> {
+    body.get(key)
+        .and_then(Value::as_str)
+        .filter(|s| !s.is_empty())
+        .map(str::to_string)
+}
+
+fn required_str(body: &Map<String, Value>, key: &str) -> AppResult<String> {
+    opt_str(body, key)
+        .ok_or_else(|| AppError::other(format!("サーバーの応答に {key} がありません")))
 }
 
 fn with_trailing_slash(url: &str) -> String {

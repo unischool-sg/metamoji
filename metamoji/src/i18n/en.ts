@@ -271,11 +271,27 @@ export const en: Record<string, string> = {
   "参加": "Join",
   "自分の教室": "My classrooms",
   "教室を作る": "Create a classroom",
-  "教室機能はこのビルドの参照バックエンド向けに作られており、MetaMoJi のサーバーの協働編集 API は実装していません。":
-    "The classroom features were built against this repository's reference backend; MetaMoJi's own collaboration API is not implemented here.",
-  "サインイン中のアカウントでは教室に参加できません。":
-    "The account you are signed in with cannot join a classroom.",
-  "サインインしても教室は利用できません。": "Signing in will not make the classroom available.",
+  "教室を使うにはサインインが必要です。": "Sign in to use the classroom.",
+  "先生が作成し、表示される参加コードを生徒に伝えます。":
+    "A teacher creates it and reads the join code out to the class.",
+  "授業を始める": "Start a lesson",
+  "授業名": "Lesson name",
+  "授業を開く": "Open the lesson",
+  "授業中": "In lesson",
+  "授業を終える": "End the lesson",
+  "あなたは編集できる役割です({roles})。": "You may edit ({roles}).",
+  "あなたは閲覧のみの役割です。": "You have view-only access.",
+  "参加者": "Participants",
+  "参加している人はいません。": "Nobody has joined.",
+  "共同編集": "Shared editing",
+  "この版では編集内容の送受信に対応していません。ノートの編集は端末内にとどまります。":
+    "This build does not send or apply edits; your notes stay on this device.",
+  "受信した編集: {count} 件(未適用)": "{count} edits received (not applied)",
+  "コードを作り直す": "Regenerate the code",
+  "参加を締め切る": "Close to new joiners",
+  "参加を再開する": "Reopen to joiners",
+  "コードを作り直すと、以前のコードでは参加できなくなります。":
+    "Regenerating invalidates the previous code.",
   "接続中": "Connected",
   "接続しています…": "Connecting…",
   "オフライン": "Offline",

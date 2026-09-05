@@ -87,6 +87,20 @@
 `EditSession` の `ModelChanged` を購読する observer を足すだけで編集経路に入れる。
 `revision` と `AppStatus.needsLogin` は既に存在する。
 
+## 教室 — MetaMoJi のサーバー
+
+- [x] クラスボックスの作成・参加(参加コード)
+- [x] 参加コードの再発行 / 参加の締切
+- [x] ルームの作成・参加・退出(`cosmos/*`)
+- [x] 中継ソケット(生 TLS + 独自フレーミング、Ping 応答、30秒ウォッチドッグ)
+- [x] 参加者の在室状況・ロール(`presenter` / `speaker`)
+- [x] 先生からのメッセージ受信
+- [ ] 編集内容の送受信 — `.atdoc` の IModel **ライター**が必要
+- [ ] 課題配信 / 採点(`distribute.tsp` / `gradebook.tsp`)
+
+実サーバーに対する動作確認は未実施。フレーミングとイベント解釈は
+`src-tauri/src/collabo/` のテストで固定してある。
+
 ## スコープ C — 教室協働(参照バックエンド)
 
 > B と同じ理由で、現在 UI から到達できない。

@@ -420,3 +420,146 @@ export async function cloudSession(): Promise<CloudSession | null> {
   if (!isTauri()) return null;
   return invoke<CloudSession | null>("cloud_session");
 }
+
+// ---------------------------------------------------------------------------
+// Classroom
+// ---------------------------------------------------------------------------
+//
+// Two halves: a class box is the shared drive with a join code; a room is the
+// live session inside it, carried by a relay socket that Rust owns. Events from
+// that socket arrive through `onClassroomEvent`, not as return values.
+
+export interface ClassBox {
+  driveId: string;
+  groupId: string | null;
+  name: string | null;
+  joinCode: string | null;
+  joinEnabled: boolean | null;
+}
+
+export interface CollaboRoom {
+  roomId: string;
+  title: string | null;
+  roomType: string | null;
+  ownerId: string | null;
+}
+
+export interface RelayInfo {
+  host: string;
+  port: number;
+  sessionId: string;
+  serverProtocolVersion: string | null;
+  clientDirectionVersion: string | null;
+}
+
+export interface CollaboMember {
+  userId: string;
+  name: string | null;
+  role: string | null;
+}
+
+/** Mirrors `collabo::socket::CollaboEvent`. */
+export type ClassroomEvent =
+  | { kind: "connected" }
+  | {
+      kind: "loggedIn";
+      ok: boolean;
+      message: string | null;
+      roomType: string | null;
+      userId: string | null;
+      roles: string[];
+    }
+  | { kind: "boothUpdated"; boothId: string }
+  | { kind: "roomUpdated"; key: string; value: string; userId: string | null }
+  | { kind: "modeChanged"; key: string; enabled: boolean }
+  | { kind: "roleChanged"; key: string; enabled: boolean }
+  | { kind: "message"; title: string | null; body: string }
+  | { kind: "settingChanged"; setting: string }
+  | {
+      kind: "direction";
+      boothId: string;
+      sequence: number;
+      userId: string | null;
+      ownEcho: boolean;
+    }
+  | { kind: "postAck"; boothId: string; packetNo: string; ok: boolean }
+  | { kind: "finished" }
+  | { kind: "disconnected"; reason: string };
+
+export async function classroomCreateBox(name: string): Promise<ClassBox> {
+  requireTauri();
+  return invoke<ClassBox>("classroom_create_box", { name });
+}
+
+export async function classroomJoinBox(joinCode: string): Promise<ClassBox> {
+  requireTauri();
+  return invoke<ClassBox>("classroom_join_box", { joinCode });
+}
+
+export async function classroomBoxCode(driveId: string, regenerate = false): Promise<ClassBox> {
+  requireTauri();
+  return invoke<ClassBox>("classroom_box_code", { driveId, regenerate });
+}
+
+export async function classroomUpdateBox(
+  driveId: string,
+  name: string | null,
+  joinEnabled: boolean | null,
+): Promise<void> {
+  requireTauri();
+  return invoke<void>("classroom_update_box", { driveId, name, joinEnabled });
+}
+
+export async function classroomCreateRoom(
+  title: string,
+  roomType = "formal",
+): Promise<CollaboRoom> {
+  requireTauri();
+  return invoke<CollaboRoom>("classroom_create_room", { title, roomType });
+}
+
+export async function classroomEnter(
+  roomId: string,
+  driveId: string,
+  nickname: string,
+  roomPassword: string | null = null,
+): Promise<RelayInfo> {
+  requireTauri();
+  return invoke<RelayInfo>("classroom_enter", { roomId, driveId, nickname, roomPassword });
+}
+
+export async function classroomLeave(): Promise<void> {
+  if (!isTauri()) return;
+  return invoke<void>("classroom_leave");
+}
+
+export async function classroomMembers(roomId: string): Promise<CollaboMember[]> {
+  requireTauri();
+  return invoke<CollaboMember[]>("classroom_members", { roomId });
+}
+
+export async function classroomAttachBooth(
+  boothId: string,
+  lastSequence = 0,
+): Promise<void> {
+  requireTauri();
+  return invoke<void>("classroom_attach_booth", { boothId, lastSequence });
+}
+
+export async function classroomDetachBooth(boothId: string): Promise<void> {
+  requireTauri();
+  return invoke<void>("classroom_detach_booth", { boothId });
+}
+
+export async function classroomCurrentRoom(): Promise<string | null> {
+  if (!isTauri()) return null;
+  return invoke<string | null>("classroom_current_room");
+}
+
+/** Subscribes to relay pushes. Returns the unsubscribe function. */
+export async function onClassroomEvent(
+  fn: (event: ClassroomEvent) => void,
+): Promise<() => void> {
+  if (!isTauri()) return () => {};
+  return listen<ClassroomEvent>("classroom://event", (e) => fn(e.payload));
+}
