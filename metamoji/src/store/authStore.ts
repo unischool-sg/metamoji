@@ -138,10 +138,17 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   error: null,
 
   setServerUrl: (serverUrl) => {
+    // Repoint the existing client rather than replacing it: the login
+    // strategies and the sync button hold a reference to this object, and a
+    // replacement would leave them talking to the previous address.
+    const existing = get().client;
+    existing.setBaseUrl(serverUrl);
     // Changing server invalidates the session: the token belongs to the old one.
+    existing.setToken(null);
+
     const next = { serverUrl, token: null, user: null };
     persist(next);
-    set({ ...next, client: new SyncClient(serverUrl, null) });
+    set({ ...next });
   },
 
   signIn: async (strategy, input) => {

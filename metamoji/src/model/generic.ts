@@ -170,3 +170,29 @@ export function putIfChanged<T extends PropScalar>(
 ): void {
   if (value !== fallback) props[key] = value;
 }
+
+/**
+ * Checks that a value really is a model tree before it is trusted.
+ *
+ * A payload arriving from a server is untrusted input: it may be corrupt, from
+ * a future schema, or simply not one of our documents. Validating the shape
+ * here turns that into a clear message instead of a `TypeError` thrown from
+ * somewhere deep in the converter.
+ */
+export function isGenericTree(value: unknown): value is GenericTree {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+  const tree = value as Partial<GenericTree>;
+
+  if (typeof tree.rootId !== "string" || tree.rootId === "") return false;
+  if (!tree.models || typeof tree.models !== "object" || Array.isArray(tree.models)) return false;
+  if (!(tree.rootId in tree.models)) return false;
+
+  for (const [id, model] of Object.entries(tree.models)) {
+    if (!model || typeof model !== "object") return false;
+    const m = model as Partial<GenericModel>;
+    if (m.id !== id) return false;
+    if (typeof m.modelType !== "string") return false;
+    if (!Array.isArray(m.children)) return false;
+  }
+  return true;
+}

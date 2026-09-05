@@ -220,3 +220,49 @@ describe("runSync", () => {
     expect(stages).toContain("done");
   });
 });
+
+describe("untrusted payloads", () => {
+  it("reports a malformed remote document instead of throwing a TypeError", async () => {
+    const client = stubClient({
+      delta: vi.fn(async () => ({
+        driveRevision: 1,
+        documents: [meta({ id: "bad", title: "壊れたノート" })],
+      })),
+      getDocument: vi.fn(async () => ({
+        id: "bad",
+        title: "壊れたノート",
+        revision: 1,
+        driveRevision: 1,
+        updatedAt: "2026-01-01T00:00:00Z",
+        // Valid JSON, but not a model tree — what a foreign or corrupt payload
+        // looks like.
+        data: '{"a":2}',
+      })),
+    });
+
+    const outcome = await runSync(client);
+    expect(outcome.pulled).toBe(0);
+    expect(outcome.errors).toHaveLength(1);
+    expect(outcome.errors[0]).toContain("ノート形式ではありません");
+  });
+
+  it("reports unparseable JSON the same way", async () => {
+    const client = stubClient({
+      delta: vi.fn(async () => ({
+        driveRevision: 1,
+        documents: [meta({ id: "bad" })],
+      })),
+      getDocument: vi.fn(async () => ({
+        id: "bad",
+        title: "壊れたノート",
+        revision: 1,
+        driveRevision: 1,
+        updatedAt: "2026-01-01T00:00:00Z",
+        data: "{not json",
+      })),
+    });
+
+    const outcome = await runSync(client);
+    expect(outcome.errors[0]).toContain("読み取れませんでした");
+  });
+});

@@ -87,10 +87,23 @@ export class SyncClient {
   constructor(
     private baseUrl: string,
     private token: string | null = null,
-  ) {}
+  ) {
+    this.baseUrl = baseUrl.replace(/\/+$/, "");
+  }
 
   setToken(token: string | null): void {
     this.token = token;
+  }
+
+  /**
+   * Repoints the client at a different server.
+   *
+   * Mutating rather than constructing a replacement is deliberate: login
+   * strategies and long-lived components hold a reference to this object, and
+   * swapping the instance leaves every one of them talking to the old address.
+   */
+  setBaseUrl(baseUrl: string): void {
+    this.baseUrl = baseUrl.replace(/\/+$/, "");
   }
 
   get url(): string {

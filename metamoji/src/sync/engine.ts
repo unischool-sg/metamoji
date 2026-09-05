@@ -17,6 +17,7 @@
  */
 
 import * as api from "../ipc/api";
+import { isGenericTree } from "../model/generic";
 import type { NoteSummary } from "../ipc/api";
 import { newNoteId } from "../model/ids";
 import { ConflictError, type SyncClient } from "./client";
@@ -137,7 +138,20 @@ async function adoptServerVersion(
   serverRevision: number,
 ): Promise<void> {
   if (!data) return;
-  const tree = JSON.parse(data) as import("../model/generic").GenericTree;
+
+  // The payload is untrusted: it may be corrupt, from a newer schema, or not
+  // one of our documents at all. Reject it with a message rather than letting
+  // it fail somewhere inside the converter.
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(data);
+  } catch {
+    throw new Error("サーバーのデータを読み取れませんでした");
+  }
+  if (!isGenericTree(parsed)) {
+    throw new Error("サーバーのデータがノート形式ではありません");
+  }
+  const tree = parsed;
 
   const summaries = await api.libraryList({});
   const existing = summaries.find((n) => n.id === id);

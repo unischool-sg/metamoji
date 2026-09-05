@@ -9,7 +9,7 @@ import {
   createShapeUnit,
   createTextUnit,
 } from "./factory";
-import { addNode, type GenericTree } from "./generic";
+import { addNode, isGenericTree, type GenericTree } from "./generic";
 import { newStrokeId } from "./ids";
 import { strokeBounds } from "./stroke";
 import { searchableText, type DrawUnit, type NoteDocument, type Stroke } from "./types";
@@ -301,5 +301,39 @@ describe("header and footer", () => {
     const page = fromGeneric(toGeneric(doc)).pages[0];
     expect(page.furniture?.header).toBe("見出し");
     expect(page.furniture?.show).toBe(false);
+  });
+});
+
+describe("isGenericTree", () => {
+  it("accepts a real tree", () => {
+    expect(isGenericTree(toGeneric(createDocument()))).toBe(true);
+  });
+
+  it("rejects things that are not trees", () => {
+    for (const value of [null, undefined, 42, "tree", [], {}, { a: 2 }]) {
+      expect(isGenericTree(value), `should reject ${JSON.stringify(value)}`).toBe(false);
+    }
+  });
+
+  it("rejects a tree whose root is missing from the model table", () => {
+    expect(isGenericTree({ rootId: "ghost", models: {} })).toBe(false);
+  });
+
+  it("rejects a model whose key and id disagree", () => {
+    expect(
+      isGenericTree({
+        rootId: "a",
+        models: { a: { id: "b", parentId: null, modelType: "$freenote", props: {}, children: [] } },
+      }),
+    ).toBe(false);
+  });
+
+  it("rejects a model with no children array", () => {
+    expect(
+      isGenericTree({
+        rootId: "a",
+        models: { a: { id: "a", parentId: null, modelType: "$freenote", props: {} } },
+      }),
+    ).toBe(false);
   });
 });
