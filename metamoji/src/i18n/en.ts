@@ -203,6 +203,35 @@ export const en: Record<string, string> = {
   "スキーマバージョン": "Schema version",
   "手書き文字認識": "Handwriting recognition",
 
+  // -- sync and sign-in ------------------------------------------------------
+  "サインイン": "Sign in",
+  "サインアウト": "Sign out",
+  "接続先": "Server",
+  "サーバー": "Server address",
+  "自前で動かしているサーバーのアドレスを指定します。":
+    "Point this at a server you run yourself.",
+  "サインイン方法": "Sign-in method",
+  "ID とパスワード": "ID and password",
+  "QR コード": "QR code",
+  "SSO": "SSO",
+  "QR コードの内容": "QR code contents",
+  "ログイン ID": "Login ID",
+  "パスワード": "Password",
+  "表示名": "Display name",
+  "アカウントを作成": "Create an account",
+  "既存のアカウントを使う": "Use an existing account",
+  "作成してサインイン": "Create and sign in",
+  "接続中…": "Connecting…",
+  "同期": "Sync",
+  "同期中…": "Syncing…",
+  "同期しました": "Synced",
+  "同期に失敗しました": "Sync failed",
+  "未同期の変更が {count} 件あります": "{count} notes have unsynced changes",
+  "{title} は別の端末でも編集されていたため、この端末の版を複製として残しました。":
+    "“{title}” was edited on another device, so this device's version was kept as a copy.",
+  "送信 {done} / {total}": "Uploading {done} / {total}",
+  "受信 {done} / {total}": "Downloading {done} / {total}",
+
   // -- unit properties -------------------------------------------------------
   "フォント": "Font",
   "標準": "Default",

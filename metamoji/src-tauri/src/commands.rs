@@ -43,6 +43,30 @@ pub fn library_list(
 // -- folders ----------------------------------------------------------------
 
 #[tauri::command]
+pub fn library_set_sync_state(
+    state: State<'_, AppState>,
+    id: String,
+    server_revision: i64,
+    synced_revision: i64,
+) -> AppResult<()> {
+    state
+        .catalog
+        .lock()
+        .unwrap()
+        .set_sync_state(&id, server_revision, synced_revision)
+}
+
+#[tauri::command]
+pub fn sync_drive_revision(state: State<'_, AppState>) -> i64 {
+    state.catalog.lock().unwrap().drive_revision()
+}
+
+#[tauri::command]
+pub fn sync_set_drive_revision(state: State<'_, AppState>, revision: i64) -> AppResult<()> {
+    state.catalog.lock().unwrap().set_drive_revision(revision)
+}
+
+#[tauri::command]
 pub fn folder_list(state: State<'_, AppState>) -> AppResult<Vec<Folder>> {
     state.catalog.lock().unwrap().folders()
 }
@@ -154,6 +178,8 @@ pub fn library_create(
         thumbnail: None,
         folder_id: None,
         trashed: false,
+        server_revision: None,
+        synced_revision: None,
         tags: Vec::new(),
     })
 }
@@ -226,6 +252,8 @@ pub fn library_duplicate(
         thumbnail: None,
         folder_id: None,
         trashed: false,
+        server_revision: None,
+        synced_revision: None,
         tags: Vec::new(),
     })
 }

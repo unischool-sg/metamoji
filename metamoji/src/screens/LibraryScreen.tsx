@@ -14,6 +14,7 @@ import { open } from "@tauri-apps/plugin-dialog";
 import { ImportReportDialog } from "../components/ImportReportDialog";
 import { useTranslation } from "../i18n/useTranslation";
 import { Menu } from "../components/Menu";
+import { SyncButton } from "../components/SyncButton";
 import * as api from "../ipc/api";
 import type { Folder, ImportReport, ListQuery, NoteSort, NoteSummary, Tag } from "../ipc/api";
 import { toGeneric } from "../model/converter";
@@ -181,6 +182,7 @@ export function LibraryScreen() {
         <button type="button" onClick={importAtdoc} disabled={importing}>
           {importing ? t("取り込み中…") : t("取り込む")}
         </button>
+        <SyncButton notes={notes} onSynced={() => void refresh()} />
         <button type="button" onClick={createNote}>
           {t("+ 新規ノート")}
         </button>

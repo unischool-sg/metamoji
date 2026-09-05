@@ -95,6 +95,12 @@ pub struct NoteSummary {
     #[serde(rename = "folderId")]
     pub folder_id: Option<String>,
     pub trashed: bool,
+    /// Revision the server last accepted, or `None` if never synced.
+    #[serde(rename = "serverRevision")]
+    pub server_revision: Option<i64>,
+    /// Local revision at the time of that sync, for detecting local changes.
+    #[serde(rename = "syncedRevision")]
+    pub synced_revision: Option<i64>,
     pub tags: Vec<crate::storage::Tag>,
 }
 

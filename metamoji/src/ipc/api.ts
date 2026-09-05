@@ -34,6 +34,10 @@ export interface NoteSummary {
   thumbnail: string | null;
   folderId: string | null;
   trashed: boolean;
+  /** Revision the server last accepted, or null if never synced. */
+  serverRevision: number | null;
+  /** Local revision at the time of that sync. */
+  syncedRevision: number | null;
   tags: Tag[];
 }
 
@@ -124,6 +128,25 @@ export async function librarySetFolder(
 // Folders and tags
 // ---------------------------------------------------------------------------
 
+export async function librarySetSyncState(
+  id: string,
+  serverRevision: number,
+  syncedRevision: number,
+): Promise<void> {
+  if (!isTauri()) return memoryBackend.librarySetSyncState(id, serverRevision, syncedRevision);
+  return invoke("library_set_sync_state", { id, serverRevision, syncedRevision });
+}
+
+export async function syncDriveRevision(): Promise<number> {
+  if (!isTauri()) return memoryBackend.syncDriveRevision();
+  return invoke<number>("sync_drive_revision");
+}
+
+export async function syncSetDriveRevision(revision: number): Promise<void> {
+  if (!isTauri()) return memoryBackend.syncSetDriveRevision(revision);
+  return invoke("sync_set_drive_revision", { revision });
+}
+
 export async function folderList(): Promise<Folder[]> {
   if (!isTauri()) return memoryBackend.folderList();
   return invoke<Folder[]>("folder_list");
@@ -197,6 +220,7 @@ export async function libraryDuplicate(
   newId: string,
   title: string,
 ): Promise<NoteSummary> {
+  if (!isTauri()) return memoryBackend.libraryDuplicate(id, newId, title);
   return invoke<NoteSummary>("library_duplicate", { id, newId, title });
 }
 
@@ -254,14 +278,17 @@ export async function assetGet(noteId: string, ticket: string): Promise<string> 
 }
 
 export async function assetList(noteId: string): Promise<string[]> {
+  if (!isTauri()) return memoryBackend.assetList(noteId);
   return invoke<string[]>("asset_list", { noteId });
 }
 
 export async function fileReadDataUrl(path: string): Promise<string> {
+  if (!isTauri()) throw new Error("ファイルの読み込みはデスクトップアプリでのみ利用できます");
   return invoke<string>("file_read_data_url", { path });
 }
 
 export async function fileWriteBytes(path: string, dataUrl: string): Promise<void> {
+  if (!isTauri()) throw new Error("ファイルの書き出しはデスクトップアプリでのみ利用できます");
   return invoke("file_write_bytes", { path, dataUrl });
 }
 
@@ -278,6 +305,7 @@ export async function atdocImport(
 }
 
 export async function atdocProbe(path: string): Promise<number> {
+  if (!isTauri()) throw new Error(".atdoc の判定はデスクトップアプリでのみ利用できます");
   return invoke<number>("atdoc_probe", { path });
 }
 

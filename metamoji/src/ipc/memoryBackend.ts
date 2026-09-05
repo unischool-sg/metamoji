@@ -16,6 +16,7 @@ import type { AtdocImportResult, AppStatus, Folder, ListQuery, NoteSummary, Tag 
 const NOTES_KEY = "metamoji.dev.notes";
 const FOLDERS_KEY = "metamoji.dev.folders";
 const TAGS_KEY = "metamoji.dev.tags";
+const DRIVE_REV_KEY = "metamoji.dev.driveRevision";
 const TREE_PREFIX = "metamoji.dev.tree.";
 const ASSET_PREFIX = "metamoji.dev.asset.";
 
@@ -68,6 +69,20 @@ export const memoryBackend = {
           ? b.createdAt.localeCompare(a.createdAt)
           : b.updatedAt.localeCompare(a.updatedAt),
     );
+  },
+
+  librarySetSyncState(id: string, serverRevision: number, syncedRevision: number): void {
+    writeNotes(
+      readNotes().map((n) => (n.id === id ? { ...n, serverRevision, syncedRevision } : n)),
+    );
+  },
+
+  syncDriveRevision(): number {
+    return Number(sessionStorage.getItem(DRIVE_REV_KEY) ?? 0);
+  },
+
+  syncSetDriveRevision(revision: number): void {
+    sessionStorage.setItem(DRIVE_REV_KEY, String(revision));
   },
 
   librarySetFolder(id: string, folderId: string | null): void {
@@ -168,6 +183,8 @@ export const memoryBackend = {
       thumbnail: null,
       folderId: null,
       trashed: false,
+      serverRevision: null,
+      syncedRevision: null,
       tags: [],
     };
     sessionStorage.setItem(TREE_PREFIX + tree.rootId, JSON.stringify(tree));
@@ -181,6 +198,38 @@ export const memoryBackend = {
 
   librarySetTrashed(id: string, trashed: boolean): void {
     writeNotes(readNotes().map((n) => (n.id === id ? { ...n, trashed } : n)));
+  },
+
+  libraryDuplicate(id: string, newId: string, title: string): NoteSummary {
+    const source = readNotes().find((n) => n.id === id);
+    const tree = sessionStorage.getItem(TREE_PREFIX + id);
+    if (!source || !tree) throw new Error(`note not found: ${id}`);
+
+    const now = new Date().toISOString();
+    // The copy carries a new root id, so the two notes are not the same
+    // document wearing two names.
+    const copy = { ...(JSON.parse(tree) as GenericTree) };
+    const remapped = JSON.stringify(copy).replaceAll(source.id, newId);
+
+    sessionStorage.setItem(TREE_PREFIX + newId, remapped);
+    const summary: NoteSummary = {
+      ...source,
+      id: newId,
+      title,
+      createdAt: now,
+      updatedAt: now,
+      serverRevision: null,
+      syncedRevision: null,
+    };
+    writeNotes([summary, ...readNotes()]);
+    return summary;
+  },
+
+  assetList(noteId: string): string[] {
+    const prefix = `${ASSET_PREFIX}${noteId}.`;
+    return Object.keys(sessionStorage)
+      .filter((k) => k.startsWith(prefix))
+      .map((k) => k.slice(prefix.length));
   },
 
   libraryDelete(id: string): void {

@@ -124,6 +124,17 @@ impl Catalog {
             self.conn
                 .execute("ALTER TABLE documents ADD COLUMN folder_id TEXT", [])?;
         }
+        // Sync bookkeeping. `server_revision` is the revision the server last
+        // accepted from us — the optimistic-lock token a later write sends as
+        // `check` (docs/06 §5). Absent means the note has never been synced.
+        if !self.has_column("documents", "server_revision")? {
+            self.conn
+                .execute("ALTER TABLE documents ADD COLUMN server_revision INTEGER", [])?;
+        }
+        if !self.has_column("documents", "synced_revision")? {
+            self.conn
+                .execute("ALTER TABLE documents ADD COLUMN synced_revision INTEGER", [])?;
+        }
 
         self.conn.execute(
             "INSERT OR REPLACE INTO meta(key, value) VALUES ('schema_version', ?1)",
@@ -158,7 +169,7 @@ impl Catalog {
     pub fn list(&self, query: &ListQuery) -> AppResult<Vec<NoteSummary>> {
         let mut sql = String::from(
             "SELECT d.id, d.title, d.created_at, d.updated_at, d.page_count, d.revision,
-                    d.thumbnail, d.folder_id, d.trashed
+                    d.thumbnail, d.folder_id, d.trashed, d.server_revision, d.synced_revision
              FROM documents d",
         );
         let mut wheres: Vec<String> = Vec::new();
@@ -220,6 +231,8 @@ impl Catalog {
                 thumbnail: png.map(|b| to_png_data_url(&b)),
                 folder_id: row.get(7)?,
                 trashed: row.get::<_, i64>(8)? != 0,
+                server_revision: row.get(9)?,
+                synced_revision: row.get(10)?,
                 tags: Vec::new(),
             })
         })?;
@@ -344,6 +357,44 @@ impl Catalog {
         self.conn.execute(
             "DELETE FROM document_search WHERE document_id = ?1",
             params![id],
+        )?;
+        Ok(())
+    }
+
+    /// Records that the server accepted our copy at `server_revision`, taken
+    /// from our own `synced_revision`. A note whose local revision has since
+    /// moved past `synced_revision` has unsynced changes.
+    pub fn set_sync_state(
+        &self,
+        id: &str,
+        server_revision: i64,
+        synced_revision: i64,
+    ) -> AppResult<()> {
+        self.conn.execute(
+            "UPDATE documents SET server_revision = ?2, synced_revision = ?3 WHERE id = ?1",
+            params![id, server_revision, synced_revision],
+        )?;
+        Ok(())
+    }
+
+    /// The drive revision this client has consumed, so a delta asks for the
+    /// right window.
+    pub fn drive_revision(&self) -> i64 {
+        self.conn
+            .query_row(
+                "SELECT value FROM meta WHERE key = 'drive_revision'",
+                [],
+                |row| row.get::<_, String>(0),
+            )
+            .ok()
+            .and_then(|v| v.parse().ok())
+            .unwrap_or(0)
+    }
+
+    pub fn set_drive_revision(&self, revision: i64) -> AppResult<()> {
+        self.conn.execute(
+            "INSERT OR REPLACE INTO meta(key, value) VALUES ('drive_revision', ?1)",
+            params![revision.to_string()],
         )?;
         Ok(())
     }
