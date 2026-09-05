@@ -1088,3 +1088,10 @@ input.layer-row__name {
   white-space: nowrap;
   max-width: 60%;
 }
+
+.notice.resume {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+}

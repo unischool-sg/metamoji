@@ -171,6 +171,8 @@ export const en: Record<string, string> = {
   "「{title}」を完全に削除しますか?": "Permanently delete “{title}”?",
   "「{search}」に一致するノートはありません。": "No notes match “{search}”.",
   "ライブラリ": "Library",
+  "前回は「{title}」を開いたままでした。": "“{title}” was still open last time.",
+  "開く": "Open",
   "ノート {n}": "Note {n}",
   "{title} のコピー": "{title} copy",
   "取り込んだノート": "Imported note",

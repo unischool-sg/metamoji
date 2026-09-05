@@ -19,6 +19,7 @@ import type { Folder, ImportReport, ListQuery, NoteSort, NoteSummary, Tag } from
 import { toGeneric } from "../model/converter";
 import { createDocument } from "../model/factory";
 import { newId, newNoteId } from "../model/ids";
+import { markSessionClosed, readInterruptedSession, type OpenSession } from "../store/sessionStore";
 
 const TAG_COLORS = ["#32a5ff", "#d93025", "#188038", "#f29900", "#9334e6", "#e8710a"];
 
@@ -39,6 +40,9 @@ export function LibraryScreen() {
   const [importing, setImporting] = useState(false);
   const [report, setReport] = useState<ImportReport | null>(null);
   const [renaming, setRenaming] = useState<string | null>(null);
+  const [interrupted, setInterrupted] = useState<OpenSession | null>(() =>
+    readInterruptedSession(),
+  );
 
   const query = useMemo<ListQuery>(
     () => ({
@@ -280,6 +284,33 @@ export function LibraryScreen() {
               {t("{count} 件", { count: notes.length })}
             </span>
           </div>
+
+          {interrupted && (
+            <div className="notice resume" style={{ marginBottom: "var(--space-4)" }}>
+              <span>
+                {t("前回は「{title}」を開いたままでした。", { title: interrupted.title })}
+              </span>
+              <span style={{ display: "flex", gap: "var(--space-2)" }}>
+                <button
+                  type="button"
+                  className="btn btn--primary"
+                  onClick={() => navigate(`/note/${interrupted.noteId}`)}
+                >
+                  {t("開く")}
+                </button>
+                <button
+                  type="button"
+                  className="btn"
+                  onClick={() => {
+                    markSessionClosed();
+                    setInterrupted(null);
+                  }}
+                >
+                  {t("閉じる")}
+                </button>
+              </span>
+            </div>
+          )}
 
           {error && (
             <div className="notice" style={{ marginBottom: "var(--space-4)" }}>

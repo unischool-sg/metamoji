@@ -50,6 +50,7 @@ import { parsePageRange, readPdfInfo, renderPdfPages } from "../io/pdf";
 import { useAssetCache } from "../hooks/useAssetCache";
 import { useEditorStore } from "../store/editorStore";
 import { usePrefsStore } from "../store/prefsStore";
+import { markSessionClosed, markSessionOpen } from "../store/sessionStore";
 
 
 export function EditorScreen() {
@@ -109,7 +110,9 @@ export function EditorScreen() {
       try {
         const tree = await api.noteLoad(noteId);
         if (cancelled) return;
-        openDocument(fromGeneric(tree), noteId);
+        const loaded = fromGeneric(tree);
+        openDocument(loaded, noteId);
+        markSessionOpen({ noteId, pageIndex: 0, title: loaded.meta.title });
       } catch (err) {
         if (!cancelled) setLoadError(String(err));
       }
@@ -117,6 +120,9 @@ export function EditorScreen() {
 
     return () => {
       cancelled = true;
+      // Leaving the editor is a clean exit, so the marker goes away. Anything
+      // left behind means the app stopped without unwinding.
+      markSessionClosed();
       closeDocument();
       void api.noteClose(noteId);
     };
@@ -155,6 +161,13 @@ export function EditorScreen() {
   }, [markSaved, setSaveState]);
 
   const autosaveSeconds = usePrefsStore((s) => s.autosaveSeconds);
+
+  useEffect(() => {
+    const state = useEditorStore.getState();
+    if (noteId && state.doc) {
+      markSessionOpen({ noteId, pageIndex, title: state.doc.meta.title });
+    }
+  }, [noteId, pageIndex, doc?.meta.title]);
 
   useEffect(() => {
     if (saveState !== "dirty") return;
