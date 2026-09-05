@@ -972,6 +972,15 @@ impl NoteStore {
         Ok(())
     }
 
+    /// Forgets how far every booth was read, so the next connection asks for
+    /// the room from the beginning. What comes back is deduplicated on the way
+    /// in; the point is to stop a mark that has run ahead of reality from
+    /// hiding everything after it.
+    pub fn forget_booth_marks(&self) -> AppResult<()> {
+        self.conn.execute("DELETE FROM room_booths", [])?;
+        Ok(())
+    }
+
     pub fn forget_room_stroke(&self, stroke_id: &str) -> AppResult<()> {
         self.conn.execute(
             "DELETE FROM room_strokes WHERE stroke_id = ?1",

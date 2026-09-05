@@ -174,8 +174,21 @@ export function EditorScreen() {
         const sent = await api.classboxSendStrokes(state.noteId);
         setClassSync(sent > 0 ? { kind: "sent", strokes: sent } : null);
       } catch (err) {
-        setClassSync({ kind: "failed", message: String(err) });
-        setShowClassError(true);
+        // One repair attempt before bothering the user: most failures here are
+        // the two sides disagreeing about what has been sent, and that is
+        // exactly what a resync settles.
+        try {
+          const report = await api.classnoteResync(state.noteId);
+          setClassSync(
+            report && report.problems.length === 0
+              ? { kind: "sent", strokes: report.sent }
+              : { kind: "failed", message: report?.problems.join(" / ") ?? String(err) },
+          );
+          if (report && report.problems.length > 0) setShowClassError(true);
+        } catch {
+          setClassSync({ kind: "failed", message: String(err) });
+          setShowClassError(true);
+        }
       }
     } catch (err) {
       console.error("save failed", err);
@@ -188,35 +201,63 @@ export function EditorScreen() {
   useEffect(() => {
     if (!noteId) return;
     let stopped = false;
-    let unlisten: (() => void) | null = null;
+    const off: Array<() => void> = [];
+    let retry: ReturnType<typeof setTimeout> | null = null;
 
-    void (async () => {
-      // Nothing to listen to unless the note came from a class box; the
-      // command says so rather than this having to ask first.
-      unlisten = await api.onClassNoteChange((change) => {
-        if (change.noteId !== noteId) return;
-        const session = useEditorStore.getState().session;
-        const doc = useEditorStore.getState().doc;
-        if (!session || !doc) return;
-        const edit = editFor(doc, change);
-        // Through `applyRemote`: someone else's writing is not this user's to
-        // undo, and must not go back out as a Direction of our own.
-        if (edit) session.applyRemote(edit);
-      });
-      if (stopped) {
-        unlisten?.();
-        return;
-      }
+    const connect = async () => {
+      if (stopped) return;
       try {
+        // Settle any disagreement about what has been sent *before* opening
+        // the connection: the repair forgets how far each booth was read, and
+        // the attach that follows then asks for the room from the beginning.
+        // Anything the note already has is dropped on the way in.
+        const report = await api.classnoteResync(noteId);
+        if (report && (report.neverArrived > 0 || report.sent > 0)) {
+          setClassSync({ kind: "sent", strokes: report.sent });
+        }
         setWatching(await api.classnoteWatch(noteId));
       } catch (err) {
         console.error("classroom watch failed", err);
+        setWatching(false);
+        // A room that is not there now may be in a moment; a note left open
+        // over a dropped connection should not stay silent for ever.
+        retry = setTimeout(() => void connect(), 15_000);
       }
+    };
+
+    void (async () => {
+      off.push(
+        await api.onClassNoteChange((change) => {
+          if (change.noteId !== noteId) return;
+          const session = useEditorStore.getState().session;
+          const doc = useEditorStore.getState().doc;
+          if (!session || !doc) return;
+          const edit = editFor(doc, change);
+          // Through `applyRemote`: someone else's writing is not this user's
+          // to undo, and must not go back out as a Direction of our own.
+          if (edit) session.applyRemote(edit);
+        }),
+      );
+      off.push(
+        await api.onClassNoteEnded((info) => {
+          if (info.noteId !== noteId) return;
+          setWatching(false);
+          // Reconnecting also resyncs, which is what repairs whatever the
+          // connection dropped in the middle of.
+          retry = setTimeout(() => void connect(), 3_000);
+        }),
+      );
+      if (stopped) {
+        for (const stop of off) stop();
+        return;
+      }
+      await connect();
     })();
 
     return () => {
       stopped = true;
-      unlisten?.();
+      if (retry) clearTimeout(retry);
+      for (const stop of off) stop();
       setWatching(false);
       void api.classnoteUnwatch();
     };
@@ -742,6 +783,32 @@ export function EditorScreen() {
         <div className="notice notice--error" style={{ margin: "var(--space-3)" }}>
           <Icon name="error" size={20} />
           <span>{classSync.message}</span>
+          <button
+            type="button"
+            className="btn btn--text"
+            onClick={() => {
+              const id = useEditorStore.getState().noteId;
+              if (!id) return;
+              setShowClassError(false);
+              setClassSync(null);
+              void (async () => {
+                try {
+                  const report = await api.classnoteResync(id);
+                  if (report && report.problems.length > 0) {
+                    setClassSync({ kind: "failed", message: report.problems.join(" / ") });
+                    setShowClassError(true);
+                  } else {
+                    setClassSync({ kind: "sent", strokes: report?.sent ?? 0 });
+                  }
+                } catch (err) {
+                  setClassSync({ kind: "failed", message: String(err) });
+                  setShowClassError(true);
+                }
+              })();
+            }}
+          >
+            {t("同期し直す")}
+          </button>
           <button
             type="button"
             className="btn btn--text"

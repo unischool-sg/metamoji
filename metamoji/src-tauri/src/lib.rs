@@ -270,6 +270,7 @@ pub fn run() {
             commands::classbox_link,
             commands::classbox_origin,
             commands::classnote_watch,
+            commands::classnote_resync,
             commands::classnote_unwatch,
             commands::classbox_note_thumbnail,
             commands::classbox_close,

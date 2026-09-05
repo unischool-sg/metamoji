@@ -35,6 +35,10 @@ use crate::model::GenericModel;
 
 /// One decoded change, on its way to the editor.
 pub const EVENT: &str = "classnote://change";
+/// The connection went away. Whoever asked for the watch has to ask again;
+/// this does not reconnect on its own, because only the caller knows whether
+/// the note is still open.
+pub const EVENT_ENDED: &str = "classnote://ended";
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(tag = "kind", rename_all = "camelCase")]
@@ -71,7 +75,29 @@ pub struct NoteChange {
 pub struct Watch {
     pub note_id: String,
     connection: Connection,
-    room_id: String,
+    pub room_id: String,
+    /// The id the room gave us when we logged in. It goes on every element we
+    /// send, and only the room knows it.
+    room_user_id: Arc<Mutex<Option<String>>>,
+}
+
+impl Watch {
+    /// Sends through the connection this note already has.
+    ///
+    /// The alternative — a second connection, post, `LogoutRoom` — ends the
+    /// room session for the whole device, and takes this watch down with it.
+    /// That is what made updates stop arriving after the first send.
+    pub async fn post(&self, frames: Vec<super::pull::Frame>) {
+        for (booth_id, payload) in frames {
+            super::pull::post(&self.connection, &booth_id, payload).await;
+        }
+        // The writer task is a queue; give the acknowledgements a moment.
+        tokio::time::sleep(std::time::Duration::from_millis(300)).await;
+    }
+
+    pub fn room_user_id(&self) -> String {
+        self.room_user_id.lock().unwrap().clone().unwrap_or_default()
+    }
 }
 
 impl Watch {
@@ -111,6 +137,8 @@ pub async fn start(
     let emitter = app.clone();
     let note = note_id.to_string();
     let sink = Arc::clone(&store);
+    let room_user_id: Arc<Mutex<Option<String>>> = Arc::new(Mutex::new(None));
+    let identity = Arc::clone(&room_user_id);
     // Filled the moment `connect` returns. The handler needs to answer
     // `BoothUpdated` with an `AttachBooth`, and the sender only exists once the
     // socket does.
@@ -118,6 +146,17 @@ pub async fn start(
     let replies = Arc::clone(&commands);
 
     let connection = socket::connect(&relay.host, relay.port, move |event| {
+        if let CollaboEvent::LoggedIn { user_id, .. } = &event {
+            *identity.lock().unwrap() = user_id.clone();
+            return;
+        }
+        if let CollaboEvent::Disconnected { reason } = &event {
+            let _ = emitter.emit(
+                EVENT_ENDED,
+                serde_json::json!({ "noteId": note, "reason": reason }),
+            );
+            return;
+        }
         // "That booth has something new." The relay says this instead of
         // pushing, for anything this user posted from somewhere else.
         if let CollaboEvent::BoothUpdated { booth_id } = &event {
@@ -223,6 +262,7 @@ pub async fn start(
         note_id: note_id.to_string(),
         connection,
         room_id: room_id.to_string(),
+        room_user_id,
     })
 }
 

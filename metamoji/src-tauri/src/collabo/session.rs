@@ -135,6 +135,29 @@ impl ClassroomState {
         self.watching.lock().await.as_ref().map(|w| w.note_id.clone())
     }
 
+    /// Sends through the connection an open note already has, if it is the
+    /// note in question. `None` means there is none and the caller has to make
+    /// its own — which is fine when nothing is watching, and fatal when
+    /// something is: logging out ends the room session for the whole device.
+    pub async fn post_for_note(
+        &self,
+        note_id: &str,
+        frames: Vec<super::pull::Frame>,
+    ) -> Option<String> {
+        let held = self.watching.lock().await;
+        let watch = held.as_ref().filter(|w| w.note_id == note_id)?;
+        let room_user_id = watch.room_user_id();
+        watch.post(frames).await;
+        Some(room_user_id)
+    }
+
+    /// The room this note is being watched in, and who the room thinks we are.
+    pub async fn watch_identity(&self, note_id: &str) -> Option<(String, String)> {
+        let held = self.watching.lock().await;
+        let watch = held.as_ref().filter(|w| w.note_id == note_id)?;
+        Some((watch.room_id.clone(), watch.room_user_id()))
+    }
+
     pub fn room_id(&self) -> Option<String> {
         self.active.lock().unwrap().as_ref().map(|a| a.room_id.clone())
     }

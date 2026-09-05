@@ -716,6 +716,34 @@ export async function classnoteWatch(noteId: string): Promise<boolean> {
   return invoke<boolean>("classnote_watch", { noteId });
 }
 
+/** What a resync found and repaired. */
+export interface Resync {
+  inRoom: number;
+  neverArrived: number;
+  erasedElsewhere: number;
+  sent: number;
+  problems: string[];
+}
+
+/**
+ * Compares the note with its classroom and repairs the difference.
+ *
+ * Sync gets stuck when the two sides disagree about what has been sent, and
+ * neither notices: the room's own history is what settles it.
+ */
+export async function classnoteResync(noteId: string): Promise<Resync | null> {
+  if (!isTauri()) return null;
+  return invoke<Resync>("classnote_resync", { noteId });
+}
+
+/** Fires when the classroom connection drops; the caller has to ask again. */
+export async function onClassNoteEnded(
+  fn: (info: { noteId: string; reason: string }) => void,
+): Promise<() => void> {
+  if (!isTauri()) return () => {};
+  return listen<{ noteId: string; reason: string }>("classnote://ended", (e) => fn(e.payload));
+}
+
 export async function classnoteUnwatch(): Promise<void> {
   if (!isTauri()) return;
   await invoke("classnote_unwatch");

@@ -872,8 +872,21 @@ pub async fn classbox_send_strokes(
         }
     };
 
-    let posted =
-        collabo::pull::post_strokes(&cloud, &classroom, &room_id, &waiting, &removals).await?;
+    // Through the note's own connection when it has one. Opening a second and
+    // logging out of it ends the room session for the whole device, which is
+    // what stopped updates arriving after the first send.
+    let posted = match classroom.watch_identity(&note_id).await {
+        Some((watched_room, room_user_id)) if watched_room == room_id => {
+            let Some(session) = cloud.session() else {
+                return Err(AppError::other("サインインしていません"));
+            };
+            let author = collabo::pull::author_of(&session, &room_id, room_user_id);
+            let (frames, posted) = collabo::pull::build_posts(&waiting, &removals, &author)?;
+            classroom.post_for_note(&note_id, frames).await;
+            posted
+        }
+        _ => collabo::pull::post_strokes(&cloud, &classroom, &room_id, &waiting, &removals).await?,
+    };
 
     // Recorded only after the relay has had them, and only as far as it got.
     // The note itself is not touched: the editor owns it while it is open, and
@@ -887,6 +900,104 @@ pub async fn classbox_send_strokes(
         store.forget_room_stroke(stroke_id)?;
     }
     Ok(posted.sent.len() + posted.removed.len())
+}
+
+/// What a resync found, in words the user can act on.
+#[derive(Debug, Default, Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Resync {
+    /// Strokes the room holds right now.
+    pub in_room: usize,
+    /// Ledger rows dropped because a post never landed; they go out again.
+    pub never_arrived: usize,
+    /// Ledger rows dropped because the room no longer holds them.
+    pub erased_elsewhere: usize,
+    /// Local strokes sent because the room did not have them.
+    pub sent: usize,
+    /// What it could not fix, said plainly.
+    pub problems: Vec<String>,
+}
+
+/// Compares this note with its classroom and repairs the difference.
+///
+/// Sync gets stuck when the two sides disagree about what has been sent: a
+/// post that never landed leaves a stroke the room will never see, and a row
+/// for an element the room has dropped makes this app keep trying to erase
+/// something that is already gone. Neither heals on its own, because both
+/// sides think they are finished.
+///
+/// The room's own history settles it. An element it never saw means the post
+/// was lost — send it again. One it saw and dropped means someone erased it —
+/// forget it. Everything else stands.
+#[tauri::command]
+pub async fn classnote_resync(
+    state: State<'_, AppState>,
+    cloud: State<'_, CloudClient>,
+    classroom: State<'_, ClassroomState>,
+    drive: State<'_, DriveClient>,
+    note_id: String,
+) -> AppResult<Resync> {
+    let mut report = Resync::default();
+
+    let Some(origin) = state.catalog.lock().unwrap().class_origin(&note_id)? else {
+        report.problems.push("このノートはクラスの写しではありません".into());
+        return Ok(report);
+    };
+    let Some(room_id) = origin.room_id else {
+        report
+            .problems
+            .push("このノートには教室がありません。クラスボックスから開き直してください".into());
+        return Ok(report);
+    };
+
+    let store = state.note(&note_id)?;
+    let (tree, ledger) = {
+        let held = store.lock().unwrap();
+        (held.read_tree()?, held.room_strokes()?)
+    };
+
+    // Read the room from the beginning. Expensive, and the point: the marks
+    // are exactly what cannot be trusted when the two sides have drifted.
+    let mut scratch = tree.clone();
+    let (pull, _) =
+        collabo::pull::fetch(&cloud, &classroom, &room_id, &mut scratch, &ledger).await?;
+    let room = collabo::pull::survey(&pull.history);
+    report.in_room = room.added.difference(&room.removed).count();
+
+    // Repair the ledger against what the room actually holds.
+    {
+        let held = store.lock().unwrap();
+        // And forget where each booth was read to. A mark that has run ahead
+        // of reality is the other way sync gets stuck: nothing after it is
+        // ever asked for again.
+        held.forget_booth_marks()?;
+        for entry in &ledger {
+            if room.holds(&entry.element_id) {
+                continue;
+            }
+            if room.added.contains(&entry.element_id) {
+                report.erased_elsewhere += 1;
+            } else {
+                report.never_arrived += 1;
+            }
+            held.forget_room_stroke(&entry.stroke_id)?;
+        }
+    }
+
+    // With the ledger honest, the ordinary send finds what is missing.
+    let sent = classbox_send_strokes(
+        state.clone(),
+        cloud.clone(),
+        classroom.clone(),
+        drive.clone(),
+        note_id.clone(),
+    )
+    .await;
+    match sent {
+        Ok(count) => report.sent = count,
+        Err(err) => report.problems.push(err.to_string()),
+    }
+    Ok(report)
 }
 
 /// Watches the classroom of an open note, so edits made elsewhere show up here

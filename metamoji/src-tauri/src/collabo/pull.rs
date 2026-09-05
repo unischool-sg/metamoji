@@ -28,6 +28,8 @@ use crate::model::GenericTree;
 type Received = Arc<Mutex<Vec<(String, i64, Vec<u8>)>>>;
 /// A ticket, its media type, and its bytes.
 type Asset = (String, String, Vec<u8>);
+/// A booth and the bytes to post to it.
+pub type Frame = (String, Vec<u8>);
 
 /// No traffic for this long means the replay is over.
 const QUIET: Duration = Duration::from_millis(1500);
@@ -44,6 +46,10 @@ pub struct RoomPull {
     /// How far each booth was read, so the next connection can carry on.
     #[serde(skip)]
     pub marks: Vec<(String, i64)>,
+    /// Everything the room replayed, kept so a resync can work out what the
+    /// room actually holds without asking twice.
+    #[serde(skip)]
+    pub history: Vec<(String, i64, Vec<u8>)>,
     pub units: usize,
     pub strokes: usize,
     /// Elements the room says have been erased since.
@@ -141,28 +147,15 @@ pub async fn post_strokes(
         .ok();
     tokio::time::sleep(LOGIN_GRACE).await;
 
-    let author = send::Author {
-        user_id: session.user_id.clone(),
-        name: session.name.clone(),
-        company_id: session.company_id.clone().unwrap_or_default(),
-        room_id: room_id.to_string(),
-        room_user_id: room_user_id.lock().unwrap().clone().unwrap_or_default(),
-    };
+    let author = author_of(
+        &session,
+        room_id,
+        room_user_id.lock().unwrap().clone().unwrap_or_default(),
+    );
 
-    let mut ids = send::IdGenerator::fresh();
-    let mut posted = Posted::default();
-
-    for pending in strokes {
-        let (payload, element_id) =
-            send::add_stroke(&pending.stroke, &pending.layer_id, &mut ids, &author, None)?;
-        post(&connection, &pending.layer_id, payload).await;
-        posted.sent.push(element_id);
-    }
-    for entry in removals {
-        let payload = send::remove_element(&entry.element_id, &entry.layer_id, &mut ids, None)?;
-        post(&connection, &entry.layer_id, payload).await;
-        // Keyed the way the ledger is, so the caller can drop the right row.
-        posted.removed.push(entry.stroke_id.clone());
+    let (frames, posted) = build_posts(strokes, removals, &author)?;
+    for (booth_id, payload) in frames {
+        post(&connection, &booth_id, payload).await;
     }
 
     // The posts are queued on the writer task; leaving at once would drop
@@ -180,6 +173,46 @@ pub async fn post_strokes(
     Ok(posted)
 }
 
+/// Builds the frames a set of changes turns into, without sending anything.
+///
+/// Shared by the two ways out: a note that is open has a connection already —
+/// posting down a second one and then logging out takes the first one with it,
+/// because the relay ends the room session for the whole device.
+pub fn build_posts(
+    strokes: &[send::Pending],
+    removals: &[send::Ledger],
+    author: &send::Author,
+) -> AppResult<(Vec<Frame>, Posted)> {
+    let mut ids = send::IdGenerator::fresh();
+    let mut frames = Vec::new();
+    let mut posted = Posted::default();
+
+    for pending in strokes {
+        let (payload, element_id) =
+            send::add_stroke(&pending.stroke, &pending.layer_id, &mut ids, author, None)?;
+        frames.push((pending.layer_id.clone(), payload));
+        posted.sent.push(element_id);
+    }
+    for entry in removals {
+        let payload = send::remove_element(&entry.element_id, &entry.layer_id, &mut ids, None)?;
+        frames.push((entry.layer_id.clone(), payload));
+        // Keyed the way the ledger is, so the caller can drop the right row.
+        posted.removed.push(entry.stroke_id.clone());
+    }
+    Ok((frames, posted))
+}
+
+/// The author stamp the room puts on every element.
+pub fn author_of(session: &crate::cloud::CloudSession, room_id: &str, room_user_id: String) -> send::Author {
+    send::Author {
+        user_id: session.user_id.clone(),
+        name: session.name.clone(),
+        company_id: session.company_id.clone().unwrap_or_default(),
+        room_id: room_id.to_string(),
+        room_user_id,
+    }
+}
+
 /// What went out. `sent` holds the room's new element ids, in the order the
 /// strokes were given; `removed` holds the note's own stroke ids, which is how
 /// the ledger is keyed.
@@ -189,7 +222,7 @@ pub struct Posted {
     pub removed: Vec<String>,
 }
 
-async fn post(connection: &socket::Connection, booth_id: &str, payload: Vec<u8>) {
+pub(crate) async fn post(connection: &socket::Connection, booth_id: &str, payload: Vec<u8>) {
     let _ = connection
         .commands
         .send(Command::PostData {
@@ -309,8 +342,9 @@ pub async fn fetch(
         .map(|l| (l.element_id.clone(), l.stroke_id.clone()))
         .collect();
     let directions = std::mem::take(&mut *received.lock().unwrap());
-    let (mut pull, assets) = fold(tree, directions, &aliases);
+    let (mut pull, assets) = fold(tree, directions.clone(), &aliases);
     pull.marks = marks;
+    pull.history = directions;
     let result = (pull, assets);
 
     // Whether or not the room had anything, this user needs a layer of their
@@ -320,6 +354,46 @@ pub async fn fetch(
         apply::ensure_booth_layer(tree, booth);
     }
     Ok(result)
+}
+
+/// What the room currently holds, worked out from its whole history.
+///
+/// `added` minus `removed` is what is actually there. Both are needed: a
+/// ledger row for an element the room never saw means a post that did not
+/// land, and one for an element it has since dropped means someone erased it.
+/// They call for opposite repairs, and only the history tells them apart.
+#[derive(Debug, Default, Clone)]
+pub struct RoomState {
+    pub added: std::collections::HashSet<String>,
+    pub removed: std::collections::HashSet<String>,
+}
+
+impl RoomState {
+    pub fn holds(&self, element_id: &str) -> bool {
+        self.added.contains(element_id) && !self.removed.contains(element_id)
+    }
+}
+
+/// Reads the room's history without touching any note.
+pub fn survey(directions: &[(String, i64, Vec<u8>)]) -> RoomState {
+    let mut state = RoomState::default();
+    for (_, _, payload) in directions {
+        let Ok(direction) = apply::decode(payload) else {
+            continue;
+        };
+        for change in direction.changes {
+            match change {
+                apply::Change::Stroke { id, .. } => {
+                    state.added.insert(id);
+                }
+                apply::Change::Remove { id } => {
+                    state.removed.insert(id);
+                }
+                _ => {}
+            }
+        }
+    }
+    state
 }
 
 /// Applies what came back, in the order it came back.
@@ -429,5 +503,87 @@ mod tests {
         assert_eq!(pull.units, 0);
         assert!(assets.is_empty());
         assert_eq!(pull.unsupported, vec!["読み取れない Direction x1".to_string()]);
+    }
+}
+
+#[cfg(test)]
+mod survey_tests {
+    use super::*;
+    use crate::atdoc::{write_document, DocumentMeta};
+    use crate::model::{GenericModel, GenericTree};
+    use serde_json::{json, Value};
+
+    /// A direction as the wire carries one.
+    fn direction(build: impl FnOnce(&mut GenericTree) -> Value) -> (String, i64, Vec<u8>) {
+        let mut tree = GenericTree::new("direction", "direction");
+        let data = build(&mut tree);
+        if let Value::Object(props) = &mut tree.models.get_mut("direction").unwrap().props {
+            props.insert("data".into(), data);
+            props.insert("target".into(), json!("b_[unit]_draw"));
+        }
+        ("b".into(), 1, write_document(&tree, &DocumentMeta::default()).unwrap())
+    }
+
+    fn model(id: &str, parent: Option<&str>, kind: &str, props: Value) -> GenericModel {
+        let mut m = GenericModel {
+            id: id.into(),
+            parent_id: parent.map(str::to_string),
+            model_type: kind.into(),
+            props,
+            children: Vec::new(),
+        };
+        if parent == Some("direction") {
+            if let Value::Object(p) = &mut m.props {
+                crate::atdoc::mark_detached(p);
+            }
+        }
+        m
+    }
+
+    fn add(element_id: &str) -> (String, i64, Vec<u8>) {
+        direction(|tree| {
+            tree.insert(model("d", Some("direction"), "D", json!({ "T": 0 })));
+            tree.insert(model("i0", Some("d"), "i", json!({ "i": element_id, "m": { "$ref": "e" } })));
+            tree.insert(model(
+                "e",
+                Some("direction"),
+                "E",
+                json!({ "I": element_id, "T": 1, "P": { "$points": [1.0, 2.0, 3.0, 4.0] },
+                        "BX": 1.0, "BY": 2.0, "BW": 2.0, "BH": 2.0 }),
+            ));
+            json!({ "$ref": "d" })
+        })
+    }
+
+    fn remove(element_id: &str) -> (String, i64, Vec<u8>) {
+        direction(|tree| {
+            tree.insert(model("d", Some("direction"), "D", json!({ "T": 0 })));
+            tree.insert(model("i0", Some("d"), "i", json!({ "i": element_id, "t": 1 })));
+            json!({ "$ref": "d" })
+        })
+    }
+
+    #[test]
+    fn what_the_room_holds_is_what_was_added_and_not_taken_back() {
+        let state = survey(&[add("a"), add("b"), remove("a")]);
+        assert!(state.holds("b"));
+        assert!(!state.holds("a"), "erased");
+        assert!(!state.holds("c"), "never there");
+    }
+
+    #[test]
+    fn an_element_it_never_saw_is_told_apart_from_one_it_dropped() {
+        // The repair differs: a post that never landed goes out again, and an
+        // element someone erased must not.
+        let state = survey(&[add("a"), remove("a")]);
+        assert!(state.added.contains("a"), "the room saw this one");
+        assert!(!state.added.contains("z"), "and never saw this one");
+    }
+
+    #[test]
+    fn an_empty_room_holds_nothing() {
+        let state = survey(&[]);
+        assert!(state.added.is_empty());
+        assert!(!state.holds("a"));
     }
 }
