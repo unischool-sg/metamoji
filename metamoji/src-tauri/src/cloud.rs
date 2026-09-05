@@ -709,7 +709,12 @@ impl CloudClient {
 
         let login_name = str_of("loginName").unwrap_or_default();
         let session = CloudSession {
-            user_id: str_of("uuid").unwrap_or_default(),
+            // `prepareLoginResponse` reads `uuid` into the field it calls
+            // `userId`, so the key and the field name differ. `userId` is
+            // accepted too: the id is what the drive service authenticates
+            // with, and an empty one is refused there rather than here, which
+            // is a long way from the cause.
+            user_id: str_of("uuid").or_else(|| str_of("userId")).unwrap_or_default(),
             name: str_of("name").unwrap_or_else(|| login_name.clone()),
             login_name,
             email: str_of("email"),
@@ -720,6 +725,15 @@ impl CloudClient {
             is_on_premise: school.is_on_premise,
             rest_host: school.server_url.clone(),
         };
+
+        if session.user_id.is_empty() {
+            // Everything downstream authenticates with this. Failing here names
+            // the cause; failing later names a symptom three services away.
+            return Err(AppError::other(format!(
+                "サインインの応答にユーザー ID がありません(応答のキー: {})",
+                body.keys().cloned().collect::<Vec<_>>().join(", ")
+            )));
+        }
 
         let mut inner = self.inner.lock().unwrap();
         inner.rest_host = Some(school.server_url.clone());

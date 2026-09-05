@@ -137,6 +137,20 @@ GET  {homeDir}rest/drives/{id}/documents/{docId}/data → ノート本体
 (`CsCloudService$28` / `$30`)。付けても無害ではなく、drive-home は
 `200` を返しつつ `homeDir` を含めなくなる ── サーバー側の不具合に見える壊れ方。
 
+⚠️ **ドライブ側のエラー封筒はネストしている。** `sync-drive.tsp` は
+`SdResponseBase` を平坦な `errorCode` として書いているが、実際は
+`users3/*` と同じ形:
+
+```json
+{"name":"InvalidUserOrPasswordException",
+ "message":"The user or password is invalid.",
+ "data":{"errorCode":11000}}
+```
+
+しかも **HTTP 500 で返ってくる**。平坦な `errorCode` を見ていると
+すべてのドライブ側エラーが素通りし、拒否されたパスワードが
+「サーバーが落ちている」として表示される。
+
 ⚠️ **`requestBody` はフォーム項目ではない。** `SdHttpClient` の内部パラメータ
 Map のキーで、その値の文字列が `application/json` のボディそのものになる
 (`SdHttpClient.smali` L1409-1449)。form-urlencoded で送ると黙って拒否される。

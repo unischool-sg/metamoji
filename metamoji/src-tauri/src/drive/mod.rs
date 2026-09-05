@@ -34,11 +34,15 @@ use crate::error::{AppError, AppResult};
 
 const USER_AGENT: &str = "MMJSdCloudService/1.0";
 
-/// `SdCloudServiceErrorCode.NOT_LOGIN_EXCEPTION`. The drive session expires
-/// independently of the tenant one, so this is routine rather than fatal.
+/// `SdCloudServiceErrorCode`.
+const INVALID_USER_OR_PASSWORD_EXCEPTION: i64 = 0x2af8;
+/// The drive session expires independently of the tenant one, so this is
+/// routine rather than fatal.
 const NOT_LOGIN_EXCEPTION: i64 = 0x2af9;
-/// `REVISION` conflict — someone else wrote first.
+/// Someone else wrote first.
 const REVISION_EXCEPTION: i64 = 0x2afa;
+const ACCESS_DENIED_EXCEPTION: i64 = 0x2aff;
+const DOCUMENT_NOT_FOUND_EXCEPTION: i64 = 0x2afc;
 
 /// One note in a class box.
 #[derive(Debug, Clone, Serialize)]
@@ -143,6 +147,13 @@ impl DriveClient {
             password.map(|p| json!(p)).unwrap_or(Value::Null),
         );
         body.insert("qwd".into(), qwd.map(|q| json!(q)).unwrap_or(Value::Null));
+
+        if user_id.is_empty() {
+            return Err(AppError::other(
+                "サインイン情報にユーザー ID がありません。一度サインアウトして、\
+                 サインインし直してください。",
+            ));
+        }
 
         // `executeLoginWithParams` calls `setDiscardCookie(true)` first: the
         // login is where a session begins, so presenting an old one to it is at
@@ -370,7 +381,9 @@ async fn read_json(response: reqwest::Response, where_: &str) -> AppResult<Map<S
 
     match serde_json::from_str::<Value>(&text) {
         Ok(Value::Object(map)) => {
-            if !status.is_success() && map.get("errorCode").is_none() {
+            // The envelope arrives *with* a 5xx — see `check_error`. So a
+            // non-2xx is only a server fault when there is no envelope in it.
+            if !status.is_success() && !has_error_envelope(&map) {
                 return Err(AppError::other(format!(
                     "サーバーエラー (HTTP {status}) — {where_}(応答: {})",
                     excerpt(&text)
@@ -390,6 +403,15 @@ async fn read_json(response: reqwest::Response, where_: &str) -> AppResult<Map<S
 /// Only ever reached on a failure, where the body is the server's own
 /// diagnostic — a message or a stack trace, not the user's notes. Truncated
 /// because a stack trace is pages long and the first line is the useful part.
+/// Whether a body carries the API's own error envelope, in either shape.
+fn has_error_envelope(body: &Map<String, Value>) -> bool {
+    body.get("errorCode").is_some()
+        || body
+            .get("data")
+            .and_then(Value::as_object)
+            .is_some_and(|data| data.contains_key("errorCode"))
+}
+
 fn excerpt(text: &str) -> String {
     let trimmed = text.trim().replace(['\n', '\r'], " ");
     if trimmed.is_empty() {
@@ -417,7 +439,23 @@ fn annotate(err: AppError, where_: &str) -> AppError {
 }
 
 pub fn check_error(body: &Map<String, Value>) -> AppResult<()> {
-    let code = body.get("errorCode").and_then(Value::as_i64).unwrap_or(0);
+    // **Nested, not flat.** `sync-drive.tsp` models `SdResponseBase` with a
+    // top-level `errorCode`; the wire form is the same shape `users3/*` uses:
+    //
+    //   {"name":"InvalidUserOrPasswordException",
+    //    "message":"The user or password is invalid.",
+    //    "data":{"errorCode":11000}}
+    //
+    // Reading it flat makes every drive error invisible — and since these
+    // arrive with an HTTP 500, a rejected password gets reported as a broken
+    // server. Both shapes are accepted; only one has been seen in the wild.
+    let code = body
+        .get("data")
+        .and_then(Value::as_object)
+        .and_then(|data| data.get("errorCode"))
+        .and_then(Value::as_i64)
+        .or_else(|| body.get("errorCode").and_then(Value::as_i64))
+        .unwrap_or(0);
     if code == 0 {
         return Ok(());
     }
@@ -432,6 +470,17 @@ pub fn check_error(body: &Map<String, Value>) -> AppResult<()> {
             "ほかの人が先に更新しました。読み込み直してください。",
         ));
     }
+    if code == INVALID_USER_OR_PASSWORD_EXCEPTION {
+        return Err(AppError::other(
+            "クラスボックスがこのアカウントを受け付けませんでした(ユーザーまたはパスワードが不正)。",
+        ));
+    }
+    if code == ACCESS_DENIED_EXCEPTION {
+        return Err(AppError::other("このクラスボックスを開く権限がありません。"));
+    }
+    if code == DOCUMENT_NOT_FOUND_EXCEPTION {
+        return Err(AppError::other("ノートが見つかりません。"));
+    }
 
     let message = ["message", "errorMessage"]
         .iter()
@@ -440,7 +489,7 @@ pub fn check_error(body: &Map<String, Value>) -> AppResult<()> {
         .find(|s| !s.is_empty())
         .map(str::to_string)
         .unwrap_or_else(|| format!("クラスボックスのエラー (errorCode {code})"));
-    Err(AppError::other(message))
+    Err(AppError::other(format!("{message} (errorCode {code})")))
 }
 
 pub mod listing;

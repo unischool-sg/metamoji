@@ -677,3 +677,46 @@ async fn a_failure_names_the_request_that_caused_it() {
     // Never the host: it is the tenant's and adds nothing.
     assert!(!err.contains("127.0.0.1"), "{err}");
 }
+
+#[tokio::test]
+async fn the_user_id_is_read_from_uuid_or_from_user_id() {
+    // `prepareLoginResponse` reads `uuid` into the field named `userId`, so the
+    // key and the field name differ. Accepting either matters because this id
+    // is what the *drive* service authenticates with: get it wrong and the
+    // failure surfaces as `InvalidUserOrPasswordException` from a different
+    // host, which is a long way from the cause.
+    for (key, expected) in [("uuid", "u-uuid"), ("userId", "u-plain")] {
+        let stub = stub(vec![
+            ("200 OK", SCHOOL_OK.to_string()),
+            (
+                "200 OK",
+                format!(r#"{{"{key}":"{expected}","loginName":"student01"}}"#),
+            ),
+        ]);
+        let client = client();
+        client.set_root_server(&stub.base);
+        let session = client.login("school01", "student01", "x").await.unwrap();
+        assert_eq!(session.user_id, expected, "from {key}");
+    }
+}
+
+#[tokio::test]
+async fn a_login_response_with_no_user_id_fails_at_the_login() {
+    // Rather than three services later, with a message about a password.
+    let stub = stub(vec![
+        ("200 OK", SCHOOL_OK.to_string()),
+        ("200 OK", r#"{"loginName":"student01","name":"山田"}"#.to_string()),
+    ]);
+    let client = client();
+    client.set_root_server(&stub.base);
+
+    let err = client
+        .login("school01", "student01", "x")
+        .await
+        .unwrap_err()
+        .to_string();
+    assert!(err.contains("ユーザー ID"), "{err}");
+    // And the keys, so the real name of the field can be found.
+    assert!(err.contains("loginName"), "{err}");
+    assert!(client.session().is_none(), "a broken session is not kept");
+}
