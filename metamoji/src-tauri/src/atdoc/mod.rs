@@ -33,6 +33,7 @@ mod container;
 mod encode;
 pub(crate) mod ink;
 mod reader;
+pub mod text;
 mod value;
 mod writer;
 
@@ -179,6 +180,15 @@ fn build_tree(parsed: &ParsedDocument, new_root_id: &str) -> AtdocImport {
     if let Some(root_model) = parsed.models.get(&(parsed.root_index.max(0) as usize)) {
         let mut props = root_model.props.clone();
         rewrite_refs(&mut props, &id_for);
+        if !root_model.tail.is_empty() {
+            use base64::Engine as _;
+            let encoded = base64::engine::general_purpose::STANDARD.encode(&root_model.tail);
+            if let Value::Object(map) = &mut props {
+                note_meta(map, |meta| {
+                    meta.insert("tail".into(), Value::String(encoded));
+                });
+            }
+        }
         if let Some(root) = tree.models.get_mut(new_root_id) {
             root.props = props;
         }
@@ -251,6 +261,20 @@ fn build_tree(parsed: &ParsedDocument, new_root_id: &str) -> AtdocImport {
                     meta.insert("version".into(), Value::from(model.version));
                 });
             }
+            // Whatever the model wrote after its properties. Kept verbatim so
+            // it goes back out unchanged, and read for what this build knows
+            // how to read — which today is a text unit's body.
+            if !model.tail.is_empty() {
+                use base64::Engine as _;
+                let encoded =
+                    base64::engine::general_purpose::STANDARD.encode(&model.tail);
+                note_meta(map, |meta| {
+                    meta.insert("tail".into(), Value::String(encoded));
+                });
+                if model.model_type == "$text" {
+                    text::apply_to_props(map, &model.tail);
+                }
+            }
         }
 
         tree.insert(GenericModel {
@@ -313,6 +337,13 @@ fn note_meta(props: &mut serde_json::Map<String, Value>, edit: impl FnOnce(&mut 
     };
     edit(&mut meta);
     props.insert(writer::META_KEY.into(), Value::Object(meta));
+}
+
+/// Parks the bytes that followed a model's property map.
+pub fn note_tail(props: &mut serde_json::Map<String, Value>, base64: String) {
+    note_meta(props, |meta| {
+        meta.insert("tail".into(), Value::String(base64));
+    });
 }
 
 /// Marks a model as one the original left unparented.

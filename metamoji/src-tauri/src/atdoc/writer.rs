@@ -105,6 +105,10 @@ pub fn write_document(tree: &GenericTree, meta: &DocumentMeta) -> AppResult<Vec<
         let mut payload = Vec::new();
         write_value(&stripped(&model.props), &resolve, &mut payload)
             .map_err(|e| AppError::other(format!("{}: {e}", model.model_type)))?;
+        // Whatever followed the property map goes back after it, byte for
+        // byte. A text unit's body lives here, and this build reads far less
+        // of it than it has to preserve.
+        payload.extend_from_slice(&tail_of(&model.props));
         positions.push(append_block(&mut out, &payload));
     }
 
@@ -204,6 +208,21 @@ fn model_version(tree: &GenericTree, id: &str) -> Option<u16> {
         .get("version")?
         .as_u64()
         .map(|v| v as u16)
+}
+
+/// The bytes the importer parked from after this model's property map.
+fn tail_of(props: &Value) -> Vec<u8> {
+    use base64::Engine as _;
+    props
+        .get(META_KEY)
+        .and_then(|meta| meta.get("tail"))
+        .and_then(Value::as_str)
+        .and_then(|encoded| {
+            base64::engine::general_purpose::STANDARD
+                .decode(encoded)
+                .ok()
+        })
+        .unwrap_or_default()
 }
 
 fn is_detached(tree: &GenericTree, id: &str) -> bool {

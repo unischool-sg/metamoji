@@ -355,6 +355,19 @@ fn subtree(doc: &ParsedDocument, index: usize) -> Vec<GenericModel> {
             // ids here are named, so one rewrite in `place_unit` covers both.
             let mut props = model.props.clone();
             number_refs_to_names(&mut props);
+            // The same second encoding a document's models carry: kept
+            // verbatim, and read where this build knows how.
+            if !model.tail.is_empty() {
+                if let Value::Object(map) = &mut props {
+                    use base64::Engine as _;
+                    let encoded =
+                        base64::engine::general_purpose::STANDARD.encode(&model.tail);
+                    crate::atdoc::note_tail(map, encoded);
+                    if model.model_type == "$text" {
+                        crate::atdoc::text::apply_to_props(map, &model.tail);
+                    }
+                }
+            }
             GenericModel {
                 id: format!("#{i}"),
                 parent_id: (model.parent >= 0 && seen.contains(&(model.parent as usize)))
@@ -469,26 +482,43 @@ fn place_unit(
     unit_id: &str,
     models: &[GenericModel],
 ) -> bool {
-    let Some(page_id) = find_by_prop(tree, "$page", "pageId", &place.page_id) else {
-        // A booth for a page this note does not have. Better ignored than
-        // invented: the page may simply not have been downloaded.
-        return false;
-    };
-    let Some(layer_id) = ensure_layer(tree, &page_id, place) else {
-        return false;
+    // A unit that is already here keeps its place. An update — a text unit
+    // re-sending itself as it is typed into — names only the unit, and the
+    // booth it arrives on is the layer's, not the unit's; looking the unit up
+    // is both simpler and right in more cases than deriving a home from the
+    // booth every time.
+    let existing_layer = find_unit(tree, unit_id)
+        .and_then(|id| tree.models.get(&id))
+        .and_then(|unit| unit.parent_id.clone());
+
+    let layer_id = match existing_layer {
+        Some(layer) => layer,
+        None => {
+            let Some(page_id) = find_by_prop(tree, "$page", "pageId", &place.page_id) else {
+                // A booth for a page this note does not have. Better ignored
+                // than invented: the page may simply not be downloaded.
+                return false;
+            };
+            match ensure_layer(tree, &page_id, place) {
+                Some(layer) => layer,
+                None => return false,
+            }
+        }
     };
 
     let prefix = format!("{}_r_{}", tree.root_id, sanitise(unit_id));
     let rename = |id: &str| format!("{prefix}{}", id.trim_start_matches('#'));
 
     // Anything left from a previous copy of this unit goes first, so an update
-    // does not leave orphaned sub-models behind.
-    let stale: Vec<String> = tree
+    // does not leave orphaned sub-models behind. A unit the document itself
+    // carried is replaced too — the update is about that unit.
+    let mut stale: Vec<String> = tree
         .models
         .keys()
         .filter(|id| id.starts_with(&prefix))
         .cloned()
         .collect();
+    stale.extend(find_unit(tree, unit_id));
     for id in &stale {
         detach(tree, id);
     }
@@ -610,6 +640,20 @@ fn ensure_layer(tree: &mut GenericTree, page_id: &str, place: &Placement) -> Opt
         children: Vec::new(),
     });
     Some(id)
+}
+
+/// A unit already in the note, by the id the original gave it.
+fn find_unit(tree: &GenericTree, unit_id: &str) -> Option<String> {
+    if unit_id.is_empty() {
+        return None;
+    }
+    tree.models
+        .values()
+        .find(|m| {
+            m.model_type.starts_with('$')
+                && m.props.get("unitId").and_then(Value::as_str) == Some(unit_id)
+        })
+        .map(|m| m.id.clone())
 }
 
 fn find_by_prop(tree: &GenericTree, model_type: &str, key: &str, value: &str) -> Option<String> {

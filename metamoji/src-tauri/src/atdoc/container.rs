@@ -372,6 +372,12 @@ fn read_version_info(buf: &[u8], pos: u64) -> HashMap<String, u16> {
 pub struct ParsedModel {
     pub index: usize,
     pub model_type: String,
+    /// Whatever follows the property map in the model's block.
+    ///
+    /// A text unit keeps its body here, in a second encoding — see `text.rs`.
+    /// Held verbatim rather than parsed: it has to go back out unchanged when
+    /// the document is written, whether or not this build understands it.
+    pub tail: Vec<u8>,
     /// The schema version this model was written at.
     pub version: u16,
     pub parent: i32,
@@ -418,18 +424,26 @@ pub fn parse_document(buf: &[u8]) -> AppResult<ParsedDocument> {
             .map(str::to_string)
             .unwrap_or_else(|| "$dummy".to_string());
 
-        let (props, decode_error) = if unallocated {
-            (Value::Object(Default::default()), None)
+        let (props, tail, decode_error) = if unallocated {
+            (Value::Object(Default::default()), Vec::new(), None)
         } else {
             match read_block(buf, item.data_position) {
                 Ok(payload) => {
                     let mut r = Reader::new(payload);
                     match read_value(&mut r) {
-                        Ok(value) => (value, None),
-                        Err(err) => (Value::Object(Default::default()), Some(err.to_string())),
+                        Ok(value) => (value, payload[r.position()..].to_vec(), None),
+                        Err(err) => (
+                            Value::Object(Default::default()),
+                            Vec::new(),
+                            Some(err.to_string()),
+                        ),
                     }
                 }
-                Err(err) => (Value::Object(Default::default()), Some(err.to_string())),
+                Err(err) => (
+                    Value::Object(Default::default()),
+                    Vec::new(),
+                    Some(err.to_string()),
+                ),
             }
         };
 
@@ -439,6 +453,7 @@ pub fn parse_document(buf: &[u8]) -> AppResult<ParsedDocument> {
                 index,
                 model_type,
                 version: extra.preload.get(index).map(|p| p.version).unwrap_or(0),
+                tail,
                 parent: item.parent,
                 props,
                 decode_error,
