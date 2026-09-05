@@ -97,6 +97,24 @@ pub fn placement_of(booth_id: &str) -> Placement {
     }
 }
 
+/// Makes sure the layer named by `booth_id` exists, and is the one being drawn
+/// on when it is this user's own.
+///
+/// The room creates it as soon as there is something on it, but a note nobody
+/// has written on yet arrives without one — and a stroke drawn anywhere else
+/// is on a layer the room has no booth for, so it could never be sent. This is
+/// what gives a first stroke somewhere to go.
+pub fn ensure_booth_layer(tree: &mut GenericTree, booth_id: &str) -> bool {
+    let place = placement_of(booth_id);
+    if place.layer_id.is_none() {
+        return false;
+    }
+    let Some(page_id) = find_by_prop(tree, "$page", "pageId", &place.page_id) else {
+        return false;
+    };
+    ensure_layer(tree, &page_id, &place).is_some()
+}
+
 pub fn decode(payload: &[u8]) -> AppResult<Direction> {
     let doc = parse_document(payload)?;
     let root = doc

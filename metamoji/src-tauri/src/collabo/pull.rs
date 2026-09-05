@@ -288,7 +288,15 @@ pub async fn fetch(
     let _ = connection.commands.send(Command::Disconnect).await;
 
     let directions = std::mem::take(&mut *received.lock().unwrap());
-    Ok(fold(tree, directions))
+    let result = fold(tree, directions);
+
+    // Whether or not the room had anything, this user needs a layer of their
+    // own to write on. Without one the next stroke lands on a layer the room
+    // has no booth for and can never be sent.
+    for booth in booths.iter().filter(|b| b.contains("_[layer-for")) {
+        apply::ensure_booth_layer(tree, booth);
+    }
+    Ok(result)
 }
 
 /// Applies what came back, in the order it came back.

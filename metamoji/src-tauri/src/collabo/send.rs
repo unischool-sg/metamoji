@@ -118,9 +118,8 @@ pub fn add_stroke(
 
     let points = wire_points(stroke)
         .ok_or_else(|| AppError::other("ストロークに座標がありません"))?;
-    let bounds = stroke
-        .get("bounds")
-        .ok_or_else(|| AppError::other("ストロークに範囲がありません"))?;
+    let (bx, by, bw, bh) = bounds_of(stroke, &points)
+        .ok_or_else(|| AppError::other("ストロークの範囲を求められません"))?;
 
     let mut tree = GenericTree::new("d", "D");
     if let Value::Object(props) = &mut tree.models.get_mut("d").unwrap().props {
@@ -157,10 +156,10 @@ pub fn add_stroke(
             "t": STROKE_TYPE_SIMPLE,
             "P": { "$points": points },
             "p": { "$ref": "s" },
-            "BX": bounds.get("x").cloned().unwrap_or(json!(0)),
-            "BY": bounds.get("y").cloned().unwrap_or(json!(0)),
-            "BW": bounds.get("width").cloned().unwrap_or(json!(0)),
-            "BH": bounds.get("height").cloned().unwrap_or(json!(0)),
+            "BX": bx,
+            "BY": by,
+            "BW": bw,
+            "BH": bh,
             "uII": author.user_id,
             "uIN": author.name,
             "uIG": author.company_id,
@@ -201,6 +200,51 @@ fn detached(mut model: GenericModel) -> GenericModel {
         crate::atdoc::mark_detached(props);
     }
     model
+}
+
+/// The element's bounding box.
+///
+/// A stroke that came from a document carries one, because the importer
+/// computed it. A stroke the user just drew does not: `strokeToProp` writes
+/// points and pen and nothing else, and the app recomputes the box every time
+/// it reads the note. So compute it here too, by the same rule the importer
+/// uses — the box is the points grown by the pen's half-width and a little
+/// more, which is roughly what the ink covers.
+fn bounds_of(stroke: &Value, points: &[Value]) -> Option<(f64, f64, f64, f64)> {
+    if let Some(bounds) = stroke.get("bounds") {
+        let read = |key: &str| bounds.get(key).and_then(Value::as_f64);
+        if let (Some(x), Some(y), Some(w), Some(h)) =
+            (read("x"), read("y"), read("width"), read("height"))
+        {
+            return Some((x, y, w, h));
+        }
+    }
+
+    let (mut min_x, mut min_y) = (f64::INFINITY, f64::INFINITY);
+    let (mut max_x, mut max_y) = (f64::NEG_INFINITY, f64::NEG_INFINITY);
+    for pair in points.chunks(2) {
+        let (Some(x), Some(y)) = (
+            pair.first().and_then(Value::as_f64),
+            pair.get(1).and_then(Value::as_f64),
+        ) else {
+            continue;
+        };
+        min_x = min_x.min(x);
+        min_y = min_y.min(y);
+        max_x = max_x.max(x);
+        max_y = max_y.max(y);
+    }
+    if !min_x.is_finite() {
+        return None;
+    }
+
+    let pad = stroke.get("width").and_then(Value::as_f64).unwrap_or(2.4) * 1.5;
+    Some((
+        min_x - pad,
+        min_y - pad,
+        (max_x - min_x) + pad * 2.0,
+        (max_y - min_y) + pad * 2.0,
+    ))
 }
 
 /// This app stores a point as `x, y, pressure, time`; the wire wants `x, y`.
@@ -527,6 +571,47 @@ mod tests {
             }
             other => panic!("{other:?}"),
         }
+    }
+
+    /// What `strokeToProp` writes for a stroke the user just drew: points and
+    /// pen, and no bounding box — the app recomputes that on every read.
+    fn freshly_drawn() -> Value {
+        json!({
+            "id": "local-2",
+            "points": { "$points": [10.0, 20.0, 0.5, 0.0, 30.0, 50.0, 0.5, 8.0] },
+            "color": "#1f1f1f",
+            "width": 2.0,
+            "penType": "ballpoint",
+            "opacity": 1.0,
+            "pressureSensitivity": 0.5,
+        })
+    }
+
+    #[test]
+    fn a_stroke_the_user_just_drew_has_its_box_worked_out() {
+        // It has no `bounds`; refusing to send it made every save from the
+        // editor fail.
+        let (bytes, _) = add_stroke(
+            &freshly_drawn(),
+            "P1_[layer-forUser]_9",
+            &mut IdGenerator::new(1),
+            &author(),
+            None,
+        )
+        .unwrap();
+        let doc = parse_document(&bytes).unwrap();
+        let e = find(&doc, "E");
+        // The points span (10,20)-(30,50), grown by 1.5x the 2.0 pen width.
+        let at = |key: &str| e.props[key].as_f64().unwrap();
+        assert_eq!((at("BX"), at("BY"), at("BW"), at("BH")), (7.0, 17.0, 26.0, 36.0));
+    }
+
+    #[test]
+    fn a_box_the_stroke_already_has_is_used_as_it_stands() {
+        let doc = built();
+        let e = find(&doc, "E");
+        assert_eq!(e.props["BX"].as_f64(), Some(10.0));
+        assert_eq!(e.props["BW"].as_f64(), Some(20.5));
     }
 
     #[test]

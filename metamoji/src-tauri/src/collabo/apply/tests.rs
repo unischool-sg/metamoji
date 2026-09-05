@@ -349,3 +349,34 @@ fn a_unit_remembers_the_element_id_it_arrived_under() {
     let unit = tree.models.values().find(|m| m.model_type == "$text").unwrap();
     assert_eq!(unit.props["$roomElementId"], json!("e1"));
 }
+
+#[test]
+fn a_layer_to_write_on_is_made_even_when_the_room_is_empty() {
+    // A note nobody has written on has no personal layer, and a stroke drawn
+    // anywhere else is on a layer the room has no booth for.
+    let mut tree = note();
+    assert!(ensure_booth_layer(&mut tree, "P1_[layer-forUser]_9876"));
+
+    let layer = tree
+        .models
+        .values()
+        .find(|m| m.props.get("layerId").and_then(Value::as_str) == Some("P1_[layer-forUser]_9876"))
+        .expect("the layer exists");
+    assert_eq!(layer.props["layerType"], json!("system:personal"));
+    assert_eq!(tree.models["page"].props["currentLayer"]["$ref"], json!(layer.id));
+}
+
+#[test]
+fn making_it_twice_makes_it_once() {
+    let mut tree = note();
+    ensure_booth_layer(&mut tree, "P1_[layer-forUser]_9876");
+    let count = tree.models.len();
+    ensure_booth_layer(&mut tree, "P1_[layer-forUser]_9876");
+    assert_eq!(tree.models.len(), count);
+}
+
+#[test]
+fn a_page_level_booth_has_no_layer_to_make() {
+    let mut tree = note();
+    assert!(!ensure_booth_layer(&mut tree, "P1"));
+}
