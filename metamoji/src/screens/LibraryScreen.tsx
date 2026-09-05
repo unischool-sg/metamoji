@@ -186,6 +186,9 @@ export function LibraryScreen() {
         <button type="button" onClick={createNote}>
           {t("+ 新規ノート")}
         </button>
+        <button type="button" onClick={() => navigate("/classroom")} title={t("教室")}>
+          {t("教室")}
+        </button>
         <button type="button" onClick={() => navigate("/settings")} title={t("設定")}>
           ⚙
         </button>

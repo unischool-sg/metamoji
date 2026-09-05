@@ -1129,3 +1129,53 @@ input.layer-row__name {
 .sync-toast__conflict {
   color: var(--color-warning);
 }
+
+/* --- classroom monitoring ----------------------------------------------- */
+
+.monitor-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: var(--space-3);
+}
+
+.monitor-cell {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  opacity: 0.55;
+}
+
+.monitor-cell[data-online="true"] {
+  opacity: 1;
+  border-color: var(--color-accent);
+}
+
+.monitor-cell img,
+.monitor-cell__blank {
+  width: 100%;
+  aspect-ratio: 1 / 1.414;
+  object-fit: cover;
+  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+.monitor-cell__label {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-2);
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
+
+.monitor-cell__label span:first-child {
+  color: var(--color-text);
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

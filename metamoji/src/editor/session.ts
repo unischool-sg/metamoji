@@ -19,6 +19,7 @@
  */
 
 import { applyCompound, applyDelta, type CompoundEdit, type ModelDelta } from "./delta";
+import { newId } from "../model/ids";
 import type { NoteDocument } from "../model/types";
 
 export type SessionEvent =
@@ -132,6 +133,7 @@ export class EditSession {
     }
 
     const edit: CompoundEdit = {
+      editId: newId("edit"),
       label: this.pendingLabel,
       children: this.pending,
       at: Date.now(),
@@ -185,6 +187,25 @@ export class EditSession {
     this.dirty = true;
     this.emit({ type: "ModelChanged", edit, doc: this.doc, source: "redo" });
     return true;
+  }
+
+  /**
+   * Applies an edit that came from a peer.
+   *
+   * Deliberately not the local path: a remote edit must not join this user's
+   * undo stack — being able to undo someone else's work is not a feature — and
+   * it must not echo back out as a new Direction. The `source` on the emitted
+   * event is what the collaboration layer checks to avoid that loop.
+   */
+  applyRemote(edit: CompoundEdit): void {
+    if (edit.children.length === 0) return;
+    // A gesture in progress would commit onto a document that has just moved.
+    this.abortEdit();
+
+    this.doc = applyCompound(this.doc, edit, false);
+    this.doc = { ...this.doc, revision: this.doc.revision + 1 };
+    this.dirty = true;
+    this.emit({ type: "ModelChanged", edit, doc: this.doc, source: "remote" });
   }
 
   // -- whole-document replacement -----------------------------------------

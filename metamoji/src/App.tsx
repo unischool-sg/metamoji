@@ -2,6 +2,7 @@ import { createHashRouter, RouterProvider } from "react-router";
 
 import { EditorScreen } from "./screens/EditorScreen";
 import { LibraryScreen } from "./screens/LibraryScreen";
+import { ClassroomScreen } from "./screens/ClassroomScreen";
 import { LoginScreen } from "./screens/LoginScreen";
 import { SettingsScreen } from "./screens/SettingsScreen";
 
@@ -17,6 +18,7 @@ const router = createHashRouter([
   { path: "/note/:noteId", element: <EditorScreen /> },
   { path: "/settings", element: <SettingsScreen /> },
   { path: "/login", element: <LoginScreen /> },
+  { path: "/classroom", element: <ClassroomScreen /> },
 ]);
 
 export default function App() {

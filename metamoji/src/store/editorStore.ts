@@ -10,6 +10,7 @@
 
 import { create } from "zustand";
 
+import type { CompoundEdit } from "../editor/delta";
 import { EditSession } from "../editor/session";
 import {
   PEN_PRESETS,
@@ -36,6 +37,21 @@ import type { LassoMode } from "../render/polygon";
 import { currentLayer, findPage } from "../model/types";
 
 export type SaveState = "saved" | "dirty" | "saving" | "error";
+
+/**
+ * Subscribers to committed local edits.
+ *
+ * This is the seam the collaboration layer attaches to, and the only one it
+ * needs. Keeping it a plain list rather than a store field means a subscriber
+ * does not re-render anything when it fires.
+ */
+type ChangeListener = (noteId: string, edit: CompoundEdit) => void;
+const changeListeners = new Set<ChangeListener>();
+
+export function onLocalEdit(listener: ChangeListener): () => void {
+  changeListeners.add(listener);
+  return () => changeListeners.delete(listener);
+}
 
 interface EditorState {
   session: EditSession | null;
@@ -139,11 +155,23 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     // mutation path goes through the transaction bracket.
     session.subscribe((event) => {
       set({
-        doc: event.type === "ModelChanged" ? event.doc : event.doc,
+        doc: event.doc,
         canUndo: session.canUndo,
         canRedo: session.canRedo,
         saveState: session.isDirty ? "dirty" : "saved",
       });
+
+      // The single broadcast hook docs/15 §6.3 prescribes. The original called
+      // `sendDirection` from a dozen unit classes, so every new unit type risked
+      // a forgotten broadcast (docs/15 §4). Here unit code never knows the
+      // network exists — this one place decides.
+      //
+      // `remote` is excluded or a received edit would echo straight back;
+      // `undo`/`redo` are excluded because they are not new work, and the peer
+      // that owns the original edit is the one that gets to take it back.
+      if (event.type === "ModelChanged" && event.source === "local") {
+        for (const listener of changeListeners) listener(noteId, event.edit);
+      }
     });
     set({
       session,

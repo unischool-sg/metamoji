@@ -61,6 +61,12 @@ export type ModelDelta =
  * matching the original's "1 gesture = 1 undo entry" rule (docs/15 §3).
  */
 export interface CompoundEdit {
+  /**
+   * Client-generated id. Two jobs: the collaboration layer uses it as the key
+   * for at-least-once delivery, and the sender recognises the echo of its own
+   * edit by it — the role docs/06 §4 gives `esid`.
+   */
+  editId: string;
   label: string;
   children: ModelDelta[];
   /** Wall-clock time of the commit, used to coalesce rapid edits if we ever want to. */
