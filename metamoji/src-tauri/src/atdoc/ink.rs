@@ -106,7 +106,7 @@ fn reachable_stroke_elements(parsed: &ParsedDocument, start: usize) -> Vec<usize
     found
 }
 
-fn is_stroke_element(props: &Value) -> bool {
+pub(crate) fn is_stroke_element(props: &Value) -> bool {
     let Some(map) = props.as_object() else {
         return false;
     };
@@ -158,7 +158,7 @@ fn walk_refs(value: &Value, out: &mut Vec<usize>) {
 }
 
 #[derive(Debug, Clone)]
-struct PenStyle {
+pub(crate) struct PenStyle {
     color: String,
     width: f64,
     alpha: f64,
@@ -176,7 +176,7 @@ impl Default for PenStyle {
     }
 }
 
-fn collect_pen_styles(parsed: &ParsedDocument) -> HashMap<usize, PenStyle> {
+pub(crate) fn collect_pen_styles(parsed: &ParsedDocument) -> HashMap<usize, PenStyle> {
     let mut out = HashMap::new();
     for (index, model) in &parsed.models {
         let Some(map) = model.props.as_object() else {
@@ -224,7 +224,7 @@ fn pen_type_name(pen_type: i64) -> &'static str {
     }
 }
 
-fn build_stroke(
+pub(crate) fn build_stroke(
     parsed: &ParsedDocument,
     index: usize,
     styles: &HashMap<usize, PenStyle>,

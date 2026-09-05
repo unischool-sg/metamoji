@@ -116,11 +116,18 @@ fn device_identity(data_dir: &std::path::Path) -> (String, Option<String>, std::
             .map(str::to_string)
     };
 
-    let code = get("deviceCode").unwrap_or_else(|| {
+    // A code the service will accept is a positive `int` as decimal digits —
+    // `NsCollaboBgTaskForCreateUniqueID` makes one with `Random.nextInt()`.
+    // Anything else was invented by an older build of this app, which also
+    // invented the id that goes with it, and the pair is refused. Dropping
+    // both is what lets the next call register properly.
+    let code = get("deviceCode").filter(|c| c.chars().all(|b| b.is_ascii_digit()));
+    let id = code.as_ref().and_then(|_| get("deviceId"));
+    let code = code.unwrap_or_else(|| {
         let bytes = uuid::Uuid::new_v4().as_u128() as u32 & 0x7fff_ffff;
         bytes.to_string()
     });
-    (code, get("deviceId"), path)
+    (code, id, path)
 }
 
 fn locale() -> String {

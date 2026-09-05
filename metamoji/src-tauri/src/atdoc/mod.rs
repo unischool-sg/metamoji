@@ -31,7 +31,7 @@
 mod assets;
 mod container;
 mod encode;
-mod ink;
+pub(crate) mod ink;
 mod reader;
 mod value;
 mod writer;
@@ -61,7 +61,7 @@ pub fn read_value_bytes(bytes: &[u8]) -> AppResult<Value> {
     let mut r = reader::Reader::new(bytes);
     value::read_value(&mut r)
 }
-pub use container::{parse_document, parse_header, ParsedDocument};
+pub use container::{parse_document, parse_header, ParsedDocument, ParsedModel};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ImportReport {

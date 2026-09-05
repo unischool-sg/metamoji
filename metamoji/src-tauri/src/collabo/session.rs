@@ -90,6 +90,33 @@ impl ClassroomState {
         Ok(CollaboRest::new(cloud, device_id, self.device_code.clone()))
     }
 
+    /// Forgets the registration, so the next call asks for a new one.
+    ///
+    /// The service refuses a pair it does not know — a device id from an older
+    /// build that invented one, or one it has since dropped — and the message
+    /// says so. Registering again costs one request and is the only way out;
+    /// without this the classroom stays unreachable until the file is deleted
+    /// by hand.
+    pub fn forget_device(&self) {
+        *self.device_id.lock().unwrap() = None;
+    }
+
+    /// Runs a cosmos call, registering again if the device pair was refused.
+    async fn with_device<'a, T, F, Fut>(&self, cloud: &'a CloudClient, call: F) -> AppResult<T>
+    where
+        F: Fn(CollaboRest<'a>) -> Fut,
+        Fut: std::future::Future<Output = AppResult<T>>,
+    {
+        let first = call(self.rest(cloud).await?).await;
+        match first {
+            Err(err) if mentions_device(&err) => {
+                self.forget_device();
+                call(self.rest(cloud).await?).await
+            }
+            other => other,
+        }
+    }
+
     pub fn room_id(&self) -> Option<String> {
         self.active.lock().unwrap().as_ref().map(|a| a.room_id.clone())
     }
@@ -108,12 +135,13 @@ impl ClassroomState {
         // a state the rest of the app has no way to represent.
         self.leave().await;
 
-        let device_id = self.device_id(cloud).await?;
         let relay = self
-            .rest(cloud)
-            .await?
-            .login_room(room_id, room_password)
+            .with_device(cloud, |rest| async move {
+                rest.login_room(room_id, room_password).await
+            })
             .await?;
+        // After `with_device`, which is where a stale registration is replaced.
+        let device_id = self.device_id(cloud).await?;
 
         let emitter = app.clone();
         let connection = socket::connect(&relay.host, relay.port, move |event| {
@@ -223,3 +251,8 @@ pub type EnterResult = RelayInfo;
 pub type RoomInfo = Room;
 pub type MemberInfo = Member;
 pub type Event = CollaboEvent;
+
+/// Whether the server's complaint is about the device rather than the user.
+fn mentions_device(err: &AppError) -> bool {
+    err.to_string().to_ascii_lowercase().contains("device")
+}

@@ -1,0 +1,687 @@
+//! Reading a Direction, and applying it to a note.
+//!
+//! What arrives on a booth is a serialised `direction` model (see
+//! `direction.rs` for the envelope). Its `data` is one of four things, and this
+//! module is the whole vocabulary this build understands:
+//!
+//!  * a `D` model — the drawing engine's own direction. `T:0` is an add: each
+//!    `i` record points at an `E` element, whose `u` property is an ordinary
+//!    unit model (`$text`, `$image`, `$web`, ink).
+//!  * a unit model directly — an update to the unit whose id the `target`
+//!    names. This is how a text unit's geometry and content are re-sent as it
+//!    is edited.
+//!  * an `attachsharedirection` — `{ticket: attachment}`, which is how the
+//!    bytes behind an image reach everyone else.
+//!  * anything else, which is reported rather than guessed at.
+//!
+//! Where it lands comes from the booth, not from the payload: a booth id is
+//! `{pageId}` for an ordinary page, and the *layer* id — `{pageId}_[layer-…]` —
+//! for the school layers. A student's own writing is on
+//! `{pageId}_[layer-forUser]_{userId}`, which does not exist in the copy the
+//! drive hands out: it is created here, on demand.
+
+use serde_json::{json, Value};
+
+use crate::atdoc::{parse_document, ParsedDocument, ParsedModel};
+use crate::error::{AppError, AppResult};
+use crate::model::{GenericModel, GenericTree};
+
+/// The marker that separates a page id from a layer id in a booth.
+const LAYER_MARK: &str = "_[layer-";
+const PERSONAL_LAYER_TYPE: &str = "system:personal";
+const COMMON_LAYER_TYPE: &str = "system:common";
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum Change {
+    /// One handwritten stroke, already folded into the shape the renderer
+    /// draws. Ink arrives as a bare `E` element with no unit wrapper — the
+    /// element *is* the content — so it lands on the layer's drawing unit
+    /// rather than becoming a unit of its own.
+    Stroke { id: String, stroke: Value },
+    /// A unit to place on a layer, with everything it references.
+    Unit {
+        unit_id: String,
+        /// The unit's own model first, then whatever it points at.
+        models: Vec<GenericModel>,
+    },
+    /// Bytes shared by ticket, for the note's asset store.
+    Asset {
+        ticket: String,
+        mime: String,
+        bytes: Vec<u8>,
+    },
+    /// A payload this build does not act on, named so it can be reported.
+    Unsupported { kind: String },
+}
+
+#[derive(Debug, Clone)]
+pub struct Direction {
+    pub target: String,
+    pub esid: Option<String>,
+    pub changes: Vec<Change>,
+}
+
+/// Where a booth's contents belong.
+#[derive(Debug, Clone, PartialEq)]
+pub struct Placement {
+    pub page_id: String,
+    /// `None` when the booth is the page itself rather than one of its layers.
+    pub layer_id: Option<String>,
+    pub layer_type: Option<String>,
+}
+
+pub fn placement_of(booth_id: &str) -> Placement {
+    match booth_id.split_once(LAYER_MARK) {
+        Some((page_id, rest)) => Placement {
+            page_id: page_id.to_string(),
+            layer_id: Some(booth_id.to_string()),
+            layer_type: Some(
+                if rest.starts_with("common") {
+                    COMMON_LAYER_TYPE
+                } else {
+                    PERSONAL_LAYER_TYPE
+                }
+                .to_string(),
+            ),
+        },
+        None => Placement {
+            page_id: booth_id.to_string(),
+            layer_id: None,
+            layer_type: None,
+        },
+    }
+}
+
+pub fn decode(payload: &[u8]) -> AppResult<Direction> {
+    let doc = parse_document(payload)?;
+    let root = doc
+        .models
+        .get(&(doc.root_index.max(0) as usize))
+        .ok_or_else(|| AppError::other("Direction にルートモデルがありません"))?;
+
+    let target = root
+        .props
+        .get("target")
+        .and_then(Value::as_str)
+        .unwrap_or_default()
+        .to_string();
+    let esid = root
+        .props
+        .get("esid")
+        .and_then(Value::as_str)
+        .map(str::to_string);
+
+    let Some(data) = root.props.get("data") else {
+        return Ok(Direction {
+            target,
+            esid,
+            changes: vec![],
+        });
+    };
+
+    // A scalar payload carries no models, so there is nothing to place.
+    let Some(index) = data.get("$ref").and_then(Value::as_u64) else {
+        return Ok(Direction {
+            target,
+            esid,
+            changes: vec![Change::Unsupported {
+                kind: "scalar".into(),
+            }],
+        });
+    };
+
+    let payload_model = doc
+        .models
+        .get(&(index as usize))
+        .ok_or_else(|| AppError::other("Direction の data が空です"))?;
+
+    let changes = match payload_model.model_type.as_str() {
+        "D" => drawing_changes(&doc, index as usize),
+        "attachsharedirection" => attachment_changes(&doc, index as usize),
+        kind if kind.starts_with('$') => {
+            // The unit model itself: an update to whatever `target` names.
+            vec![Change::Unit {
+                unit_id: unit_id_of(payload_model, &target),
+                models: subtree(&doc, index as usize),
+            }]
+        }
+        other => vec![Change::Unsupported {
+            kind: other.to_string(),
+        }],
+    };
+
+    Ok(Direction {
+        target,
+        esid,
+        changes,
+    })
+}
+
+/// `DrDirectionType._value` — the enum's own number, which is its ordinal
+/// minus one because `NONE` is -1. Only the add is acted on; the rest are
+/// named so an unsupported edit can be reported as what it was rather than as
+/// a number.
+fn direction_type_name(value: i64) -> &'static str {
+    match value {
+        -1 => "NONE",
+        0 => "ADD_REMOVE",
+        1 => "GROUP",
+        2 => "SELECT",
+        3 => "DESELECT",
+        4 => "TRANSLATE",
+        5 => "RESIZE",
+        6 => "SCALE",
+        7 => "ROTATE",
+        8 => "SET_VARIATION",
+        9 => "SET_EXTRA_HANDLE_VARIATION",
+        10 => "ERASE",
+        11 => "CHANGE_STYLE",
+        12 => "CHANGE_ORDER",
+        13 => "APPLY_VARIATION",
+        14 => "EDIT_EXTRA_HANDLE",
+        15 => "SET_CONTENT_PROPERTIES",
+        16 => "BIND_UNBIND",
+        _ => "unknown",
+    }
+}
+
+/// `D` — the drawing engine's direction. Only "add" carries content.
+fn drawing_changes(doc: &ParsedDocument, index: usize) -> Vec<Change> {
+    const ADD: i64 = 0;
+
+    let model = &doc.models[&index];
+    let kind = model.props.get("T").and_then(Value::as_i64).unwrap_or(-1);
+    if kind != ADD {
+        return vec![Change::Unsupported {
+            kind: format!("D {}", direction_type_name(kind)),
+        }];
+    }
+
+    let mut out = Vec::new();
+    for record in doc.children.get(&(index as i32)).cloned().unwrap_or_default() {
+        // `m` is the element; without one the record is a removal or a move,
+        // which this build does not apply.
+        let Some(element) = doc.models[&record]
+            .props
+            .get("m")
+            .and_then(|m| m.get("$ref"))
+            .and_then(Value::as_u64)
+        else {
+            out.push(Change::Unsupported {
+                kind: "D T=0 without an element".into(),
+            });
+            continue;
+        };
+        // `u` on the element is the unit the user actually sees. Ink has none:
+        // a stroke element carries its own points and pen, and belongs to the
+        // layer's drawing unit.
+        let Some(unit) = doc
+            .models
+            .get(&(element as usize))
+            .and_then(|e| e.props.get("u"))
+            .and_then(|u| u.get("$ref"))
+            .and_then(Value::as_u64)
+        else {
+            match stroke_change(doc, element as usize) {
+                Some(change) => out.push(change),
+                None => out.push(Change::Unsupported {
+                    kind: "element without a unit".into(),
+                }),
+            }
+            continue;
+        };
+
+        let Some(unit_model) = doc.models.get(&(unit as usize)) else {
+            continue;
+        };
+        out.push(Change::Unit {
+            unit_id: unit_id_of(unit_model, ""),
+            models: subtree(doc, unit as usize),
+        });
+    }
+    out
+}
+
+/// Folds one stroke element into the shape the renderer draws, reusing the
+/// same conversion the importer applies to a document's own ink.
+fn stroke_change(doc: &ParsedDocument, index: usize) -> Option<Change> {
+    let model = doc.models.get(&index)?;
+    if !crate::atdoc::ink::is_stroke_element(&model.props) {
+        return None;
+    }
+    let styles = crate::atdoc::ink::collect_pen_styles(doc);
+    let id = model
+        .props
+        .get("I")
+        .and_then(Value::as_str)
+        .map(str::to_string)
+        .unwrap_or_else(|| format!("e{index}"));
+    let stroke = crate::atdoc::ink::build_stroke(doc, index, &styles, &|_| id.clone())?;
+    Some(Change::Stroke { id, stroke })
+}
+
+fn attachment_changes(doc: &ParsedDocument, index: usize) -> Vec<Change> {
+    use base64::Engine as _;
+
+    let Value::Object(map) = &doc.models[&index].props else {
+        return Vec::new();
+    };
+    // `t` holds the map of ticket to attachment; older payloads put the
+    // tickets at the top level.
+    let table = match map.get("t") {
+        Some(Value::Object(inner)) => inner,
+        _ => map,
+    };
+
+    let mut out = Vec::new();
+    for (ticket, target) in table {
+        let Some(model) = target
+            .get("$ref")
+            .and_then(Value::as_u64)
+            .and_then(|i| doc.models.get(&(i as usize)))
+        else {
+            continue;
+        };
+        let Some(blob) = model.props.get("$blob") else {
+            continue;
+        };
+        let Some(Value::String(payload)) = blob.get("$blob") else {
+            continue;
+        };
+        let Ok(bytes) = base64::engine::general_purpose::STANDARD.decode(payload) else {
+            continue;
+        };
+        let mime = blob
+            .get("$mime")
+            .and_then(Value::as_str)
+            .or_else(|| model.props.get("$mimetype").and_then(Value::as_str))
+            .unwrap_or("application/octet-stream")
+            .to_string();
+        out.push(Change::Asset {
+            ticket: ticket.clone(),
+            mime,
+            bytes,
+        });
+    }
+    out.sort_by(|a, b| match (a, b) {
+        (Change::Asset { ticket: x, .. }, Change::Asset { ticket: y, .. }) => x.cmp(y),
+        _ => std::cmp::Ordering::Equal,
+    });
+    out
+}
+
+fn unit_id_of(model: &ParsedModel, fallback: &str) -> String {
+    model
+        .props
+        .get("unitId")
+        .and_then(Value::as_str)
+        .unwrap_or(fallback)
+        .to_string()
+}
+
+/// The model at `index` and everything reachable from it, root first.
+///
+/// Ids are placeholders (`#index`) here; `apply` rewrites them to ids that are
+/// stable for this unit, so applying the same direction twice replaces rather
+/// than duplicates.
+fn subtree(doc: &ParsedDocument, index: usize) -> Vec<GenericModel> {
+    let mut order = vec![index];
+    let mut seen: std::collections::HashSet<usize> = [index].into_iter().collect();
+    let mut queue = vec![index];
+
+    while let Some(current) = queue.pop() {
+        let Some(model) = doc.models.get(&current) else {
+            continue;
+        };
+        let mut next: Vec<usize> = doc
+            .children
+            .get(&(current as i32))
+            .cloned()
+            .unwrap_or_default();
+        collect_refs(&model.props, &mut next);
+        for target in next {
+            if doc.models.contains_key(&target) && seen.insert(target) {
+                order.push(target);
+                queue.push(target);
+            }
+        }
+    }
+
+    order
+        .iter()
+        .map(|i| {
+            let model = &doc.models[i];
+            // References are table indices on the wire; name them the way the
+            // ids here are named, so one rewrite in `place_unit` covers both.
+            let mut props = model.props.clone();
+            number_refs_to_names(&mut props);
+            GenericModel {
+                id: format!("#{i}"),
+                parent_id: (model.parent >= 0 && seen.contains(&(model.parent as usize)))
+                    .then(|| format!("#{}", model.parent)),
+                model_type: model.model_type.clone(),
+                props,
+                children: doc
+                    .children
+                    .get(&(*i as i32))
+                    .map(|kids| kids.iter().map(|k| format!("#{k}")).collect())
+                    .unwrap_or_default(),
+            }
+        })
+        .collect()
+}
+
+fn number_refs_to_names(value: &mut Value) {
+    match value {
+        Value::Object(map) => {
+            if let Some(Value::Number(n)) = map.get("$ref") {
+                let index = n.as_u64().unwrap_or(0);
+                map.insert("$ref".into(), Value::String(format!("#{index}")));
+                return;
+            }
+            let keys: Vec<String> = map.keys().cloned().collect();
+            for key in keys {
+                if let Some(child) = map.get_mut(&key) {
+                    number_refs_to_names(child);
+                }
+            }
+        }
+        Value::Array(items) => {
+            for v in items {
+                number_refs_to_names(v);
+            }
+        }
+        _ => {}
+    }
+}
+
+fn collect_refs(value: &Value, out: &mut Vec<usize>) {
+    match value {
+        Value::Object(map) => {
+            if let Some(Value::Number(n)) = map.get("$ref") {
+                if let Some(i) = n.as_u64() {
+                    out.push(i as usize);
+                }
+                return;
+            }
+            for v in map.values() {
+                collect_refs(v, out);
+            }
+        }
+        Value::Array(items) => {
+            for v in items {
+                collect_refs(v, out);
+            }
+        }
+        _ => {}
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Applying
+// ---------------------------------------------------------------------------
+
+#[derive(Debug, Default, PartialEq)]
+pub struct Applied {
+    pub units: usize,
+    pub strokes: usize,
+    pub assets: Vec<(String, String, Vec<u8>)>,
+    pub unsupported: Vec<String>,
+}
+
+/// Puts a direction's changes into `tree`.
+///
+/// Idempotent: a unit is keyed by its own id, so replaying a booth from the
+/// beginning — which is what a reconnect does — rewrites the same models
+/// instead of stacking copies.
+pub fn apply(tree: &mut GenericTree, booth_id: &str, direction: &Direction) -> Applied {
+    let mut applied = Applied::default();
+    let place = placement_of(booth_id);
+
+    for change in &direction.changes {
+        match change {
+            Change::Asset {
+                ticket,
+                mime,
+                bytes,
+            } => applied
+                .assets
+                .push((ticket.clone(), mime.clone(), bytes.clone())),
+            Change::Unsupported { kind } => applied.unsupported.push(kind.clone()),
+            Change::Unit { unit_id, models } => {
+                if place_unit(tree, &place, unit_id, models) {
+                    applied.units += 1;
+                }
+            }
+            Change::Stroke { id, stroke } => {
+                if place_stroke(tree, &place, id, stroke) {
+                    applied.strokes += 1;
+                }
+            }
+        }
+    }
+    applied
+}
+
+fn place_unit(
+    tree: &mut GenericTree,
+    place: &Placement,
+    unit_id: &str,
+    models: &[GenericModel],
+) -> bool {
+    let Some(page_id) = find_by_prop(tree, "$page", "pageId", &place.page_id) else {
+        // A booth for a page this note does not have. Better ignored than
+        // invented: the page may simply not have been downloaded.
+        return false;
+    };
+    let Some(layer_id) = ensure_layer(tree, &page_id, place) else {
+        return false;
+    };
+
+    let prefix = format!("{}_r_{}", tree.root_id, sanitise(unit_id));
+    let rename = |id: &str| format!("{prefix}{}", id.trim_start_matches('#'));
+
+    // Anything left from a previous copy of this unit goes first, so an update
+    // does not leave orphaned sub-models behind.
+    let stale: Vec<String> = tree
+        .models
+        .keys()
+        .filter(|id| id.starts_with(&prefix))
+        .cloned()
+        .collect();
+    for id in &stale {
+        detach(tree, id);
+    }
+
+    for (position, model) in models.iter().enumerate() {
+        let mut props = model.props.clone();
+        rewrite_refs(&mut props, &rename);
+
+        let parent_id = match &model.parent_id {
+            Some(parent) => Some(rename(parent)),
+            // The unit itself hangs off the layer; anything it references but
+            // does not parent stays where the original had it — unparented.
+            None if position == 0 => Some(layer_id.clone()),
+            None => None,
+        };
+
+        tree.insert(GenericModel {
+            id: rename(&model.id),
+            parent_id,
+            model_type: model.model_type.clone(),
+            props,
+            children: Vec::new(),
+        });
+    }
+    true
+}
+
+/// Adds one stroke to the drawing unit of the booth's layer, creating that
+/// unit the first time.
+///
+/// Keyed by the stroke's own element id, so a replayed booth rewrites the same
+/// stroke instead of drawing it twice.
+fn place_stroke(tree: &mut GenericTree, place: &Placement, id: &str, stroke: &Value) -> bool {
+    let Some(page_id) = find_by_prop(tree, "$page", "pageId", &place.page_id) else {
+        return false;
+    };
+    let Some(layer_id) = ensure_layer(tree, &page_id, place) else {
+        return false;
+    };
+
+    let draw_id = format!("{}_ink_{}", tree.root_id, sanitise(&layer_id));
+    if !tree.models.contains_key(&draw_id) {
+        tree.insert(GenericModel {
+            id: draw_id.clone(),
+            parent_id: Some(layer_id),
+            model_type: "$draw".into(),
+            props: json!({ "strokes": [] }),
+            children: Vec::new(),
+        });
+    }
+
+    let Some(draw) = tree.models.get_mut(&draw_id) else {
+        return false;
+    };
+    let Value::Object(props) = &mut draw.props else {
+        return false;
+    };
+    let mut strokes = match props.remove("strokes") {
+        Some(Value::Array(list)) => list,
+        _ => Vec::new(),
+    };
+    strokes.retain(|s| s.get("id").and_then(Value::as_str) != Some(id));
+    strokes.push(stroke.clone());
+
+    // The renderer culls by frame before it looks at a stroke, so the unit has
+    // to grow to hold what it now contains.
+    let frame = stroke_bounds(&strokes);
+    props.insert("strokes".into(), Value::Array(strokes));
+    if let Some((x, y, w, h)) = frame {
+        props.insert("x".into(), json!(x));
+        props.insert("y".into(), json!(y));
+        props.insert("width".into(), json!(w));
+        props.insert("height".into(), json!(h));
+    }
+    true
+}
+
+fn stroke_bounds(strokes: &[Value]) -> Option<(f64, f64, f64, f64)> {
+    let (mut min_x, mut min_y) = (f64::INFINITY, f64::INFINITY);
+    let (mut max_x, mut max_y) = (f64::NEG_INFINITY, f64::NEG_INFINITY);
+    for stroke in strokes {
+        let bounds = stroke.get("bounds")?;
+        let x = bounds.get("x")?.as_f64()?;
+        let y = bounds.get("y")?.as_f64()?;
+        let w = bounds.get("width")?.as_f64()?;
+        let h = bounds.get("height")?.as_f64()?;
+        min_x = min_x.min(x);
+        min_y = min_y.min(y);
+        max_x = max_x.max(x + w);
+        max_y = max_y.max(y + h);
+    }
+    min_x.is_finite().then_some((min_x, min_y, max_x - min_x, max_y - min_y))
+}
+
+/// Finds the layer the booth names, creating it when the note has never seen
+/// it — which is the normal case for a personal layer, since the drive's copy
+/// of a class note does not contain one.
+fn ensure_layer(tree: &mut GenericTree, page_id: &str, place: &Placement) -> Option<String> {
+    let Some(layer_id) = place.layer_id.as_deref() else {
+        // Page-level booth: the page's own edit layer is where units go.
+        return find_layer_by_type(tree, page_id, "system:edit")
+            .or_else(|| first_layer(tree, page_id));
+    };
+
+    if let Some(existing) = find_by_prop(tree, "$layer", "layerId", layer_id) {
+        return Some(existing);
+    }
+
+    let id = format!("{}_l_{}", tree.root_id, sanitise(layer_id));
+    tree.insert(GenericModel {
+        id: id.clone(),
+        parent_id: Some(page_id.to_string()),
+        model_type: "$layer".into(),
+        props: json!({
+            "layerId": layer_id,
+            "layerType": place.layer_type.clone().unwrap_or_else(|| PERSONAL_LAYER_TYPE.into()),
+            "visible": true,
+        }),
+        children: Vec::new(),
+    });
+    Some(id)
+}
+
+fn find_by_prop(tree: &GenericTree, model_type: &str, key: &str, value: &str) -> Option<String> {
+    tree.models
+        .values()
+        .find(|m| {
+            m.model_type == model_type && m.props.get(key).and_then(Value::as_str) == Some(value)
+        })
+        .map(|m| m.id.clone())
+}
+
+fn find_layer_by_type(tree: &GenericTree, page_id: &str, layer_type: &str) -> Option<String> {
+    let page = tree.models.get(page_id)?;
+    page.children
+        .iter()
+        .filter_map(|id| tree.models.get(id))
+        .find(|m| {
+            m.model_type == "$layer"
+                && m.props.get("layerType").and_then(Value::as_str) == Some(layer_type)
+        })
+        .map(|m| m.id.clone())
+}
+
+fn first_layer(tree: &GenericTree, page_id: &str) -> Option<String> {
+    let page = tree.models.get(page_id)?;
+    page.children
+        .iter()
+        .filter_map(|id| tree.models.get(id))
+        .find(|m| m.model_type == "$layer")
+        .map(|m| m.id.clone())
+}
+
+fn detach(tree: &mut GenericTree, id: &str) {
+    if let Some(model) = tree.models.remove(id) {
+        if let Some(parent) = model.parent_id.and_then(|p| tree.models.get_mut(&p)) {
+            parent.children.retain(|c| c != id);
+        }
+    }
+}
+
+/// Model ids end up in file paths and asset keys, so they keep to something
+/// tame; the unit id itself stays in the properties untouched.
+fn sanitise(id: &str) -> String {
+    id.chars()
+        .map(|c| if c.is_ascii_alphanumeric() { c } else { '_' })
+        .collect()
+}
+
+fn rewrite_refs(value: &mut Value, rename: &impl Fn(&str) -> String) {
+    match value {
+        Value::Object(map) => {
+            if let Some(Value::String(id)) = map.get("$ref") {
+                let renamed = rename(id);
+                map.insert("$ref".into(), Value::String(renamed));
+                return;
+            }
+            let keys: Vec<String> = map.keys().cloned().collect();
+            for key in keys {
+                if let Some(child) = map.get_mut(&key) {
+                    rewrite_refs(child, rename);
+                }
+            }
+        }
+        Value::Array(items) => {
+            for v in items {
+                rewrite_refs(v, rename);
+            }
+        }
+        _ => {}
+    }
+}
+
+#[path = "apply/tests.rs"]
+#[cfg(test)]
+mod tests;
