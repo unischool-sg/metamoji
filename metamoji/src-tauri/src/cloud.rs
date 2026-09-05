@@ -575,6 +575,16 @@ impl CloudClient {
         url: &str,
         body: Option<Value>,
     ) -> AppResult<Map<String, Value>> {
+        // Path only, never the host: the host is the tenant's and is not the
+        // interesting part, and a screenshot travels further than a log.
+        let where_ = format!(
+            "{method} {}",
+            url.split_once("://")
+                .and_then(|(_, rest)| rest.split_once('/'))
+                .map(|(_, path)| format!("/{path}"))
+                .unwrap_or_else(|| url.to_string())
+        );
+
         let mut request = self
             .http
             .request(method, url)
@@ -588,7 +598,7 @@ impl CloudClient {
         let response = request
             .send()
             .await
-            .map_err(|e| AppError::other(format!("サーバーに接続できません: {e}")))?;
+            .map_err(|e| AppError::other(format!("サーバーに接続できません: {e} — {where_}")))?;
 
         let status = response.status();
         let text = response
@@ -600,15 +610,22 @@ impl CloudClient {
             // A non-JSON body here almost always means a proxy or an error page
             // rather than the API, so quote the status instead of the parse
             // error, which would say nothing useful.
-            AppError::other(format!("サーバーの応答を解釈できません (HTTP {status})"))
+            AppError::other(format!("サーバーの応答を解釈できません (HTTP {status}) — {where_}"))
         })?;
 
         let body = match value {
             Value::Object(map) => map,
-            _ => return Err(AppError::other("サーバーの応答が想定と異なります")),
+            _ => {
+                return Err(AppError::other(format!(
+                    "サーバーの応答が想定と異なります — {where_}"
+                )))
+            }
         };
 
-        check_error(status.as_u16(), &body)?;
+        // Every failure names the request that produced it. Without that, one
+        // screenshot of "HTTP 500" could be any of a dozen calls, and the next
+        // step is a guess.
+        check_error(status.as_u16(), &body).map_err(|err| annotate(err, &where_, &body))?;
         Ok(body)
     }
 
@@ -1089,6 +1106,25 @@ fn parse_drive_entry(value: &Value) -> Option<DriveEntry> {
         // `isHidden` compares against the integer 1, so anything else — absent,
         // 0, a string — means visible.
         hidden: entry.get("hidden").and_then(Value::as_i64) == Some(1),
+    })
+}
+
+/// Adds the request and the response's shape to an error.
+///
+/// `NotLoggedIn` is left alone: it is retried rather than shown, and the retry
+/// matches on the variant.
+fn annotate(err: AppError, where_: &str, body: &Map<String, Value>) -> AppError {
+    if matches!(err, AppError::NotLoggedIn) {
+        return err;
+    }
+
+    // Keys, never values — the values are the user's, and the keys are what
+    // says whether the call landed where it was meant to.
+    let keys = body.keys().cloned().collect::<Vec<_>>().join(", ");
+    AppError::other(if keys.is_empty() {
+        format!("{err} — {where_}")
+    } else {
+        format!("{err} — {where_}(応答のキー: {keys})")
     })
 }
 

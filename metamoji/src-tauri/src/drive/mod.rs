@@ -149,8 +149,8 @@ impl DriveClient {
             .await
             .map_err(|e| AppError::other(format!("クラスボックスに接続できません: {e}")))?;
 
-        let json = read_json(response).await?;
-        check_error(&json)?;
+        let json = read_json(response, "POST /rest/users/login").await?;
+        check_error(&json).map_err(|e| annotate(e, "POST /rest/users/login"))?;
 
         *self.session.lock().unwrap() = Some(Session {
             home_dir: home_dir.to_string(),
@@ -198,6 +198,7 @@ impl DriveClient {
 
     async fn get_json_once(&self, path: &str) -> AppResult<Map<String, Value>> {
         let home = self.require_home()?;
+        let where_ = format!("GET /{path}");
         let response = self
             .http
             // No body on a GET — `SdHttpClient` passes a null map for these.
@@ -205,10 +206,12 @@ impl DriveClient {
             .headers(self.headers())
             .send()
             .await
-            .map_err(|e| AppError::other(format!("クラスボックスに接続できません: {e}")))?;
+            .map_err(|e| {
+                AppError::other(format!("クラスボックスに接続できません: {e} — {where_}"))
+            })?;
 
-        let json = read_json(response).await?;
-        check_error(&json)?;
+        let json = read_json(response, &where_).await?;
+        check_error(&json).map_err(|e| annotate(e, &where_))?;
         Ok(json)
     }
 
@@ -224,13 +227,16 @@ impl DriveClient {
 
     async fn get_bytes_once(&self, path: &str) -> AppResult<DriveFile> {
         let home = self.require_home()?;
+        let where_ = format!("GET /{path}");
         let response = self
             .http
             .get(format!("{home}{path}"))
             .headers(self.headers())
             .send()
             .await
-            .map_err(|e| AppError::other(format!("クラスボックスに接続できません: {e}")))?;
+            .map_err(|e| {
+                AppError::other(format!("クラスボックスに接続できません: {e} — {where_}"))
+            })?;
 
         let status = response.status();
         let mime_type = response
@@ -250,10 +256,12 @@ impl DriveClient {
             || mime_type.as_deref().is_some_and(|m| m.contains("json"))
         {
             if let Ok(Value::Object(json)) = serde_json::from_slice::<Value>(&bytes) {
-                check_error(&json)?;
+                check_error(&json).map_err(|e| annotate(e, &where_))?;
             }
             if !status.is_success() {
-                return Err(AppError::other(format!("サーバーエラー (HTTP {status})")));
+                return Err(AppError::other(format!(
+                    "サーバーエラー (HTTP {status}) — {where_}"
+                )));
             }
         }
 
@@ -338,17 +346,24 @@ impl DriveClient {
     }
 }
 
-async fn read_json(response: reqwest::Response) -> AppResult<Map<String, Value>> {
+async fn read_json(response: reqwest::Response, where_: &str) -> AppResult<Map<String, Value>> {
     let status = response.status();
     let text = response
         .text()
         .await
-        .map_err(|e| AppError::other(format!("応答を読み取れません: {e}")))?;
+        .map_err(|e| AppError::other(format!("応答を読み取れません: {e} — {where_}")))?;
 
     match serde_json::from_str::<Value>(&text) {
-        Ok(Value::Object(map)) => Ok(map),
+        Ok(Value::Object(map)) => {
+            if !status.is_success() && map.get("errorCode").is_none() {
+                return Err(AppError::other(format!(
+                    "サーバーエラー (HTTP {status}) — {where_}"
+                )));
+            }
+            Ok(map)
+        }
         _ => Err(AppError::other(format!(
-            "クラスボックスの応答を解釈できません (HTTP {status})"
+            "クラスボックスの応答を解釈できません (HTTP {status}) — {where_}"
         ))),
     }
 }
@@ -357,6 +372,15 @@ async fn read_json(response: reqwest::Response) -> AppResult<Map<String, Value>>
 ///
 /// The message is at `message` and the error name at `data.name`, per the
 /// field notes in `sync-drive.tsp`; there is no nested `errorCode`.
+/// Adds the request to an error. `NotLoggedIn` is left alone — it is retried,
+/// not shown, and the retry matches on the variant.
+fn annotate(err: AppError, where_: &str) -> AppError {
+    match err {
+        AppError::NotLoggedIn => err,
+        other => AppError::other(format!("{other} — {where_}")),
+    }
+}
+
 pub fn check_error(body: &Map<String, Value>) -> AppResult<()> {
     let code = body.get("errorCode").and_then(Value::as_i64).unwrap_or(0);
     if code == 0 {

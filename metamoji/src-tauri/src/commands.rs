@@ -677,20 +677,41 @@ pub async fn classbox_open(
     drive: State<'_, DriveClient>,
     drive_id: String,
 ) -> AppResult<Listing> {
-    let home = cloud.drive_home(&drive_id).await?;
+    // Four calls to two different services. Naming the step in the error is
+    // what turns "could not open the class" into something actionable — the
+    // steps fail for very different reasons and are fixed in different files.
+    let step = |name: &'static str| move |e: AppError| step_failed(name, e);
+
+    let home = cloud.drive_home(&drive_id).await.map_err(step("場所の取得"))?;
     let (user_id, password, qwd) = cloud
         .drive_credential()
         .ok_or_else(|| AppError::other("サインインしていません"))?;
 
     drive
         .login(&home, &user_id, password.as_deref(), qwd.as_deref())
-        .await?;
+        .await
+        .map_err(step("クラスへのサインイン"))?;
     // Announces the sync before reading; the original always does, and a drive
     // that refuses it will refuse the read too — better to find out here.
-    drive.sync_start(&drive_id).await?;
+    drive
+        .sync_start(&drive_id)
+        .await
+        .map_err(step("同期の開始"))?;
 
-    let file = drive.drive_data(&drive_id, None).await?;
-    drive::listing::parse(file.bytes)
+    let file = drive
+        .drive_data(&drive_id, None)
+        .await
+        .map_err(step("中身の取得"))?;
+    drive::listing::parse(file.bytes).map_err(step("中身の解釈"))
+}
+
+/// Prefixes an error with the step that produced it, unless it is one the
+/// caller handles rather than shows.
+fn step_failed(step: &str, err: AppError) -> AppError {
+    match err {
+        AppError::NotLoggedIn => err,
+        other => AppError::other(format!("{step}に失敗: {other}")),
+    }
 }
 
 #[tauri::command]

@@ -198,7 +198,9 @@ async fn an_error_code_becomes_the_message_the_user_sees() {
         .unwrap_err()
         .to_string();
 
-    assert_eq!(err, "ライセンスの有効期限が切れています");
+    // The message the server sent, plus the request that produced it.
+    assert!(err.starts_with("ライセンスの有効期限が切れています"), "{err}");
+    assert!(err.contains("/users3/login"), "{err}");
     // A refused login must not leave a session behind.
     assert!(client.session().is_none());
 }
@@ -557,7 +559,7 @@ async fn a_login_that_keeps_failing_stops_rather_than_looping() {
     client.login("school01", "student01", "x").await.unwrap();
 
     let err = client.drive_entries().await.unwrap_err().to_string();
-    assert_eq!(err, "password changed");
+    assert!(err.starts_with("password changed"), "{err}");
 }
 
 #[tokio::test]
@@ -651,4 +653,27 @@ async fn a_home_response_without_the_field_names_what_it_did_contain() {
     let err = client.drive_home("d-1").await.unwrap_err().to_string();
     assert!(err.contains("list"), "{err}");
     assert!(err.contains("uid"), "{err}");
+}
+
+#[tokio::test]
+async fn a_failure_names_the_request_that_caused_it() {
+    // "HTTP 500" on its own could be any of a dozen calls. The path is what
+    // makes one screenshot enough to know which.
+    let stub = stub(vec![
+        ("200 OK", SCHOOL_OK.to_string()),
+        ("200 OK", login_ok()),
+        ("500 Internal Server Error", r#"{"uid":"u-1"}"#.to_string()),
+    ]);
+
+    let client = client();
+    client.set_root_server(&stub.base);
+    client.login("school01", "student01", "x").await.unwrap();
+
+    let err = client.drive_entries().await.unwrap_err().to_string();
+    assert!(err.contains("500"), "{err}");
+    assert!(err.contains("GET /mmjeditor2/2.0/drives/entry"), "{err}");
+    // Keys, so the reader can tell a wrong endpoint from a broken one.
+    assert!(err.contains("uid"), "{err}");
+    // Never the host: it is the tenant's and adds nothing.
+    assert!(!err.contains("127.0.0.1"), "{err}");
 }

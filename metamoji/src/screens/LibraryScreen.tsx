@@ -69,6 +69,7 @@ export function LibraryScreen() {
   const myBoxes = useClassroomStore((s) => s.myBoxes);
   const boxListing = useClassroomStore((s) => s.listing);
   const openingBox = useClassroomStore((s) => s.openingBox);
+  const listingError = useClassroomStore((s) => s.listingError);
   const loadingBoxes = useClassroomStore((s) => s.loadingBoxes);
   const boxesError = useClassroomStore((s) => s.boxesError);
 
@@ -495,6 +496,8 @@ export function LibraryScreen() {
             <ClassBoxGrid
               listing={boxListing}
               loading={openingBox}
+              error={listingError}
+              onRetry={() => void useClassroomStore.getState().openBox()}
               onOpen={(id, title) => void openClassNote(id, title)}
             />
           ) : loading ? (
@@ -744,10 +747,14 @@ function formatDate(iso: string): string {
 function ClassBoxGrid({
   listing,
   loading,
+  error,
+  onRetry,
   onOpen,
 }: {
   listing: ClassBoxListing | null;
   loading: boolean;
+  error: string | null;
+  onRetry: () => void;
   onOpen: (documentId: string, title: string | null) => void;
 }) {
   const { t } = useTranslation();
@@ -759,6 +766,21 @@ function ClassBoxGrid({
       <div className="library__empty">
         <Icon name="school" size={48} />
         <p>{t("クラスを開けませんでした。")}</p>
+        {/*
+         * The server's own words, verbatim. The message names the step and the
+         * request that failed; replacing it with a sentence of our own is what
+         * left this impossible to diagnose from a screenshot.
+         */}
+        {error && (
+          <div className="notice notice--error" style={{ textAlign: "left" }}>
+            <Icon name="error" size={20} />
+            <span>{error}</span>
+          </div>
+        )}
+        <button type="button" className="btn" onClick={onRetry}>
+          <Icon name="refresh" size={18} />
+          {t("再読み込み")}
+        </button>
       </div>
     );
   }

@@ -42,6 +42,11 @@ interface ClassroomState {
   /** The class box's contents, or null before it has been opened. */
   listing: ClassBoxListing | null;
   openingBox: boolean;
+  /** Why opening the box failed. Kept apart from `error` so the grid can show
+   * it in place rather than replacing it with a generic line. */
+  listingError: string | null;
+  /** Why the join code could not be fetched, if it could not. */
+  codeError: string | null;
   roomId: string | null;
   roomTitle: string | null;
   relay: RelayInfo | null;
@@ -87,6 +92,8 @@ export const useClassroomStore = create<ClassroomState>((set, get) => ({
   box: null,
   listing: null,
   openingBox: false,
+  listingError: null,
+  codeError: null,
   roomId: null,
   roomTitle: null,
   relay: null,
@@ -171,11 +178,17 @@ export const useClassroomStore = create<ClassroomState>((set, get) => ({
   openBox: async () => {
     const box = get().box;
     if (!box) return;
-    set({ openingBox: true, error: null });
+    set({ openingBox: true, error: null, listingError: null });
     try {
-      set({ listing: await api.classboxOpen(box.driveId), openingBox: false });
+      set({
+        listing: await api.classboxOpen(box.driveId),
+        openingBox: false,
+        listingError: null,
+      });
     } catch (err) {
-      set({ openingBox: false, listing: null, error: message(err) });
+      // The message names the step and the request; throwing it away and
+      // showing "could not open the class" is what made this undiagnosable.
+      set({ openingBox: false, listing: null, listingError: message(err) });
     }
   },
 

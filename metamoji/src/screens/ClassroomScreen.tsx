@@ -334,10 +334,18 @@ export function ClassroomScreen() {
           {store.openingBox ? (
             <p className="setting-note">{t("読み込み中…")}</p>
           ) : !store.listing ? (
-            <button type="button" className="btn" onClick={() => void store.openBox()}>
-              <Icon name="folder" size={18} />
-              {t("開く")}
-            </button>
+            <>
+              {store.listingError && (
+                <div className="notice notice--error" style={{ marginBottom: "var(--space-3)" }}>
+                  <Icon name="error" size={20} />
+                  <span>{store.listingError}</span>
+                </div>
+              )}
+              <button type="button" className="btn" onClick={() => void store.openBox()}>
+                <Icon name="folder" size={18} />
+                {store.listingError ? t("再読み込み") : t("開く")}
+              </button>
+            </>
           ) : store.listing.documents.length === 0 ? (
             <>
               <p className="setting-note">{t("ノートはまだありません。")}</p>
@@ -435,6 +443,13 @@ export function ClassroomScreen() {
             <label>{t("参加コード")}</label>
             <code className="setting-value">{store.box.joinCode ?? "—"}</code>
           </div>
+          {store.codeError && (
+            <p className="setting-note">
+              {t("このドライブには参加コードがありません。")}
+              <br />
+              {store.codeError}
+            </p>
+          )}
           <div className="button-grid">
             <button
               type="button"

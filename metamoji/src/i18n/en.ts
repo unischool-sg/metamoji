@@ -282,6 +282,7 @@ export const en: Record<string, string> = {
   "あなたは編集できる役割です({roles})。": "You may edit ({roles}).",
   "あなたは閲覧のみの役割です。": "You have view-only access.",
   "クラスを開けませんでした。": "Could not open the class.",
+  "このドライブには参加コードがありません。": "This drive has no join code.",
   "自分のクラス": "My classes",
   "再読み込み": "Reload",
   "読み込む": "Load",
