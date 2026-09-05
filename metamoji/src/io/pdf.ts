@@ -18,6 +18,9 @@ import PdfWorker from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 pdfjs.GlobalWorkerOptions.workerSrc = PdfWorker;
 
 export interface PdfPageImage {
+  /** 1-based page this image is of. Out-of-range requests are dropped, so the
+   * caller cannot pair the results back up by position. */
+  page: number;
   dataUrl: string;
   /** Rendered size in pixels. */
   width: number;
@@ -101,6 +104,7 @@ export async function renderPdfPages(
 
       await page.render({ canvas, canvasContext: ctx, viewport }).promise;
       out.push({
+        page: pageNumber,
         dataUrl: canvas.toDataURL("image/png"),
         width: canvas.width,
         height: canvas.height,

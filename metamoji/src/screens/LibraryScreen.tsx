@@ -26,7 +26,9 @@ import type {
   NoteSummary,
   Tag,
 } from "../ipc/api";
+import { rasterisePdfUnits } from "../io/atdocPdf";
 import { toGeneric } from "../model/converter";
+import type { GenericTree } from "../model/generic";
 import { createDocument } from "../model/factory";
 import { newId, newNoteId } from "../model/ids";
 import { markSessionClosed, readInterruptedSession, type OpenSession } from "../store/sessionStore";
@@ -56,6 +58,7 @@ export function LibraryScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [importing, setImporting] = useState(false);
+  const [busy, setBusy] = useState<string | null>(null);
   const [report, setReport] = useState<ImportReport | null>(null);
   const [renaming, setRenaming] = useState<string | null>(null);
   const [interrupted, setInterrupted] = useState<OpenSession | null>(() =>
@@ -141,7 +144,13 @@ export function LibraryScreen() {
     try {
       const noteId = newNoteId();
       const result = await api.atdocImport(selected, noteId);
-      const title = selected.split("/").pop()?.replace(/\.[^.]+$/, "") ?? t("取り込んだノート");
+      // The document's own name beats the file's: a note copied out of a class
+      // box is called something like `doc_1730.atdoc` on disk.
+      const title =
+        result.title ??
+        selected.split("/").pop()?.replace(/\.[^.]+$/, "") ??
+        t("取り込んだノート");
+      await renderBackgrounds(noteId, result.tree);
       await api.libraryCreate(result.tree, title);
       await refresh();
       setReport(result.report);
@@ -149,6 +158,7 @@ export function LibraryScreen() {
       setError(String(err));
     } finally {
       setImporting(false);
+      setBusy(null);
     }
   };
 
@@ -183,19 +193,37 @@ export function LibraryScreen() {
     void act(() => api.tagCreate(newId("tag"), name.trim(), color));
   };
 
+  /**
+   * Turns the note's embedded PDF into page images.
+   *
+   * Shared by both ways in, because a class-box note and a `.atdoc` on disk are
+   * the same document in the same format — one arrived over the network.
+   */
+  const renderBackgrounds = async (noteId: string, tree: GenericTree) => {
+    await rasterisePdfUnits(noteId, tree, (done, total) =>
+      setBusy(t("PDF を読み込んでいます… {done} / {total}", { done, total })),
+    );
+  };
+
   const openClassNote = async (documentId: string, title: string | null) => {
     if (view.kind !== "classbox") return;
     setError(null);
+    setBusy(t("ノートを取り込んでいます…"));
     try {
       const noteId = newNoteId();
       const result = await api.classboxOpenNote(view.id, documentId, noteId);
+      await renderBackgrounds(noteId, result.tree);
       const summary = await api.libraryCreate(
         result.tree,
-        title ?? t("クラスボックスのノート"),
+        // The class box's own title is the fresher of the two: renaming a note
+        // there does not rewrite the document inside it.
+        title ?? result.title ?? t("クラスボックスのノート"),
       );
       navigate(`/note/${summary.id}`);
     } catch (err) {
       setError(String(err));
+    } finally {
+      setBusy(null);
     }
   };
 
@@ -490,6 +518,13 @@ export function LibraryScreen() {
             <div className="notice notice--error" style={{ marginBottom: "var(--space-4)" }}>
               <Icon name="error" size={20} />
               <span>{error}</span>
+            </div>
+          )}
+
+          {busy && (
+            <div className="notice" style={{ marginBottom: "var(--space-4)" }}>
+              <Icon name="pending" size={20} />
+              <span>{busy}</span>
             </div>
           )}
 

@@ -73,6 +73,8 @@ export interface ImportReport {
 export interface AtdocImportResult {
   tree: GenericTree;
   report: ImportReport;
+  /** The document's own title, when it has one. */
+  title: string | null;
 }
 
 export interface ExportPagePayload {

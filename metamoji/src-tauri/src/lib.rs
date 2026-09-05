@@ -27,6 +27,9 @@ use crate::state::AppState;
 pub struct AtdocImportResult {
     pub tree: GenericTree,
     pub report: ImportReport,
+    /// The document's own title, when it has one. The caller decides whether to
+    /// use it — a class-box record's title is fresher, a file name is not.
+    pub title: Option<String>,
 }
 
 /// Imports a `.atdoc` file the user picked in a dialog.
@@ -36,12 +39,18 @@ pub struct AtdocImportResult {
 /// The returned report states exactly what was recovered rather than leaving the
 /// user to guess from a half-populated note.
 #[tauri::command]
-fn atdoc_import(path: String, new_root_id: String) -> AppResult<AtdocImportResult> {
+fn atdoc_import(
+    state: tauri::State<'_, AppState>,
+    path: String,
+    new_root_id: String,
+) -> AppResult<AtdocImportResult> {
     let bytes = std::fs::read(&path).map_err(AppError::Io)?;
     let result = atdoc::import(bytes, &new_root_id)?;
+    commands::store_imported_assets(&state, &new_root_id, result.assets)?;
     Ok(AtdocImportResult {
         tree: result.tree,
         report: result.report,
+        title: result.title,
     })
 }
 

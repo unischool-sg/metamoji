@@ -163,6 +163,7 @@ export const en: Record<string, string> = {
   "名前": "Name",
   "取り込む": "Import",
   "取り込み中…": "Importing…",
+  "ノートを取り込んでいます…": "Importing the note…",
   "新規ノート": "New note",
   "まだノートがありません。": "No notes yet.",
   "最初のノートを作成": "Create your first note",

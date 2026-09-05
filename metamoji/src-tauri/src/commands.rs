@@ -346,9 +346,7 @@ pub fn note_set_thumbnail(
 /// Stores bytes and returns the ticket the model will reference.
 ///
 /// `data` is a data URL, which is how the frontend already has an image after a
-/// paste or a file read. Assets are fetched back out through the `mmasset://`
-/// protocol rather than this command, so a large image crosses IPC once on the
-/// way in and never on the way out.
+/// paste or a file read.
 #[tauri::command]
 pub fn asset_put(
     state: State<'_, AppState>,
@@ -742,6 +740,7 @@ pub async fn classbox_revision(
 /// format rather than a simplification of it.
 #[tauri::command]
 pub async fn classbox_open_note(
+    state: State<'_, AppState>,
     drive: State<'_, DriveClient>,
     drive_id: String,
     document_id: String,
@@ -752,10 +751,34 @@ pub async fn classbox_open_note(
         .document_data(&drive_id, &document_id, revision.as_deref())
         .await?;
     let result = crate::atdoc::import(file.bytes, &new_root_id)?;
+    // The note does not exist yet — `library_create` writes the tree a moment
+    // from now — but its asset store does, because opening one creates it. The
+    // PDF a class handout is built on lands here rather than travelling to the
+    // webview as base64 and back.
+    store_imported_assets(&state, &new_root_id, result.assets)?;
     Ok(crate::AtdocImportResult {
         tree: result.tree,
         report: result.report,
+        title: result.title,
     })
+}
+
+/// Writes the binaries an import lifted out of the model tree into the note's
+/// own asset store, under the tickets the models now reference.
+pub(crate) fn store_imported_assets(
+    state: &AppState,
+    note_id: &str,
+    assets: Vec<crate::atdoc::ImportedAsset>,
+) -> AppResult<()> {
+    if assets.is_empty() {
+        return Ok(());
+    }
+    let store = state.note(note_id)?;
+    let store = store.lock().unwrap();
+    for asset in assets {
+        store.put_asset(&asset.ticket, &asset.mime, &asset.bytes)?;
+    }
+    Ok(())
 }
 
 #[tauri::command]
