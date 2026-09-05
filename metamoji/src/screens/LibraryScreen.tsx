@@ -64,6 +64,13 @@ export function LibraryScreen() {
   const [interrupted, setInterrupted] = useState<OpenSession | null>(() =>
     readInterruptedSession(),
   );
+  // Selection is a set of ids rather than a flag on the summaries because the
+  // summaries are replaced wholesale on every refresh; a flag would be lost
+  // each time, and the whole point of the selection is to outlive the actions
+  // taken on it.
+  const [selected, setSelected] = useState<ReadonlySet<string>>(EMPTY_SELECTION);
+  /** The last note clicked, so shift-click has a run to extend from. */
+  const [anchor, setAnchor] = useState<string | null>(null);
 
   // Class boxes sit in the sidebar with folders and tags because that is what
   // they are to the user: another place their notes live. That they come from
@@ -102,6 +109,14 @@ export function LibraryScreen() {
       setNotes(nextNotes);
       setFolders(nextFolders);
       setTags(nextTags);
+      // A note that has just been trashed, deleted or filtered out is gone
+      // from the grid, and a selection counting notes nobody can see is a
+      // count nobody can act on.
+      setSelected((prev) => {
+        if (prev.size === 0) return prev;
+        const live = new Set(nextNotes.map((n) => n.id).filter((id) => prev.has(id)));
+        return live.size === prev.size ? prev : live;
+      });
       setError(null);
     } catch (err) {
       setError(String(err));
@@ -115,6 +130,23 @@ export function LibraryScreen() {
     const timer = setTimeout(() => void refresh(), search ? 200 : 0);
     return () => clearTimeout(timer);
   }, [refresh, search]);
+
+  // Moving to another folder, tag or the trash ends the selection: the notes
+  // it held are no longer on screen, and carrying it across would leave the
+  // action bar offering to delete notes the user cannot see.
+  useEffect(() => {
+    setSelected(EMPTY_SELECTION);
+    setAnchor(null);
+  }, [view, search]);
+
+  useEffect(() => {
+    if (selected.size === 0) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") clearSelection();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [selected.size]);
 
   // -- notes ---------------------------------------------------------------
 
@@ -177,6 +209,78 @@ export function LibraryScreen() {
   const rename = (id: string, title: string) => {
     setRenaming(null);
     if (title.trim()) void act(() => api.libraryRename(id, title.trim()));
+  };
+
+  // -- selection ------------------------------------------------------------
+
+  const clearSelection = () => {
+    setSelected(EMPTY_SELECTION);
+    setAnchor(null);
+  };
+
+  const toggleSelect = (id: string, extend: boolean) => {
+    setSelected((prev) => selectionAfterClick(notes.map((n) => n.id), prev, anchor, id, extend));
+    setAnchor(id);
+  };
+
+  const selectAll = () => {
+    setSelected(new Set(notes.map((n) => n.id)));
+    setAnchor(null);
+  };
+
+  /**
+   * Runs `fn` over a set of notes, one at a time.
+   *
+   * Sequential rather than `Promise.all`: the backend is a single catalog and
+   * forty concurrent writes to it buy nothing, while one-at-a-time gives a
+   * count to show and lets a note that fails leave the rest untouched. One
+   * unreadable note out of forty should not abandon the other thirty-nine, so
+   * failures are counted and reported at the end instead of thrown.
+   */
+  const applyToNotes = async (ids: string[], fn: (id: string) => Promise<unknown>) => {
+    if (ids.length === 0) return;
+    setError(null);
+    let failures = 0;
+    let firstError = "";
+    for (const [index, id] of ids.entries()) {
+      setBusy(t("{done} / {total} 件を処理しています…", { done: index + 1, total: ids.length }));
+      try {
+        await fn(id);
+      } catch (err) {
+        failures += 1;
+        firstError ||= String(err);
+      }
+    }
+    setBusy(null);
+    clearSelection();
+    await refresh();
+    if (failures > 0) {
+      setError(t("{count} 件を処理できませんでした: {error}", { count: failures, error: firstError }));
+    }
+  };
+
+  const selectedIds = () => notes.filter((note) => selected.has(note.id)).map((note) => note.id);
+
+  const trashSelected = () => void applyToNotes(selectedIds(), (id) => api.librarySetTrashed(id, true));
+
+  const restoreSelected = () =>
+    void applyToNotes(selectedIds(), (id) => api.librarySetTrashed(id, false));
+
+  const deleteSelected = () => {
+    const ids = selectedIds();
+    if (!window.confirm(t("選択した {count} 件を完全に削除しますか?", { count: ids.length }))) return;
+    void applyToNotes(ids, (id) => api.libraryDelete(id));
+  };
+
+  /**
+   * Empties the trash — or as much of it as is on screen. With a search in the
+   * box the grid is a subset, and deleting the notes it does not show would be
+   * deleting things the user was not looking at.
+   */
+  const emptyTrash = () => {
+    const ids = notes.map((note) => note.id);
+    if (!window.confirm(t("ゴミ箱の {count} 件を完全に削除しますか?", { count: ids.length }))) return;
+    void applyToNotes(ids, (id) => api.libraryDelete(id));
   };
 
   // -- folders and tags -----------------------------------------------------
@@ -492,17 +596,81 @@ export function LibraryScreen() {
         </nav>
 
         <main className="library">
-          <div className="library__header">
-            <h1>{viewTitle}</h1>
-            <span className="library__count">
-              {t("{count} 件", {
-                count:
-                  view.kind === "classbox"
-                    ? (boxListing?.documents.length ?? 0)
-                    : notes.length,
-              })}
-            </span>
-          </div>
+          {/*
+            * Material's contextual top app bar: while notes are selected the
+            * title is replaced by what is selected and what can be done to it,
+            * rather than adding a second bar and pushing the grid down.
+            */}
+          {selected.size > 0 ? (
+            <div className="library__header library__header--select">
+              <button
+                type="button"
+                className="icon-btn"
+                onClick={clearSelection}
+                title={t("選択を解除")}
+              >
+                <Icon name="close" />
+                <span className="sr-only">{t("選択を解除")}</span>
+              </button>
+              <h1>{t("{count} 件を選択中", { count: selected.size })}</h1>
+              <div className="library__actions">
+                <button
+                  type="button"
+                  className="btn btn--text"
+                  onClick={selectAll}
+                  disabled={selected.size === notes.length}
+                >
+                  <Icon name="check" size={18} />
+                  {t("すべて選択")}
+                </button>
+                {view.kind === "trash" ? (
+                  <>
+                    <button type="button" className="btn" onClick={restoreSelected}>
+                      <Icon name="restore_from_trash" size={18} />
+                      {t("元に戻す操作")}
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn--primary btn--danger"
+                      onClick={deleteSelected}
+                    >
+                      <Icon name="delete_forever" size={18} />
+                      {t("完全に削除")}
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    type="button"
+                    className="btn btn--primary btn--danger"
+                    onClick={trashSelected}
+                  >
+                    <Icon name="delete" size={18} />
+                    {t("ゴミ箱へ")}
+                  </button>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="library__header">
+              <h1>{viewTitle}</h1>
+              <span className="library__count">
+                {t("{count} 件", {
+                  count:
+                    view.kind === "classbox"
+                      ? (boxListing?.documents.length ?? 0)
+                      : notes.length,
+                })}
+              </span>
+              {view.kind === "trash" && notes.length > 0 && (
+                <div className="library__actions">
+                  <button type="button" className="btn btn--danger" onClick={emptyTrash}>
+                    <Icon name="delete_forever" size={18} />
+                    {t("ゴミ箱を空にする")}
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
 
           {interrupted && (
             <div className="notice resume" style={{ marginBottom: "var(--space-4)" }}>
@@ -582,7 +750,9 @@ export function LibraryScreen() {
               )}
             </div>
           ) : (
-            <div className="library__grid">
+            <div
+              className={`library__grid${selected.size > 0 ? " library__grid--selecting" : ""}`}
+            >
               {notes.map((note) => (
                 <NoteCard
                   key={note.id}
@@ -590,6 +760,9 @@ export function LibraryScreen() {
                   tags={tags}
                   renaming={renaming === note.id}
                   inTrash={view.kind === "trash"}
+                  selected={selected.has(note.id)}
+                  selecting={selected.size > 0}
+                  onToggleSelect={(extend) => toggleSelect(note.id, extend)}
                   onOpen={() => navigate(`/note/${note.id}`)}
                   onStartRename={() => setRenaming(note.id)}
                   onRename={(title) => rename(note.id, title)}
@@ -628,6 +801,10 @@ interface CardProps {
   tags: Tag[];
   renaming: boolean;
   inTrash: boolean;
+  selected: boolean;
+  /** Something is selected — so a click on any card extends that, not opens. */
+  selecting: boolean;
+  onToggleSelect: (extend: boolean) => void;
   onOpen: () => void;
   onStartRename: () => void;
   onRename: (title: string) => void;
@@ -644,6 +821,9 @@ function NoteCard({
   tags,
   renaming,
   inTrash,
+  selected,
+  selecting,
+  onToggleSelect,
   onOpen,
   onStartRename,
   onRename,
@@ -659,14 +839,30 @@ function NoteCard({
 
   return (
     <div
-      className="note-card"
-      draggable={!inTrash}
+      className={`note-card${selected ? " note-card--selected" : ""}`}
+      draggable={!inTrash && !selecting}
       onDragStart={(e) => e.dataTransfer.setData("text/note-id", note.id)}
     >
       <button
         type="button"
+        className="icon-btn icon-btn--sm note-card__select"
+        aria-pressed={selected}
+        title={selected ? t("選択を解除") : t("選択")}
+        onClick={(e) => onToggleSelect(e.shiftKey)}
+      >
+        <Icon name="check" size={20} />
+        <span className="sr-only">{selected ? t("選択を解除") : t("選択")}</span>
+      </button>
+
+      <button
+        type="button"
         className="note-card__open"
-        onClick={onOpen}
+        /*
+         * Once a selection is running the grid is a picker, not a launcher:
+         * opening a note here would throw away the selection the user is
+         * halfway through building.
+         */
+        onClick={(e) => (selecting ? onToggleSelect(e.shiftKey) : onOpen())}
         disabled={renaming}
       >
         {note.thumbnail ? (
@@ -921,6 +1117,39 @@ function ClassBoxGrid({
       )}
     </>
   );
+}
+
+/** Shared empty set, so an empty selection is always the same object. */
+const EMPTY_SELECTION: ReadonlySet<string> = new Set<string>();
+
+/**
+ * The selection a click on `id` leaves behind.
+ *
+ * A plain click toggles one note. Shift-click fills in the run from the last
+ * note clicked, which is the only way to pick forty notes without forty
+ * clicks. The anchor may have left the grid since it was set — trashed,
+ * renamed out of the current search — and then there is no run to fill, so the
+ * click falls back to a plain toggle rather than selecting nothing.
+ */
+export function selectionAfterClick(
+  ids: readonly string[],
+  selected: ReadonlySet<string>,
+  anchor: string | null,
+  id: string,
+  extend: boolean,
+): Set<string> {
+  const next = new Set(selected);
+  const from = anchor === null ? -1 : ids.indexOf(anchor);
+  const to = ids.indexOf(id);
+
+  if (extend && from >= 0 && to >= 0) {
+    for (let i = Math.min(from, to); i <= Math.max(from, to); i += 1) next.add(ids[i]);
+    return next;
+  }
+
+  if (next.has(id)) next.delete(id);
+  else next.add(id);
+  return next;
 }
 
 /** `/算数/4月/` → the trail back to the top. Empty at the top itself. */

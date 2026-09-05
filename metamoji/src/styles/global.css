@@ -676,6 +676,41 @@ input[type="range"]::-webkit-slider-thumb {
   opacity: 1;
 }
 
+/*
+ * The selection tick. Hidden until the card is hovered so the grid stays a
+ * grid of notes; once anything is selected every card shows one, because a
+ * selection you can only extend by hovering is a selection you cannot see the
+ * shape of.
+ */
+.note-card__select {
+  position: absolute;
+  top: var(--space-1);
+  left: var(--space-1);
+  z-index: 1;
+  background: var(--md-sys-color-surface-container-high);
+  color: var(--md-sys-color-on-surface-variant);
+  box-shadow: var(--md-sys-elevation-1);
+  opacity: 0;
+  transition: opacity var(--md-sys-motion-duration-short2)
+    var(--md-sys-motion-easing-standard);
+}
+
+.note-card:hover .note-card__select,
+.note-card:focus-within .note-card__select,
+.library__grid--selecting .note-card__select {
+  opacity: 1;
+}
+
+.note-card__select[aria-pressed="true"] {
+  background: var(--md-sys-color-primary);
+  color: var(--md-sys-color-on-primary);
+}
+
+.note-card--selected {
+  outline: 2px solid var(--md-sys-color-primary);
+  outline-offset: 1px;
+}
+
 .note-card__footer .icon-btn {
   background: var(--md-sys-color-surface-container-high);
   color: var(--md-sys-color-on-surface-variant);
@@ -1434,6 +1469,19 @@ input.layer-row__name {
   align-items: baseline;
   gap: var(--space-3);
   margin-bottom: var(--space-5);
+}
+
+/* The contextual bar: a close button and a count sit centred, not on a baseline. */
+.library__header--select {
+  align-items: center;
+}
+
+/* Pushed to the trailing edge, Material's app-bar action slot. */
+.library__actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
 }
 
 .library__header h1 {
