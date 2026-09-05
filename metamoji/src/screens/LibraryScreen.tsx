@@ -814,36 +814,58 @@ function ClassBoxGrid({
   return (
     <>
       {crumbs.length > 0 && <Breadcrumbs crumbs={crumbs} onNavigate={onNavigate} />}
-      <div className="library__grid">
-        {here.map((folder) => (
-          <button
-            key={folder.absPath}
-            type="button"
-            className="folder-card"
-            onClick={() => onNavigate(folder.absPath)}
-          >
-            <Icon name="folder" size={32} />
-            <span className="folder-card__name">{folder.name}</span>
-          </button>
-        ))}
-        {notes.map((doc) => (
-          <div key={doc.documentId} className="note-card">
-            <button
-              type="button"
-              className="note-card__open"
-              onClick={() => onOpen(doc.documentId, doc.title)}
-            >
-              <div className="note-card__thumb" />
-            </button>
-            <div className="note-card__body">
-              <div className="note-card__title" title={doc.title ?? doc.documentId}>
-                {doc.title ?? doc.documentId}
-              </div>
-              <div className="note-card__meta">{t("端末に複製して開きます")}</div>
-            </div>
+
+      {/*
+       * Two grids, not one. A folder card is a single row of text and a note
+       * card is a whole page thumbnail, so putting both in one auto-fill grid
+       * makes every row as tall as its tallest member and leaves ragged gaps
+       * under the folders. Separate sections also let the folders be denser,
+       * which is what they want to be.
+       */}
+      {here.length > 0 && (
+        <section className="box-section">
+          <h2 className="box-section__title">{t("フォルダ")}</h2>
+          <div className="folder-grid">
+            {here.map((folder) => (
+              <button
+                key={folder.absPath}
+                type="button"
+                className="folder-card"
+                onClick={() => onNavigate(folder.absPath)}
+              >
+                <Icon name="folder" size={24} />
+                <span className="folder-card__name">{folder.name}</span>
+              </button>
+            ))}
           </div>
-        ))}
-      </div>
+        </section>
+      )}
+
+      {notes.length > 0 && (
+        <section className="box-section">
+          {/* Only worth a heading when there is something above it. */}
+          {here.length > 0 && <h2 className="box-section__title">{t("ノート")}</h2>}
+          <div className="library__grid">
+            {notes.map((doc) => (
+              <div key={doc.documentId} className="note-card">
+                <button
+                  type="button"
+                  className="note-card__open"
+                  onClick={() => onOpen(doc.documentId, doc.title)}
+                >
+                  <div className="note-card__thumb" />
+                </button>
+                <div className="note-card__body">
+                  <div className="note-card__title" title={doc.title ?? doc.documentId}>
+                    {doc.title ?? doc.documentId}
+                  </div>
+                  <div className="note-card__meta">{t("端末に複製して開きます")}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
     </>
   );
 }

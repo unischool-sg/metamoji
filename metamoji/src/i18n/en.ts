@@ -289,6 +289,7 @@ export const en: Record<string, string> = {
   "所属しているクラスはありません。下から参加してください。":
     "You do not belong to any class yet — join one below.",
   "クラスボックスのノート": "Notes in the class box",
+  "ノート": "Notes",
   "ノートはまだありません。": "No notes yet.",
   "このフォルダは空です。": "This folder is empty.",
   "最上位": "Top",

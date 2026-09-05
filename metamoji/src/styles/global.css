@@ -1468,15 +1468,40 @@ input.layer-row__name {
 
 /* --- class box folders -------------------------------------------------- */
 
+/*
+ * Folders and notes get a section each.
+ *
+ * A folder card is one row of text; a note card is a whole page thumbnail.
+ * In one `auto-fill` grid every row is as tall as its tallest member, so a
+ * single folder next to a note leaves a column of empty space under it. Two
+ * grids also let the folders be denser, which is what they want to be.
+ */
+.box-section + .box-section {
+  margin-top: var(--space-6);
+}
+
+.box-section__title {
+  margin: 0 0 var(--space-3);
+  font-size: var(--md-sys-typescale-title-small-size);
+  line-height: var(--md-sys-typescale-title-small-line-height);
+  letter-spacing: var(--md-sys-typescale-title-small-tracking);
+  font-weight: 500;
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+.folder-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: var(--space-3);
+}
+
 /* Material 3 outlined card, shaped like a folder row rather than a note. */
 .folder-card {
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  justify-content: center;
-  gap: var(--space-2);
-  min-height: 96px;
-  padding: var(--space-4);
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 56px;
+  padding: 0 var(--space-4);
   border: 1px solid var(--md-sys-color-outline-variant);
   border-radius: var(--md-sys-shape-corner-medium);
   background: var(--md-sys-color-surface-container-low);
@@ -1485,12 +1510,15 @@ input.layer-row__name {
 }
 
 .folder-card__name {
+  min-width: 0;
   font-size: var(--md-sys-typescale-title-small-size);
   line-height: var(--md-sys-typescale-title-small-line-height);
   letter-spacing: var(--md-sys-typescale-title-small-tracking);
   font-weight: 500;
   color: var(--md-sys-color-on-surface);
-  overflow-wrap: anywhere;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .breadcrumbs {
