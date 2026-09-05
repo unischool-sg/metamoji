@@ -48,6 +48,7 @@ import {
 import { currentLayer, searchableText } from "../model/types";
 import { IDENTITY_VIEWPORT, type Viewport } from "../render/viewport";
 import { EXPORT_DPI, renderPagesForExport, renderPageToDataUrl } from "../io/pageRender";
+import { editFor } from "../classroom/live";
 import { parsePageRange, readPdfInfo, renderPdfPages } from "../io/pdf";
 import { useAssetCache } from "../hooks/useAssetCache";
 import { useEditorStore } from "../store/editorStore";
@@ -87,6 +88,8 @@ export function EditorScreen() {
     { kind: "sent"; strokes: number } | { kind: "failed"; message: string } | null
   >(null);
   const [showClassError, setShowClassError] = useState(false);
+  /** True while this note's classroom is connected and pushing updates. */
+  const [watching, setWatching] = useState(false);
   const [editingUnitId, setEditingUnitId] = useState<ModelId | null>(null);
   // The live viewport is kept in a ref so panning and zooming never re-render
   // the editor. It is mirrored into state only while a text box is open, since
@@ -179,6 +182,45 @@ export function EditorScreen() {
       setSaveState("error");
     }
   }, [markSaved, setSaveState]);
+
+  // -- the classroom, while the note is open --------------------------------
+
+  useEffect(() => {
+    if (!noteId) return;
+    let stopped = false;
+    let unlisten: (() => void) | null = null;
+
+    void (async () => {
+      // Nothing to listen to unless the note came from a class box; the
+      // command says so rather than this having to ask first.
+      unlisten = await api.onClassNoteChange((change) => {
+        if (change.noteId !== noteId) return;
+        const session = useEditorStore.getState().session;
+        const doc = useEditorStore.getState().doc;
+        if (!session || !doc) return;
+        const edit = editFor(doc, change);
+        // Through `applyRemote`: someone else's writing is not this user's to
+        // undo, and must not go back out as a Direction of our own.
+        if (edit) session.applyRemote(edit);
+      });
+      if (stopped) {
+        unlisten?.();
+        return;
+      }
+      try {
+        setWatching(await api.classnoteWatch(noteId));
+      } catch (err) {
+        console.error("classroom watch failed", err);
+      }
+    })();
+
+    return () => {
+      stopped = true;
+      unlisten?.();
+      setWatching(false);
+      void api.classnoteUnwatch();
+    };
+  }, [noteId]);
 
   const autosaveSeconds = usePrefsStore((s) => s.autosaveSeconds);
 
@@ -597,6 +639,12 @@ export function EditorScreen() {
           <span className="save-chip">
             <Icon name="pending" size={16} />
             {busy}
+          </span>
+        )}
+        {watching && (
+          <span className="save-chip" title={t("教室につながっています")}>
+            <Icon name="school" size={16} />
+            {t("教室")}
           </span>
         )}
         {classSync && (

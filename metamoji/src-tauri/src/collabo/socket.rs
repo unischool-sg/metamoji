@@ -140,6 +140,13 @@ pub enum Command {
         save: bool,
         rip_off_size: String,
     },
+    /// Asks to be told when a booth gains data, rather than being sent it.
+    ///
+    /// The relay does not push a user their own posts — another device signed
+    /// in as the same person hears nothing about them. This is how it finds
+    /// out: `bidseq` lists `{boothId}={lastSequence}` and the relay answers
+    /// with `BoothUpdated` when a booth moves past the sequence given.
+    NotifyBoothUpdated { marks: Vec<(String, i64)> },
     /// Only ever sent in reply to the server's `Ping` (§4).
     PingResult,
     Disconnect,
@@ -188,6 +195,14 @@ impl Command {
                 .param("rsize", rip_off_size)
                 .param("binary", payload.len())
                 .payload(payload.clone()),
+            Command::NotifyBoothUpdated { marks } => Frame::new("AddNotifyBoothUpdated").param(
+                "bidseq",
+                marks
+                    .iter()
+                    .map(|(booth, sequence)| format!("{booth}={sequence}"))
+                    .collect::<Vec<_>>()
+                    .join(","),
+            ),
             Command::PingResult => Frame::new("PingResult"),
             // Never framed: the writer task breaks out before encoding it.
             Command::Disconnect => Frame::new("Disconnect"),

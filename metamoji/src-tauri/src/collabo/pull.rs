@@ -25,7 +25,7 @@ use crate::error::AppResult;
 use crate::model::GenericTree;
 
 /// A booth id and the bytes that arrived on it.
-type Received = Arc<Mutex<Vec<(String, Vec<u8>)>>>;
+type Received = Arc<Mutex<Vec<(String, i64, Vec<u8>)>>>;
 /// A ticket, its media type, and its bytes.
 type Asset = (String, String, Vec<u8>);
 
@@ -41,6 +41,9 @@ const LOGIN_GRACE: Duration = Duration::from_millis(1200);
 #[serde(rename_all = "camelCase")]
 pub struct RoomPull {
     pub directions: usize,
+    /// How far each booth was read, so the next connection can carry on.
+    #[serde(skip)]
+    pub marks: Vec<(String, i64)>,
     pub units: usize,
     pub strokes: usize,
     /// Elements the room says have been erased since.
@@ -235,10 +238,13 @@ pub async fn fetch(
     let seen = Arc::clone(&received);
     let connection = socket::connect(&relay.host, relay.port, move |event| {
         if let CollaboEvent::Direction {
-            booth_id, payload, ..
+            booth_id,
+            sequence,
+            payload,
+            ..
         } = event
         {
-            seen.lock().unwrap().push((booth_id, payload));
+            seen.lock().unwrap().push((booth_id, sequence, payload));
         }
     })
     .await?;
@@ -290,12 +296,22 @@ pub async fn fetch(
         .await;
     let _ = connection.commands.send(Command::Disconnect).await;
 
+    let marks = {
+        let mut highest: std::collections::HashMap<String, i64> = Default::default();
+        for (booth_id, sequence, _) in received.lock().unwrap().iter() {
+            let mark = highest.entry(booth_id.clone()).or_insert(*sequence);
+            *mark = (*mark).max(*sequence);
+        }
+        highest.into_iter().collect::<Vec<_>>()
+    };
     let aliases: std::collections::HashMap<String, String> = ledger
         .iter()
         .map(|l| (l.element_id.clone(), l.stroke_id.clone()))
         .collect();
     let directions = std::mem::take(&mut *received.lock().unwrap());
-    let result = fold(tree, directions, &aliases);
+    let (mut pull, assets) = fold(tree, directions, &aliases);
+    pull.marks = marks;
+    let result = (pull, assets);
 
     // Whether or not the room had anything, this user needs a layer of their
     // own to write on. Without one the next stroke lands on a layer the room
@@ -309,7 +325,7 @@ pub async fn fetch(
 /// Applies what came back, in the order it came back.
 fn fold(
     tree: &mut GenericTree,
-    directions: Vec<(String, Vec<u8>)>,
+    directions: Vec<(String, i64, Vec<u8>)>,
     aliases: &std::collections::HashMap<String, String>,
 ) -> (RoomPull, Vec<Asset>) {
     let mut pull = RoomPull {
@@ -319,7 +335,7 @@ fn fold(
     let mut assets = Vec::new();
     let mut unsupported: std::collections::BTreeMap<String, usize> = Default::default();
 
-    for (booth_id, payload) in directions {
+    for (booth_id, _sequence, payload) in directions {
         let Ok(direction) = apply::decode(&payload) else {
             *unsupported.entry("読み取れない Direction".into()).or_default() += 1;
             continue;
@@ -406,7 +422,7 @@ mod tests {
         let mut tree = GenericTree::new("root", "$sharenote");
         let (pull, assets) = fold(
             &mut tree,
-            vec![("P1".into(), b"not a container".to_vec())],
+            vec![("P1".into(), 1, b"not a container".to_vec())],
             &Default::default(),
         );
         assert_eq!(pull.directions, 1);

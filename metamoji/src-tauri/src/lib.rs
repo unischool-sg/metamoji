@@ -269,6 +269,8 @@ pub fn run() {
             commands::classbox_send_strokes,
             commands::classbox_link,
             commands::classbox_origin,
+            commands::classnote_watch,
+            commands::classnote_unwatch,
             commands::classbox_note_thumbnail,
             commands::classbox_close,
             atdoc_import,

@@ -754,6 +754,14 @@ impl NoteStore {
             -- knows them by. The note itself cannot answer this: a stroke the
             -- user erased is gone from the tree, and erasing is exactly what
             -- has to be reported.
+            -- How far this note has read each of its classroom booths, so a
+            -- reconnect asks for what is new rather than replaying a term's
+            -- worth of lessons into an open editor.
+            CREATE TABLE IF NOT EXISTS room_booths (
+                booth_id      TEXT PRIMARY KEY,
+                last_sequence INTEGER NOT NULL
+            );
+
             CREATE TABLE IF NOT EXISTS room_strokes (
                 stroke_id  TEXT PRIMARY KEY,
                 element_id TEXT NOT NULL,
@@ -941,6 +949,27 @@ impl NoteStore {
             })
         })?;
         Ok(rows.collect::<Result<Vec<_>, _>>()?)
+    }
+
+    /// The sequence each booth has been read up to.
+    pub fn booth_marks(&self) -> AppResult<Vec<(String, i64)>> {
+        let mut stmt = self
+            .conn
+            .prepare("SELECT booth_id, last_sequence FROM room_booths")?;
+        let rows = stmt.query_map([], |r| Ok((r.get(0)?, r.get(1)?)))?;
+        Ok(rows.collect::<Result<Vec<_>, _>>()?)
+    }
+
+    /// Moves a booth's mark forward. Never backwards: a direction that arrives
+    /// out of order must not make the note ask for everything again.
+    pub fn mark_booth(&self, booth_id: &str, sequence: i64) -> AppResult<()> {
+        self.conn.execute(
+            "INSERT INTO room_booths(booth_id, last_sequence) VALUES (?1, ?2)
+             ON CONFLICT(booth_id) DO UPDATE SET
+                 last_sequence = MAX(last_sequence, excluded.last_sequence)",
+            params![booth_id, sequence],
+        )?;
+        Ok(())
     }
 
     pub fn forget_room_stroke(&self, stroke_id: &str) -> AppResult<()> {

@@ -121,6 +121,18 @@ function parkedProps(value: unknown): PropDict {
   return (value as { [EXTRA_KEY]?: PropDict })[EXTRA_KEY] ?? {};
 }
 
+/**
+ * The name the classroom knows a page or a layer by.
+ *
+ * Not the same as `id`: that one is this app's, and for a note taken from a
+ * class box the two are different. Anything addressing the room — a booth, a
+ * Direction's target — needs this one.
+ */
+export function sourceIdOf(value: Page | Layer, key: "pageId" | "layerId"): string {
+  const parked = parkedProps(value)[key];
+  return typeof parked === "string" ? parked : value.id;
+}
+
 const DEFAULT_PEN: PenAttributes = {
   color: "#1f1f1f",
   width: 2.4,
@@ -666,7 +678,7 @@ export function unitFromGeneric(node: GenericModel): Unit | null {
   return null;
 }
 
-function strokeFromProp(raw: PropValue): Stroke | null {
+export function strokeFromProp(raw: PropValue): Stroke | null {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
   const p = raw as PropDict;
 

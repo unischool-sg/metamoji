@@ -889,6 +889,61 @@ pub async fn classbox_send_strokes(
     Ok(posted.sent.len() + posted.removed.len())
 }
 
+/// Watches the classroom of an open note, so edits made elsewhere show up here
+/// as they happen.
+///
+/// Not polling: the relay pushes. `AttachBooth` says where to resume and
+/// everything after that arrives on the connection, which is both cheaper and
+/// more immediate than asking again on a timer would be.
+#[tauri::command]
+pub async fn classnote_watch(
+    app: tauri::AppHandle,
+    state: State<'_, AppState>,
+    cloud: State<'_, CloudClient>,
+    classroom: State<'_, ClassroomState>,
+    note_id: String,
+) -> AppResult<bool> {
+    let Some(origin) = state.catalog.lock().unwrap().class_origin(&note_id)? else {
+        return Ok(false);
+    };
+    let Some(room_id) = origin.room_id else {
+        return Ok(false);
+    };
+
+    let store = state.note(&note_id)?;
+    let (tree, marks) = {
+        let held = store.lock().unwrap();
+        (held.read_tree()?, held.booth_marks()?)
+    };
+    let Some(session) = cloud.session() else {
+        return Ok(false);
+    };
+    let booths = collabo::pull::booths_for(&tree, &session.user_id);
+    if booths.is_empty() {
+        return Ok(false);
+    }
+
+    let watch = collabo::watch::start(
+        &app,
+        &cloud,
+        &classroom,
+        &room_id,
+        &note_id,
+        &booths,
+        &marks.into_iter().collect(),
+        store,
+    )
+    .await?;
+    classroom.set_watch(Some(watch)).await;
+    Ok(true)
+}
+
+#[tauri::command]
+pub async fn classnote_unwatch(classroom: State<'_, ClassroomState>) -> AppResult<()> {
+    classroom.set_watch(None).await;
+    Ok(())
+}
+
 /// Records that a note is a copy of a class-box document.
 #[tauri::command]
 pub fn classbox_link(

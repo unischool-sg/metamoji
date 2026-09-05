@@ -7,7 +7,7 @@
 
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import type { GenericTree } from "../model/generic";
+import type { GenericModel, GenericTree } from "../model/generic";
 import { memoryBackend } from "./memoryBackend";
 
 export interface Tag {
@@ -80,6 +80,24 @@ export interface RoomPull {
   unsupported: string[];
   /** Set when the room could not be reached; the note still opens. */
   error: string | null;
+}
+
+/** One decoded change from a note's classroom, as it happens. */
+export type ClassNoteChangeItem =
+  | { kind: "stroke"; id: string; stroke: unknown }
+  | { kind: "unit"; unitId: string; models: GenericModel[] }
+  | { kind: "remove"; id: string }
+  | { kind: "asset"; ticket: string };
+
+export interface ClassNoteChange {
+  noteId: string;
+  boothId: string;
+  sequence: number;
+  /** The page as the classroom names it — not this app's model id. */
+  pageId: string;
+  layerId: string | null;
+  layerType: string | null;
+  changes: ClassNoteChangeItem[];
 }
 
 /** Where a note came from, when it came from a class box. */
@@ -684,6 +702,31 @@ export async function classboxOrigin(noteId: string): Promise<ClassOrigin | null
 export async function classboxSendStrokes(noteId: string): Promise<number> {
   if (!isTauri()) return 0;
   return invoke<number>("classbox_send_strokes", { noteId });
+}
+
+/**
+ * Stays in the note's classroom while it is open, so an edit made anywhere
+ * else in the class arrives here as it happens.
+ *
+ * Returns false for a note with no classroom to watch. There is no polling
+ * interval to choose: the relay pushes.
+ */
+export async function classnoteWatch(noteId: string): Promise<boolean> {
+  if (!isTauri()) return false;
+  return invoke<boolean>("classnote_watch", { noteId });
+}
+
+export async function classnoteUnwatch(): Promise<void> {
+  if (!isTauri()) return;
+  await invoke("classnote_unwatch");
+}
+
+/** Subscribes to what the watched note's classroom sends. */
+export async function onClassNoteChange(
+  fn: (change: ClassNoteChange) => void,
+): Promise<() => void> {
+  if (!isTauri()) return () => {};
+  return listen<ClassNoteChange>("classnote://change", (e) => fn(e.payload));
 }
 
 export async function classboxNoteThumbnail(

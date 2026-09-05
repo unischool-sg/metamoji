@@ -34,6 +34,10 @@ struct Active {
 
 pub struct ClassroomState {
     active: Mutex<Option<Active>>,
+    /// The room being watched on behalf of an open note, if any. Separate from
+    /// `active`: the classroom screen and the editor want different rooms, and
+    /// one closing must not take the other's connection with it.
+    watching: tokio::sync::Mutex<Option<super::watch::Watch>>,
     /// Ours to invent, and the seed for the registration below.
     device_code: String,
     /// The service's answer to that code. `None` until we have asked.
@@ -53,6 +57,7 @@ impl ClassroomState {
     ) -> Self {
         Self {
             active: Mutex::new(None),
+            watching: tokio::sync::Mutex::new(None),
             device_code,
             device_id: Mutex::new(device_id),
             store_path,
@@ -115,6 +120,19 @@ impl ClassroomState {
             }
             other => other,
         }
+    }
+
+    /// Replaces whatever note was being watched. Returns nothing: a watch that
+    /// could not be stopped is one whose socket is already gone.
+    pub async fn set_watch(&self, next: Option<super::watch::Watch>) {
+        let previous = std::mem::replace(&mut *self.watching.lock().await, next);
+        if let Some(previous) = previous {
+            previous.stop().await;
+        }
+    }
+
+    pub async fn watched_note(&self) -> Option<String> {
+        self.watching.lock().await.as_ref().map(|w| w.note_id.clone())
     }
 
     pub fn room_id(&self) -> Option<String> {
