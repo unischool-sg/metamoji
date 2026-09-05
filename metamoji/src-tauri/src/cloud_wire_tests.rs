@@ -9,133 +9,8 @@
 //! to assert on bytes that a typed server would have already normalised away,
 //! and adding an HTTP server dependency to ship one test is a poor trade.
 
-use std::io::{BufRead, BufReader, Read, Write};
-use std::net::{TcpListener, TcpStream};
-use std::sync::mpsc::{channel, Receiver, Sender};
-use std::thread;
-
-use serde_json::Value;
-
 use crate::cloud::{CloudClient, DEFAULT_ROOT_SERVER};
-
-/// One request as the stub saw it.
-#[derive(Debug, Clone)]
-struct Seen {
-    method: String,
-    path: String,
-    headers: Vec<(String, String)>,
-    body: String,
-}
-
-impl Seen {
-    fn header(&self, name: &str) -> Option<&str> {
-        self.headers
-            .iter()
-            .find(|(k, _)| k.eq_ignore_ascii_case(name))
-            .map(|(_, v)| v.as_str())
-    }
-
-    fn json(&self) -> Value {
-        serde_json::from_str(&self.body).expect("body was not JSON")
-    }
-}
-
-struct Stub {
-    base: String,
-    seen: Receiver<Seen>,
-}
-
-/// Serves canned replies in order, recording what it was asked for.
-///
-/// `{BASE}` in a reply body is replaced with the stub's own base URL. The
-/// two-step flow needs the tenant server the first reply names to be this same
-/// stub, and its port is only known after it binds.
-fn stub(replies: Vec<(&'static str, String)>) -> Stub {
-    let listener = TcpListener::bind("127.0.0.1:0").unwrap();
-    let port = listener.local_addr().unwrap().port();
-    let base = format!("http://127.0.0.1:{port}/");
-    let (tx, rx): (Sender<Seen>, Receiver<Seen>) = channel();
-
-    let replies: Vec<(&'static str, String)> = replies
-        .into_iter()
-        .map(|(status, body)| (status, body.replace("{BASE}", &base)))
-        .collect();
-
-    thread::spawn(move || {
-        for (index, stream) in listener.incoming().enumerate() {
-            let Ok(mut stream) = stream else { break };
-            let seen = read_request(&mut stream);
-            let (status, body) = replies
-                .get(index)
-                .cloned()
-                .unwrap_or(("200 OK", "{}".to_string()));
-
-            let response = format!(
-                "HTTP/1.1 {status}\r\n\
-                 content-type: application/json\r\n\
-                 content-length: {}\r\n\
-                 set-cookie: JSESSIONID=abc123; Path=/\r\n\
-                 connection: close\r\n\r\n{body}",
-                body.len()
-            );
-            let _ = stream.write_all(response.as_bytes());
-            let _ = tx.send(seen);
-            if index + 1 >= replies.len() {
-                break;
-            }
-        }
-    });
-
-    Stub { base, seen: rx }
-}
-
-fn read_request(stream: &mut TcpStream) -> Seen {
-    let mut reader = BufReader::new(stream.try_clone().unwrap());
-
-    let mut start = String::new();
-    reader.read_line(&mut start).unwrap();
-    let mut parts = start.split_whitespace();
-    let method = parts.next().unwrap_or_default().to_string();
-    let path = parts.next().unwrap_or_default().to_string();
-
-    let mut headers = Vec::new();
-    let mut length = 0usize;
-    loop {
-        let mut line = String::new();
-        if reader.read_line(&mut line).unwrap() == 0 {
-            break;
-        }
-        let line = line.trim_end().to_string();
-        if line.is_empty() {
-            break;
-        }
-        if let Some((name, value)) = line.split_once(african_colon()) {
-            let (name, value) = (name.trim().to_string(), value.trim().to_string());
-            if name.eq_ignore_ascii_case("content-length") {
-                length = value.parse().unwrap_or(0);
-            }
-            headers.push((name, value));
-        }
-    }
-
-    let mut body = vec![0u8; length];
-    if length > 0 {
-        reader.read_exact(&mut body).unwrap();
-    }
-
-    Seen {
-        method,
-        path,
-        headers,
-        body: String::from_utf8_lossy(&body).to_string(),
-    }
-}
-
-/// `split_once(':')` — named so the literal does not read as a typo next to the
-/// `\r\n` handling above.
-fn african_colon() -> char {
-    ':'
-}
+use crate::test_support::stub;
 
 fn client() -> CloudClient {
     // No store path: these tests are about the wire, and a shared session file
@@ -532,7 +407,7 @@ async fn the_session_file_is_not_world_readable() {
 }
 
 #[tokio::test]
-async fn listing_drives_is_a_get_that_still_carries_a_body() {
+async fn listing_drives_is_a_get_with_no_body() {
     // Two things at once, both easy to get wrong: `/drives/entry` is a `GET`,
     // and this API sends a JSON body on `GET` anyway
     // (docs/typespec/README.md §通信の基本仕様).
@@ -560,7 +435,10 @@ async fn listing_drives_is_a_get_that_still_carries_a_body() {
 
     assert_eq!(list.method, "GET");
     assert_eq!(list.path, "/mmjeditor2/2.0/drives/entry");
-    assert_eq!(list.json()["productName"], "Android-Share-G-ClassRoom");
+    // No body. `docs/typespec/README.md` says this API sends JSON on `GET`,
+    // but that is per-command: `CsCloudService$28` passes a literal null, and
+    // sending one anyway is what broke the drive-home call.
+    assert_eq!(list.body, "", "GET /drives/entry sends no body");
 
     assert_eq!(entries.len(), 2, "the entry with no id is dropped");
     assert_eq!(entries[0].name.as_deref(), Some("1年1組"));
@@ -588,6 +466,9 @@ async fn a_drives_home_is_fetched_with_get() {
 
     assert_eq!(seen.method, "GET");
     assert_eq!(seen.path, "/mmjeditor2/2.0/drives/d-1/home");
+    // Likewise `CsCloudService$30`. The symptom of getting this wrong was a
+    // `200` with no `homeDir` in it, which reads as a server problem.
+    assert_eq!(seen.body, "", "GET /drives/<id>/home sends no body");
     // Every drive path is concatenated onto this, so it needs the slash.
     assert_eq!(home, "https://drive.example/x/");
 }
@@ -750,4 +631,24 @@ fn a_client_with_no_saved_root_server_is_not_pointed_at_production_by_a_test() {
     // above calls `set_root_server` before anything else.
     assert_eq!(client.root_server(), crate::cloud::DEFAULT_ROOT_SERVER);
     assert!(client.session().is_none(), "no session, so no request is possible");
+}
+
+#[tokio::test]
+async fn a_home_response_without_the_field_names_what_it_did_contain() {
+    // "サーバーの応答に homeDir がありません" on its own is undiagnosable from a
+    // screenshot. The keys say whether the call reached the right endpoint at
+    // all — and keys are safe to show; the values are the user's.
+    let stub = stub(vec![
+        ("200 OK", SCHOOL_OK.to_string()),
+        ("200 OK", login_ok()),
+        ("200 OK", r#"{"list":[],"uid":"u-1"}"#.to_string()),
+    ]);
+
+    let client = client();
+    client.set_root_server(&stub.base);
+    client.login("school01", "student01", "x").await.unwrap();
+
+    let err = client.drive_home("d-1").await.unwrap_err().to_string();
+    assert!(err.contains("list"), "{err}");
+    assert!(err.contains("uid"), "{err}");
 }

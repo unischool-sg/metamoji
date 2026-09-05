@@ -130,6 +130,17 @@ GET  {homeDir}rest/drives/{id}/documents/{docId}/data → ノート本体
 `sync-drive.tsp` は「`homeDir` がどのレスポンスで払い出されるか未確定」と
 記しているが、払い出しているのは `GET /drives/{driveId}/home`(`drive.tsp`)。
 
+⚠️ **この API の「GET でも JSON ボディを送る」はコマンドごとに違う。**
+`docs/typespec/README.md` は全体の性質のように書いているが、実際には
+呼び出し側が `stringify()` を呼ぶコマンドだけで、`/drives/entry` と
+`/drives/{id}/home` は**ボディの位置に null を渡している**
+(`CsCloudService$28` / `$30`)。付けても無害ではなく、drive-home は
+`200` を返しつつ `homeDir` を含めなくなる ── サーバー側の不具合に見える壊れ方。
+
+⚠️ **`requestBody` はフォーム項目ではない。** `SdHttpClient` の内部パラメータ
+Map のキーで、その値の文字列が `application/json` のボディそのものになる
+(`SdHttpClient.smali` L1409-1449)。form-urlencoded で送ると黙って拒否される。
+
 ノート本体は `.atdoc` と同じコンテナ形式なので、**ローカルファイル用に書いた
 インポータがそのまま読める**。実形式に対して作っておいた見返り。
 ただし書き戻せないので、開くときは端末へ複製する ── 同期しているふりはしない。

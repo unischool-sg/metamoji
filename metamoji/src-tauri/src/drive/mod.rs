@@ -9,8 +9,11 @@
 //!   `CloudClient::drive_home` — there is no fixed host
 //! * it keeps **its own session cookie**, so signing into the tenant does not
 //!   sign you into a drive; `login` here is a second, separate handshake
-//! * `GET`/`DELETE` send no body at all, and `POST` wraps its JSON in a
-//!   `requestBody` key rather than sending it directly
+//! * `GET`/`DELETE` send no body at all. `POST` does — and `requestBody` is a
+//!   key in `SdHttpClient`'s *internal* parameter map, not a form field: the
+//!   string under it becomes the raw body, typed `application/json`
+//!   (`SdHttpClient.smali` L1409-1449). Sending it as a form field is a silent
+//!   way to be refused.
 //! * booleans go on the wire as the **strings** `"true"`/`"false"`
 //! * the headers differ too: `MMJSdCloudService/1.0`, an `X-DM-Device`, and no
 //!   `X-DM-AppVersion`
@@ -137,8 +140,11 @@ impl DriveClient {
             .http
             .post(&url)
             .headers(self.headers())
-            // `POST` wraps the JSON in `requestBody`; it is not the body itself.
-            .form(&[("requestBody", Value::Object(body).to_string())])
+            .header(
+                reqwest::header::CONTENT_TYPE,
+                "application/json; charset=utf-8",
+            )
+            .body(Value::Object(body).to_string())
             .send()
             .await
             .map_err(|e| AppError::other(format!("クラスボックスに接続できません: {e}")))?;

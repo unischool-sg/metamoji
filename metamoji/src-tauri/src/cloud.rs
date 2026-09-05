@@ -454,7 +454,7 @@ impl CloudClient {
         command: &str,
         params: Map<String, Value>,
     ) -> AppResult<Map<String, Value>> {
-        self.command(co_login_id, reqwest::Method::POST, command, params)
+        self.command(co_login_id, reqwest::Method::POST, command, Some(params))
             .await
     }
 
@@ -516,32 +516,35 @@ impl CloudClient {
         Ok(())
     }
 
-    /// A command with an explicit method.
+    /// A command with an explicit method and an explicit body.
     ///
-    /// The verb is not decoration: `/drives/entry` and `/drives/{id}/home` are
-    /// `GET`, and the tenant answers a `POST` to them differently. The body
-    /// goes along regardless — `CsParamBaseAbstract#stringify()` is called for
-    /// every request and the client sends JSON on `GET` too, which is unusual
-    /// enough that `docs/typespec/README.md` calls it out.
+    /// Both matter, and neither is uniform across this API.
+    ///
+    /// `docs/typespec/README.md` says the client sends a JSON body even on
+    /// `GET`. That is true of *some* commands — the ones whose call site calls
+    /// `stringify()` — but not all: `/drives/entry` and `/drives/{id}/home`
+    /// pass a literal `null` where the body goes
+    /// (`CsCloudService$28`/`$30`). Sending one anyway is not harmless; the
+    /// drive-home call answers `200` with no `homeDir` in it.
     async fn command(
         &self,
         co_login_id: &str,
         method: reqwest::Method,
         command: &str,
-        params: Map<String, Value>,
+        body: Option<Map<String, Value>>,
     ) -> AppResult<Map<String, Value>> {
         let host = self.school_for(co_login_id).await?.server_url;
         // `getRestHost() + contextRoot + command`, exactly as
         // `CsHttpClient.sendRequestWithCommand` builds it.
         let url = format!("{host}{REST_BASE_PATH}{command}");
 
-        let body = Value::Object(params);
-        match self.send(method.clone(), &url, Some(body.clone())).await {
+        let body = body.map(Value::Object);
+        match self.send(method.clone(), &url, body.clone()).await {
             Err(AppError::NotLoggedIn) => {
                 // Once, and only once: a credential the server keeps rejecting
                 // must surface as a sign-in problem rather than loop.
                 self.reauthenticate().await?;
-                self.send(method, &url, Some(body)).await
+                self.send(method, &url, body).await
             }
             other => other,
         }
@@ -729,18 +732,31 @@ impl CloudClient {
     /// issued. It is issued here: `GET /drives/{driveId}/home` on the tenant.
     pub async fn drive_home(&self, drive_id: &str) -> AppResult<String> {
         let co_login_id = self.signed_in_school()?;
-        let mut params = self.base_params();
-        params.insert("driveId".into(), json!(drive_id));
-
+        // The drive id is in the path; `CsCloudService$30` sends no body at
+        // all, and sending one gets a `200` back with no `homeDir` in it.
         let body = self
             .command(
                 &co_login_id,
                 reqwest::Method::GET,
                 &format!("/drives/{drive_id}/home"),
-                params,
+                None,
             )
             .await?;
-        Ok(with_trailing_slash(&required_str(&body, "homeDir")?))
+
+        match opt_str(&body, "homeDir") {
+            Some(home) => Ok(with_trailing_slash(&home)),
+            // Naming the keys that *were* there turns "it did not work" into
+            // something diagnosable from a screenshot. Keys only — the values
+            // are the user's.
+            None => Err(AppError::other(format!(
+                "サーバーの応答に homeDir がありません(応答のキー: {})",
+                if body.is_empty() {
+                    "なし".to_string()
+                } else {
+                    body.keys().cloned().collect::<Vec<_>>().join(", ")
+                }
+            ))),
+        }
     }
 
     /// The drives the signed-in user belongs to — their class boxes.
@@ -753,13 +769,9 @@ impl CloudClient {
     /// `hidden`. Note `id`, not `driveId` — the accessor reads `"id"`.
     pub async fn drive_entries(&self) -> AppResult<Vec<DriveEntry>> {
         let co_login_id = self.signed_in_school()?;
+        // No body: `CsCloudService$28` passes a literal null.
         let body = self
-            .command(
-                &co_login_id,
-                reqwest::Method::GET,
-                "/drives/entry",
-                self.base_params(),
-            )
+            .command(&co_login_id, reqwest::Method::GET, "/drives/entry", None)
             .await?;
 
         let list = body

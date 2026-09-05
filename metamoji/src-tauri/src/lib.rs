@@ -4,6 +4,11 @@ pub mod collabo;
 pub mod drive;
 #[cfg(test)]
 mod cloud_wire_tests;
+#[cfg(test)]
+#[path = "drive/wire_tests.rs"]
+mod drive_wire_tests;
+#[cfg(test)]
+mod test_support;
 mod commands;
 mod error;
 pub mod export;
