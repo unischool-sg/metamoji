@@ -90,6 +90,9 @@ export function EditorScreen() {
   const [showClassError, setShowClassError] = useState(false);
   /** True while this note's classroom is connected and pushing updates. */
   const [watching, setWatching] = useState(false);
+  /** True for a note taken from a class box, connected or not. */
+  const [classNote, setClassNote] = useState(false);
+  const [resyncing, setResyncing] = useState(false);
   const [editingUnitId, setEditingUnitId] = useState<ModelId | null>(null);
   // The live viewport is kept in a ref so panning and zooming never re-render
   // the editor. It is mirrored into state only while a text box is open, since
@@ -204,6 +207,13 @@ export function EditorScreen() {
     const off: Array<() => void> = [];
     let retry: ReturnType<typeof setTimeout> | null = null;
 
+    void api
+      .classboxOrigin(noteId)
+      .then((origin) => {
+        if (!stopped) setClassNote(origin !== null);
+      })
+      .catch(() => {});
+
     const connect = async () => {
       if (stopped) return;
       try {
@@ -259,9 +269,39 @@ export function EditorScreen() {
       if (retry) clearTimeout(retry);
       for (const stop of off) stop();
       setWatching(false);
+      setClassNote(false);
       void api.classnoteUnwatch();
     };
   }, [noteId]);
+
+  /**
+   * Compares the note with its classroom and repairs the difference.
+   *
+   * On the toolbar rather than buried in an error, because the two sides can
+   * drift without either noticing — a post that did not land looks exactly
+   * like one that did from here. Nothing to diagnose first: press it.
+   */
+  const resync = useCallback(async () => {
+    const id = useEditorStore.getState().noteId;
+    if (!id 
+      || resyncing) return;
+    setResyncing(true);
+    setShowClassError(false);
+    try {
+      const report = await api.classnoteResync(id);
+      if (report && report.problems.length > 0) {
+        setClassSync({ kind: "failed", message: report.problems.join(" / ") });
+        setShowClassError(true);
+      } else {
+        setClassSync({ kind: "sent", strokes: report?.sent ?? 0 });
+      }
+    } catch (err) {
+      setClassSync({ kind: "failed", message: String(err) });
+      setShowClassError(true);
+    } finally {
+      setResyncing(false);
+    }
+  }, [resyncing]);
 
   const autosaveSeconds = usePrefsStore((s) => s.autosaveSeconds);
 
@@ -682,11 +722,27 @@ export function EditorScreen() {
             {busy}
           </span>
         )}
-        {watching && (
-          <span className="save-chip" title={t("教室につながっています")}>
-            <Icon name="school" size={16} />
-            {t("教室")}
-          </span>
+        {classNote && (
+          <>
+            <span
+              className="save-chip"
+              data-state={watching ? "saved" : "dirty"}
+              title={watching ? t("教室につながっています") : t("教室につながっていません")}
+            >
+              <Icon name="school" size={16} />
+              {t("教室")}
+            </span>
+            <button
+              type="button"
+              className="icon-btn"
+              onClick={() => void resync()}
+              disabled={resyncing}
+              title={t("同期し直す")}
+            >
+              <Icon name="refresh" />
+              <span className="sr-only">{t("同期し直す")}</span>
+            </button>
+          </>
         )}
         {classSync && (
           <button
@@ -783,30 +839,7 @@ export function EditorScreen() {
         <div className="notice notice--error" style={{ margin: "var(--space-3)" }}>
           <Icon name="error" size={20} />
           <span>{classSync.message}</span>
-          <button
-            type="button"
-            className="btn btn--text"
-            onClick={() => {
-              const id = useEditorStore.getState().noteId;
-              if (!id) return;
-              setShowClassError(false);
-              setClassSync(null);
-              void (async () => {
-                try {
-                  const report = await api.classnoteResync(id);
-                  if (report && report.problems.length > 0) {
-                    setClassSync({ kind: "failed", message: report.problems.join(" / ") });
-                    setShowClassError(true);
-                  } else {
-                    setClassSync({ kind: "sent", strokes: report?.sent ?? 0 });
-                  }
-                } catch (err) {
-                  setClassSync({ kind: "failed", message: String(err) });
-                  setShowClassError(true);
-                }
-              })();
-            }}
-          >
+          <button type="button" className="btn btn--text" onClick={() => void resync()}>
             {t("同期し直す")}
           </button>
           <button

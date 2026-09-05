@@ -126,6 +126,7 @@ export const en: Record<string, string> = {
   "保存に失敗": "Save failed",
   "教室に送れませんでした": "Could not send to the classroom",
   "教室につながっています": "Connected to the classroom",
+  "教室につながっていません": "Not connected to the classroom",
   "同期し直す": "Sync again",
   "このノートは古い形式で取り込まれているため、教室に送れません。クラスボックスから開き直してください。":
     "This note was imported by an older build and cannot be sent to the classroom. Open it again from the class box.",
