@@ -141,12 +141,22 @@ fn client() -> CloudClient {
     CloudClient::new("test-machine".into(), "ja_JP".into(), "Asia/Tokyo".into()).unwrap()
 }
 
-fn login_ok(rest_host: &str) -> String {
-    format!(
-        r#"{{"errorCode":0,"userId":"u-1","loginName":"student01","name":"山田 太郎",
-            "email":"a@example.jp","coLoginId":"school01","companyId":"c-1",
-            "companyName":"例示小学校","isClassRoom":false,"restHost":"{rest_host}"}}"#
-    )
+/// What `mpsroot/RequestServlet` really answers.
+///
+/// Taken verbatim from a live lookup of a real school code, with the host
+/// swapped for the stub. Note `serverURL`, capitalised, and that the id is not
+/// echoed back — both were got wrong from the field names alone.
+const SCHOOL_OK: &str = r#"{"isOnPremise":false,"isClassRoom":true,
+    "serverURL":"{BASE}","errorMessage":"","errorCode":0,"isSeminar":false}"#;
+
+/// A successful login, keyed as `prepareLoginResponse` reads it: `uuid` for the
+/// user id, and no `restHost`/`isClassRoom` — those come from the school
+/// lookup, which passes them in.
+fn login_ok() -> String {
+    r#"{"uuid":"u-1","loginName":"student01","name":"山田 太郎",
+        "email":"a@example.jp","companyId":"c-1","companyName":"例示小学校",
+        "companyVersion":3,"serverVersion":2.0}"#
+        .to_string()
 }
 
 #[test]
@@ -160,8 +170,8 @@ fn the_root_server_defaults_to_the_documented_one() {
 async fn resolving_a_school_hits_the_root_servlet() {
     let stub = stub(vec![(
         "200 OK",
-        r#"{"serverUrl":"https://tenant.example/","coLoginId":"school01",
-            "isClassRoom":true,"isOnPremise":false}"#
+        r#"{"isOnPremise":false,"isClassRoom":true,
+            "serverURL":"https://tenant.example/","errorCode":0}"#
             .to_string(),
     )]);
     let client = client();
@@ -177,13 +187,14 @@ async fn resolving_a_school_hits_the_root_servlet() {
 
     assert_eq!(school.server_url, "https://tenant.example/");
     assert!(school.is_class_room);
+    assert_eq!(school.co_login_id, "school01");
 }
 
 #[tokio::test]
 async fn a_school_id_is_escaped_into_the_query() {
     let stub = stub(vec![(
         "200 OK",
-        r#"{"serverUrl":"https://tenant.example/"}"#.to_string(),
+        r#"{"serverURL":"https://tenant.example/"}"#.to_string(),
     )]);
     let client = client();
     client.set_root_server(&stub.base);
@@ -211,11 +222,8 @@ async fn an_unknown_school_says_so_rather_than_failing_later() {
 #[tokio::test]
 async fn login_posts_the_documented_envelope_to_the_tenant() {
     let stub = stub(vec![
-        (
-            "200 OK",
-            r#"{"serverUrl":"{BASE}","coLoginId":"school01"}"#.to_string(),
-        ),
-        ("200 OK", login_ok("")),
+        ("200 OK", SCHOOL_OK.to_string()),
+        ("200 OK", login_ok()),
     ]);
     let client = client();
     client.set_root_server(&stub.base);
@@ -255,16 +263,21 @@ async fn login_posts_the_documented_envelope_to_the_tenant() {
     assert_eq!(body["timezone"], "Asia/Tokyo");
     assert!(body["productVersion"].is_string());
 
+    // `uuid`, not `userId`.
     assert_eq!(session.user_id, "u-1");
     assert_eq!(session.company_name.as_deref(), Some("例示小学校"));
     assert_eq!(client.session().unwrap().login_name, "student01");
+    // These come from the school lookup, not the login response.
+    assert_eq!(session.rest_host, stub.base);
+    assert!(session.is_class_room);
+    assert_eq!(session.co_login_id, "school01");
 }
 
 #[tokio::test]
 async fn simple_login_sends_the_class_and_the_roll_number() {
     let stub = stub(vec![
-        ("200 OK", r#"{"serverUrl":"{BASE}"}"#.to_string()),
-        ("200 OK", login_ok("")),
+        ("200 OK", SCHOOL_OK.to_string()),
+        ("200 OK", login_ok()),
     ]);
     let client = client();
     client.set_root_server(&stub.base);
@@ -288,10 +301,12 @@ async fn simple_login_sends_the_class_and_the_roll_number() {
 #[tokio::test]
 async fn an_error_code_becomes_the_message_the_user_sees() {
     let stub = stub(vec![
-        ("200 OK", r#"{"serverUrl":"{BASE}"}"#.to_string()),
+        ("200 OK", SCHOOL_OK.to_string()),
         (
             "200 OK",
-            r#"{"errorCode":9,"errorMessage":"ライセンスの有効期限が切れています"}"#.to_string(),
+            r#"{"name":"LicenseExpired","message":"ライセンスの有効期限が切れています",
+                "data":{"errorCode":9}}"#
+                .to_string(),
         ),
     ]);
     let client = client();
@@ -321,14 +336,17 @@ async fn an_http_error_page_does_not_surface_as_a_parse_error() {
 #[tokio::test]
 async fn the_class_list_comes_back_in_name_list_order() {
     let stub = stub(vec![
-        ("200 OK", r#"{"serverUrl":"{BASE}"}"#.to_string()),
+        ("200 OK", SCHOOL_OK.to_string()),
         (
             "200 OK",
-            r#"{"errorCode":0,"allList":{
-                "nameList":["3年2組","1年1組"],
+            // Trimmed from a live school's answer, keeping the shape that
+            // matters: the outer key is `alllist`, and a staff group arrives in
+            // the same list with an empty roll.
+            r#"{"alllist":{
+                "nameList":["教師グループ","高校3年1組"],
                 "detailList":{
-                  "1年1組":{"id":"cg-11","idNumberList":["1","2"]},
-                  "3年2組":{"id":"cg-32","idNumberList":["7"]}}}}"#
+                  "高校3年1組":{"idNumberList":["1","2"],"id":"499970003101"},
+                  "教師グループ":{"idNumberList":[],"id":"499969981101"}}}}"#
                 .to_string(),
         ),
     ]);
@@ -341,16 +359,17 @@ async fn the_class_list_comes_back_in_name_list_order() {
 
     assert_eq!(info.path, "/mmjeditor2/2.0/users3/getclassroominfo");
     assert_eq!(groups.len(), 2);
-    assert_eq!(groups[0].name, "3年2組");
-    assert_eq!(groups[0].id, "cg-32");
+    assert_eq!(groups[0].name, "教師グループ");
+    assert!(groups[0].id_numbers.is_empty());
+    assert_eq!(groups[1].id, "499970003101");
     assert_eq!(groups[1].id_numbers, ["1", "2"]);
 }
 
 #[tokio::test]
 async fn signing_out_clears_the_session_even_if_the_server_is_gone() {
     let stub = stub(vec![
-        ("200 OK", r#"{"serverUrl":"{BASE}"}"#.to_string()),
-        ("200 OK", login_ok("")),
+        ("200 OK", SCHOOL_OK.to_string()),
+        ("200 OK", login_ok()),
     ]);
     let client = client();
     client.set_root_server(&stub.base);
@@ -366,8 +385,8 @@ async fn signing_out_clears_the_session_even_if_the_server_is_gone() {
 #[tokio::test]
 async fn changing_the_root_server_drops_the_session() {
     let stub = stub(vec![
-        ("200 OK", r#"{"serverUrl":"{BASE}"}"#.to_string()),
-        ("200 OK", login_ok("")),
+        ("200 OK", SCHOOL_OK.to_string()),
+        ("200 OK", login_ok()),
     ]);
     let client = client();
     client.set_root_server(&stub.base);

@@ -108,6 +108,10 @@ pub struct CloudSession {
 struct Inner {
     root_server: String,
     rest_host: Option<String>,
+    /// What the root servlet said about the school currently being signed into.
+    /// `isClassRoom`, `isOnPremise` and the tenant host all come from here, not
+    /// from the login response — `prepareLoginResponse` passes them *in*.
+    school: Option<School>,
     session: Option<CloudSession>,
 }
 
@@ -136,6 +140,7 @@ impl CloudClient {
             inner: Mutex::new(Inner {
                 root_server: DEFAULT_ROOT_SERVER.to_string(),
                 rest_host: None,
+                school: None,
                 session: None,
             }),
             device_name,
@@ -154,6 +159,7 @@ impl CloudClient {
         inner.root_server = with_trailing_slash(url);
         // A different root means a different tenant and a different session.
         inner.rest_host = None;
+        inner.school = None;
         inner.session = None;
     }
 
@@ -202,19 +208,21 @@ impl CloudClient {
         );
 
         let body = self.send(reqwest::Method::GET, &url, None).await?;
+
+        // `serverURL`, not `serverUrl`. The Java *field* is `serverUrl`, but
+        // `ExecuteGetServerUrlWithParams` reads the JSON key by hand and the
+        // key is capitalised. Reading the field name instead makes every school
+        // look as though it does not exist.
         let server_url = body
-            .get("serverUrl")
+            .get("serverURL")
             .and_then(Value::as_str)
             .filter(|s| !s.is_empty())
             .ok_or_else(|| AppError::other(format!("学校ID「{co_login_id}」が見つかりません")))?;
 
         let school = School {
             server_url: with_trailing_slash(server_url),
-            co_login_id: body
-                .get("coLoginId")
-                .and_then(Value::as_str)
-                .unwrap_or(co_login_id)
-                .to_string(),
+            // The servlet does not echo the id back.
+            co_login_id: co_login_id.to_string(),
             is_class_room: body
                 .get("isClassRoom")
                 .and_then(Value::as_bool)
@@ -225,16 +233,19 @@ impl CloudClient {
                 .unwrap_or(false),
         };
 
-        self.inner.lock().unwrap().rest_host = Some(school.server_url.clone());
+        let mut inner = self.inner.lock().unwrap();
+        inner.rest_host = Some(school.server_url.clone());
+        inner.school = Some(school.clone());
         Ok(school)
     }
 
-    /// The tenant host, resolving it first if this school has not been seen.
-    async fn rest_host_for(&self, co_login_id: &str) -> AppResult<String> {
-        if let Some(host) = self.inner.lock().unwrap().rest_host.clone() {
-            return Ok(host);
+    /// The school being signed into, resolving it if it has not been seen.
+    async fn school_for(&self, co_login_id: &str) -> AppResult<School> {
+        let cached = self.inner.lock().unwrap().school.clone();
+        match cached {
+            Some(school) if school.co_login_id == co_login_id => Ok(school),
+            _ => self.resolve_school(co_login_id).await,
         }
-        Ok(self.resolve_school(co_login_id).await?.server_url)
     }
 
     async fn post_command(
@@ -243,7 +254,7 @@ impl CloudClient {
         command: &str,
         params: Map<String, Value>,
     ) -> AppResult<Map<String, Value>> {
-        let host = self.rest_host_for(co_login_id).await?;
+        let host = self.school_for(co_login_id).await?.server_url;
         // `getRestHost() + contextRoot + command`, exactly as
         // `CsHttpClient.sendRequestWithCommand` builds it.
         let url = format!("{host}{REST_BASE_PATH}{command}");
@@ -292,7 +303,7 @@ impl CloudClient {
             _ => return Err(AppError::other("サーバーの応答が想定と異なります")),
         };
 
-        check_error_code(&body)?;
+        check_error(status.as_u16(), &body)?;
         Ok(body)
     }
 
@@ -310,8 +321,9 @@ impl CloudClient {
         params.insert("loginName".into(), json!(login_name));
         params.insert("password".into(), json!(password));
 
+        let school = self.school_for(co_login_id).await?;
         let body = self.post_command(co_login_id, "/users3/login", params).await?;
-        self.finish_login(co_login_id, body)
+        self.finish_login(&school, body)
     }
 
     /// 学校ID + クラス + 出席番号 + パスワード — `SimpleLoginDriver`, the
@@ -329,52 +341,47 @@ impl CloudClient {
         params.insert("idNumber".into(), json!(id_number));
         params.insert("password".into(), json!(password));
 
+        let school = self.school_for(co_login_id).await?;
         let body = self
             .post_command(co_login_id, "/users3/classroomlogin", params)
             .await?;
-        self.finish_login(co_login_id, body)
+        self.finish_login(&school, body)
     }
 
-    fn finish_login(&self, co_login_id: &str, body: Map<String, Value>) -> AppResult<CloudSession> {
-        let str_of = |key: &str| body.get(key).and_then(Value::as_str).map(str::to_string);
-
-        // `restHost` redirects the client at a tenant host that may differ from
-        // the one `RequestServlet` gave — `prepareLoginResponse` re-points the
-        // context here, so this does too.
-        let rest_host = str_of("restHost")
-            .filter(|s| !s.is_empty())
-            .map(|s| with_trailing_slash(&s))
-            .unwrap_or_else(|| {
-                self.inner
-                    .lock()
-                    .unwrap()
-                    .rest_host
-                    .clone()
-                    .unwrap_or_default()
-            });
+    /// Builds the session from a successful login response.
+    ///
+    /// Follows `prepareLoginResponse`, which is fussier than it looks. Only
+    /// some of these come from the body:
+    ///
+    /// * `uuid` — **not** `userId`; that is the Java field's name, not the key
+    /// * `loginName`, `name`, `email`, `companyId`, `companyName` — from the body
+    /// * `restHost`, `isClassRoom`, `isOnPremise` — from the *school lookup*,
+    ///   passed in rather than returned; the login response has no such fields
+    /// * `coLoginId` — the id that was typed
+    fn finish_login(&self, school: &School, body: Map<String, Value>) -> AppResult<CloudSession> {
+        let str_of = |key: &str| {
+            body.get(key)
+                .and_then(Value::as_str)
+                .filter(|s| !s.is_empty())
+                .map(str::to_string)
+        };
 
         let login_name = str_of("loginName").unwrap_or_default();
         let session = CloudSession {
-            user_id: str_of("userId").unwrap_or_default(),
+            user_id: str_of("uuid").unwrap_or_default(),
             name: str_of("name").unwrap_or_else(|| login_name.clone()),
             login_name,
             email: str_of("email"),
-            co_login_id: str_of("coLoginId").unwrap_or_else(|| co_login_id.to_string()),
+            co_login_id: school.co_login_id.clone(),
             company_id: str_of("companyId"),
             company_name: str_of("companyName"),
-            is_class_room: body
-                .get("isClassRoom")
-                .and_then(Value::as_bool)
-                .unwrap_or(false),
-            is_on_premise: body
-                .get("isOnPremise")
-                .and_then(Value::as_bool)
-                .unwrap_or(false),
-            rest_host: rest_host.clone(),
+            is_class_room: school.is_class_room,
+            is_on_premise: school.is_on_premise,
+            rest_host: school.server_url.clone(),
         };
 
         let mut inner = self.inner.lock().unwrap();
-        inner.rest_host = Some(rest_host);
+        inner.rest_host = Some(school.server_url.clone());
         inner.session = Some(session.clone());
         Ok(session)
     }
@@ -387,7 +394,10 @@ impl CloudClient {
         let body = self
             .post_command(co_login_id, "/users3/getclassroominfo", params)
             .await?;
-        Ok(parse_class_groups(body.get("allList")))
+        // `alllist`, all lower case. Same trap as `serverURL` and `uuid`: the
+        // TypeSpec names the Java *field* (`allList`), and the wire key differs.
+        // Verified against a live school's response.
+        Ok(parse_class_groups(body.get("alllist")))
     }
 
     pub async fn logout(&self) -> AppResult<()> {
@@ -422,18 +432,44 @@ impl CloudClient {
 // Helpers
 // ---------------------------------------------------------------------------
 
-/// Maps the envelope's `errorCode` onto a message.
+/// Turns a response into an error, or into nothing.
 ///
-/// **docs/14 §1 gets this backwards.** It reads "エラーコードが特定値
-/// (0x67/0x7b)以外ならエラー", i.e. those two codes are fine. They are not:
+/// There are two envelopes, and `putResponseDataFromNewBean` shows both:
+///
+/// ```text
+///   REST API      { "name": "…", "message": "…", "data": { "errorCode": N } }
+///   RequestServlet{ "errorCode": N, "errorMessage": "…", "serverURL": "…" }
+/// ```
+///
+/// The REST one nests the code under `data` and puts the human message at the
+/// top level under `message`. Reading a top-level `errorCode` — which is what
+/// the response *bean's* field is called — finds nothing, so a refused login
+/// looks like a success with every field empty.
+///
+/// The HTTP status matters too: the original treats any non-2xx as an error
+/// before it looks at the body at all.
+///
+/// **docs/14 §1 has the accepted codes backwards.** It reads "エラーコードが
+/// 特定値(0x67/0x7b)以外ならエラー", i.e. those two are fine. They are not:
 /// `LoginDriver.setError` builds a `LoginError` on every path, and the only
-/// thing those two codes change is that the message comes from the client
-/// instead of the server. Which is itself informative — the server declines to
-/// say whether it was the id or the password, and repeating a generic message
-/// keeps it that way.
-fn check_error_code(body: &Map<String, Value>) -> AppResult<()> {
-    let code = body.get("errorCode").and_then(Value::as_i64).unwrap_or(0);
-    if code == 0 {
+/// thing those two change is that the message comes from the client instead of
+/// the server. Which is itself informative — the server declines to say whether
+/// it was the id or the password, and repeating a generic message keeps it that
+/// way.
+fn check_error(status: u16, body: &Map<String, Value>) -> AppResult<()> {
+    // The REST envelope: `data.errorCode` with `message` alongside it.
+    let nested = body
+        .get("data")
+        .and_then(Value::as_object)
+        .and_then(|data| data.get("errorCode"))
+        .and_then(Value::as_i64);
+
+    // The servlet envelope: a flat `errorCode`.
+    let flat = body.get("errorCode").and_then(Value::as_i64);
+
+    let code = nested.or(flat).unwrap_or(0);
+    let http_ok = (200..300).contains(&status);
+    if code == 0 && http_ok {
         return Ok(());
     }
 
@@ -455,18 +491,29 @@ fn check_error_code(body: &Map<String, Value>) -> AppResult<()> {
         return Err(AppError::other(message));
     }
 
-    let message = body
-        .get("errorMessage")
-        .and_then(Value::as_str)
-        .filter(|s| !s.is_empty())
-        .map(str::to_string)
-        .unwrap_or_else(|| format!("サーバーエラー (errorCode {code})"));
-    Err(AppError::other(message))
+    // `message` is the REST envelope's; `errorMessage` the servlet's.
+    let message = ["message", "errorMessage"]
+        .iter()
+        .filter_map(|key| body.get(*key))
+        .filter_map(Value::as_str)
+        .find(|s| !s.is_empty())
+        .map(str::to_string);
+
+    Err(AppError::other(message.unwrap_or_else(|| {
+        if code != 0 {
+            format!("サーバーエラー (errorCode {code})")
+        } else {
+            format!("サーバーエラー (HTTP {status})")
+        }
+    })))
 }
 
-/// `allList` is `{ nameList: [...], detailList: { <name>: { id, idNumberList } } }`
+/// `alllist` is `{ nameList: [...], detailList: { <name>: { id, idNumberList } } }`
 /// — the shape `SimpleLoginViewModel` reads. Order comes from `nameList`, not
 /// from the map, because JSON object order is not something to rely on.
+///
+/// A class with an empty `idNumberList` is real: 「教師グループ」 and 「〜担任団」
+/// are groups of staff, and they arrive in the same list as the classes.
 fn parse_class_groups(all_list: Option<&Value>) -> Vec<ClassGroup> {
     let Some(all_list) = all_list.and_then(Value::as_object) else {
         return Vec::new();
@@ -537,9 +584,40 @@ mod tests {
 
     #[test]
     fn a_zero_error_code_is_success() {
-        assert!(check_error_code(&body(json!({ "errorCode": 0 }))).is_ok());
-        // A response with no `errorCode` at all is the `RequestServlet` shape.
-        assert!(check_error_code(&body(json!({ "serverUrl": "https://x/" }))).is_ok());
+        assert!(check_error(200, &body(json!({ "errorCode": 0 }))).is_ok());
+        assert!(check_error(200, &body(json!({ "data": { "errorCode": 0 } }))).is_ok());
+        // A body with no code at all is the successful-login shape.
+        assert!(check_error(200, &body(json!({ "uuid": "u-1" }))).is_ok());
+    }
+
+    #[test]
+    fn the_rest_envelope_nests_the_code_under_data() {
+        // `putResponseDataFromNewBean` reads `data.errorCode` and the top-level
+        // `message`. Looking for a top-level `errorCode` — the *field* name on
+        // the Java bean — finds nothing, and a refused login sails through as a
+        // success with every field empty.
+        let err = check_error(
+            200,
+            &body(json!({
+                "name": "CanNotLoginException",
+                "message": "ログインできません",
+                "data": { "errorCode": 42 },
+            })),
+        )
+        .unwrap_err()
+        .to_string();
+        assert_eq!(err, "ログインできません");
+    }
+
+    #[test]
+    fn the_servlet_envelope_keeps_the_code_at_the_top() {
+        let err = check_error(
+            200,
+            &body(json!({ "errorCode": 42, "errorMessage": "該当なし" })),
+        )
+        .unwrap_err()
+        .to_string();
+        assert_eq!(err, "該当なし");
     }
 
     #[test]
@@ -548,10 +626,13 @@ mod tests {
         // and the point of them is that the reason is withheld — so the message
         // must not come from the server even when it offers one.
         for code in [INVALID_EMAIL_EXCEPTION, CAN_NOT_LOGIN_EXCEPTION] {
-            let err = check_error_code(&body(json!({
-                "errorCode": code,
-                "errorMessage": "user not found",
-            })))
+            let err = check_error(
+                200,
+                &body(json!({
+                    "message": "user not found",
+                    "data": { "errorCode": code },
+                })),
+            )
             .unwrap_err()
             .to_string();
             assert!(!err.contains("user not found"), "leaked: {err}");
@@ -560,19 +641,16 @@ mod tests {
     }
 
     #[test]
-    fn other_codes_report_what_the_server_said() {
-        let err = check_error_code(&body(json!({
-            "errorCode": 42,
-            "errorMessage": "利用期限が切れています",
-        })))
-        .unwrap_err()
-        .to_string();
-        assert_eq!(err, "利用期限が切れています");
+    fn a_non_2xx_status_is_an_error_even_with_a_clean_body() {
+        let err = check_error(503, &body(json!({ "errorCode": 0 })))
+            .unwrap_err()
+            .to_string();
+        assert!(err.contains("503"), "{err}");
     }
 
     #[test]
     fn a_code_with_no_message_still_says_something() {
-        let err = check_error_code(&body(json!({ "errorCode": 42 })))
+        let err = check_error(200, &body(json!({ "data": { "errorCode": 42 } })))
             .unwrap_err()
             .to_string();
         assert!(err.contains("42"), "{err}");
@@ -580,11 +658,14 @@ mod tests {
 
     #[test]
     fn maintenance_wins_over_the_generic_message() {
-        let err = check_error_code(&body(json!({
-            "errorCode": 7,
-            "isUnderMaintenance": true,
-            "maintMessage": "本日 22:00 まで停止しています",
-        })))
+        let err = check_error(
+            200,
+            &body(json!({
+                "data": { "errorCode": 7 },
+                "isUnderMaintenance": true,
+                "maintMessage": "本日 22:00 まで停止しています",
+            })),
+        )
         .unwrap_err()
         .to_string();
         assert_eq!(err, "本日 22:00 まで停止しています");

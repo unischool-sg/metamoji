@@ -55,12 +55,35 @@ B と C のサーバーは [`../server/`](../server/) の参照実装。
 あり、[`src/sync/referenceBackend.ts`](src/sync/referenceBackend.ts) に
 セッションを与えれば戻る。
 
+### JSON のキー名は Java のフィールド名と一致しない
+
+`docs/typespec/` のモデルは `CsXxxResponse` の**フィールド名**から起こしてあり、
+ワイヤ上のキーとは別物のことがある。実サーバーで確認した実例:
+
+| TypeSpec / Java フィールド | 実際の JSON キー |
+|---|---|
+| `serverUrl` | **`serverURL`** |
+| `allList` | **`alllist`** |
+| `userId`(ログイン応答) | **`uuid`** |
+
+`CsCloudService` が `bodyMessage` を手で読んでいる箇所(`const-string` のリテラル)
+が正解で、フィールド名は当てにならない。エラーも同様で、REST API は
+`{name, message, data:{errorCode}}` と入れ子になっており、トップレベルの
+`errorCode` は `RequestServlet` だけの形。
+
 ### 検証について
 
-学校のアカウントを持っていないため、**実サーバーに対する動作確認はしていない。**
-代わりに `src-tauri/src/cloud_wire_tests.rs` が、文書化されたワイヤ形式どおりの
-リクエストが出ていることをスタブサーバーに対して検証している ── URL の組み立て、
-`X-DM-*` ヘッダ、共通パラメータ、`errorCode` の扱い、テナントホストの切り替え。
+学校のアカウントを持っていないため、**サインインそのものは実サーバーで確認できていない。**
+ログイン前の2つのエンドポイントは実際に叩いて確認した:
+
+```
+GET  mpsroot/RequestServlet?coLoginId=…    → serverURL / isClassRoom
+POST /users3/getclassroominfo              → 59クラス(出席番号つき)
+```
+
+`src-tauri/src/cloud_wire_tests.rs` はその実応答を切り詰めたものを fixture に
+使っており、URL の組み立て、`X-DM-*` ヘッダ、共通パラメータ、両方のエラー封筒、
+テナントホストの切り替えを検証している。
 
 ## 意図的に実装しないもの
 

@@ -72,9 +72,10 @@ export function LoginScreen() {
       const found = await api.cloudResolveSchool(id);
       setSchool(found);
       if (strategy.id === "simple") {
-        const groups = await api.cloudClassGroups(id);
-        setClasses(groups);
-        if (groups.length > 0) setClassGroupId((current) => current || groups[0].id);
+        // No default: the list mixes classes with staff groups (「教師グループ」,
+        // 「〜担任団」), so preselecting the first entry would put most students
+        // on the wrong one.
+        setClasses(await api.cloudClassGroups(id));
       }
     } catch (err) {
       setSchool(null);
@@ -221,6 +222,7 @@ export function LoginScreen() {
                     }}
                   >
                     {!classes && <option value="">{t("先に学校 ID を確認してください")}</option>}
+                    {classes && <option value="">{t("選択してください")}</option>}
                     {classes?.length === 0 && (
                       <option value="">{t("クラスが登録されていません")}</option>
                     )}

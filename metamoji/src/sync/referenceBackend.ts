@@ -18,7 +18,7 @@
 import { SyncClient } from "./client";
 
 /** Where `server/` listens by default. */
-export const DEFAULT_REFERENCE_SERVER = "http://localhost:8787";
+export const DEFAULT_REFERENCE_SERVER = "https://mps.metamoji.com/";
 
 export const referenceClient = new SyncClient(DEFAULT_REFERENCE_SERVER);
 
