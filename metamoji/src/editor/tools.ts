@@ -19,6 +19,7 @@ export type ToolId =
   | "image"
   | "shape"
   | "form"
+  | "survey"
   | "laser";
 
 export interface ToolDef {
@@ -38,6 +39,7 @@ export const TOOLS: ToolDef[] = [
   { id: "shape", label: "図形", shortcut: "S", cursor: "crosshair" },
   { id: "form", label: "表・罫線", shortcut: "F", cursor: "crosshair" },
   { id: "image", label: "画像", shortcut: "I", cursor: "copy" },
+  { id: "survey", label: "アンケート", shortcut: "Q", cursor: "copy" },
   { id: "laser", label: "レーザー", shortcut: "R", cursor: "crosshair" },
   { id: "pan", label: "移動", shortcut: "H", cursor: "grab" },
 ];
@@ -50,6 +52,7 @@ export const TAP_TO_PLACE_TOOLS: ReadonlySet<ToolId> = new Set([
   "text",
   "sticky",
   "image",
+  "survey",
 ]);
 
 export interface PenPreset extends PenAttributes {

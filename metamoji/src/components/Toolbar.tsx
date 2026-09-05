@@ -19,6 +19,7 @@ const GLYPHS: Record<ToolId, string> = {
   shape: "◇",
   form: "▦",
   image: "🖼",
+  survey: "▤",
   laser: "◉",
   pan: "✥",
 };

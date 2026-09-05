@@ -24,6 +24,7 @@ import {
   getBool,
   getDict,
   getInt,
+  getList,
   getNumber,
   getOptionalString,
   getPoints,
@@ -45,6 +46,7 @@ import {
   MT_PAGE,
   MT_PDF,
   MT_SHAPE,
+  MT_SURVEY,
   MT_TEXT,
   isUnitModelType,
 } from "./modelTypes";
@@ -69,6 +71,8 @@ import type {
   ShapeKind,
   ShapeUnit,
   Stroke,
+  SurveyGraph,
+  SurveyUnit,
   TextAlign,
   TextUnit,
   Unit,
@@ -237,6 +241,19 @@ function unitToProps(unit: Unit): PropDict {
       props.lineWidth = unit.lineWidth;
       props.backgroundColor = unit.backgroundColor;
       props.backgroundOpacity = unit.backgroundOpacity;
+      break;
+
+    case "$surveyunit":
+      props.question = unit.question;
+      // The original's key is `type`, but that is our discriminator, so the
+      // stored name keeps docs/05 §4's spelling while the field does not.
+      props.surveyType = unit.surveyKind === "checkbox" ? "CheckBox" : "RadioButton";
+      props.choices = unit.choices;
+      props.graphType = unit.graphType;
+      props.allowAnswer = unit.allowAnswer;
+      props.publish = unit.publish;
+      props.result = unit.result;
+      props.answer = unit.answer;
       break;
 
     case "$flipunit":
@@ -527,6 +544,40 @@ export function unitFromGeneric(node: GenericModel): Unit | null {
       return attachExtra(unit, p, [
         "form", "columns", "rows", "lineColor", "lineWidth",
         "backgroundColor", "backgroundOpacity",
+      ]);
+    }
+
+    case MT_SURVEY: {
+      const rawChoices = getList(p, "choices");
+      const choices = rawChoices
+        .filter((c: unknown): c is string => typeof c === "string")
+        .slice(0, 12);
+
+      const rawResult = getDict(p, "result") ?? {};
+      const result: Record<string, number> = {};
+      for (const [key, value] of Object.entries(rawResult)) {
+        if (typeof value === "number" && Number.isFinite(value)) result[key] = value;
+      }
+
+      const unit: SurveyUnit = {
+        ...base,
+        type: "$surveyunit",
+        question: getString(p, "question", ""),
+        surveyKind: getString(p, "surveyType", "RadioButton") === "CheckBox"
+          ? "checkbox"
+          : "radio",
+        choices: choices.length > 0 ? choices : ["はい", "いいえ"],
+        graphType: getString(p, "graphType", "bar") as SurveyGraph,
+        allowAnswer: getBool(p, "allowAnswer", true),
+        publish: getBool(p, "publish", true),
+        result,
+        answer: getList(p, "answer")
+          .filter((a: unknown): a is number => typeof a === "number")
+          .map((a) => Math.trunc(a)),
+      };
+      return attachExtra(unit, p, [
+        "question", "surveyType", "choices", "graphType",
+        "allowAnswer", "publish", "result", "answer",
       ]);
     }
 

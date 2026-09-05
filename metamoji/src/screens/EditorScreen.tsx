@@ -28,6 +28,7 @@ import {
   createImageUnit,
   createPage,
   createShapeUnit,
+  createSurveyUnit,
   createTextUnit,
 } from "../model/factory";
 import { newTicket } from "../model/ids";
@@ -339,6 +340,22 @@ export function EditorScreen() {
           });
         });
         beginTextEdit(unit.id);
+        state.setTool("select");
+        state.setSelection([unit.id]);
+        return;
+      }
+
+      if (tool === "survey") {
+        const unit = createSurveyUnit(world.x, world.y);
+        s.transact("アンケートを追加", () => {
+          s.record({
+            kind: "unit.add",
+            pageId: page.id,
+            layerId: layer.id,
+            index: layer.units.length,
+            unit,
+          });
+        });
         state.setTool("select");
         state.setSelection([unit.id]);
         return;

@@ -24,6 +24,7 @@ export const MT_PDF = "$pdf";
 export const MT_FLIP = "$flipunit";
 export const MT_SHAPE = "$shape";
 export const MT_FORM = "$form";
+export const MT_SURVEY = "$surveyunit";
 
 /** Placeholder preserving units we cannot represent (unknown/deferred types). */
 export const MT_DUMMY = "$dummy";
@@ -32,7 +33,6 @@ export const MT_DUMMY = "$dummy";
 export const MT_DEFERRED = [
   "$video",
   "$soundunit",
-  "$surveyunit",
   "$web",
   "$bgform",
   "$formparts",
@@ -49,6 +49,7 @@ export const UNIT_MODEL_TYPES = [
   MT_FLIP,
   MT_SHAPE,
   MT_FORM,
+  MT_SURVEY,
   MT_DUMMY,
 ] as const;
 

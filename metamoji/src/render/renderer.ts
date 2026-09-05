@@ -21,6 +21,7 @@
 import { buildStrokePath } from "../model/stroke";
 import { rectIntersects } from "../model/stroke";
 import type { Layer, Page, Rect, Stroke, Unit } from "../model/types";
+import { drawChart } from "./chart";
 import { visibleWorldRect, type Viewport } from "./viewport";
 
 /** Resolves an asset ticket to something Canvas can draw. */
@@ -97,6 +98,43 @@ export function unitBounds(unit: Unit): Rect {
 
 const RULE_SPACING = 40;
 const GRID_SPACING = 40;
+
+/**
+ * Survey layout, shared with hit testing.
+ *
+ * Kept here as constants rather than duplicated in the controller: if the two
+ * disagree, a tap selects a different choice from the one under the finger,
+ * which is the kind of bug nobody reports precisely.
+ */
+export const SURVEY_PADDING = 14;
+export const SURVEY_QUESTION_LINE = 21;
+export const SURVEY_QUESTION_GAP = 6;
+export const SURVEY_CHOICE_HEIGHT = 24;
+
+/**
+ * Which choice sits at `localY`, or null if the point is outside the list.
+ *
+ * Takes a context because the question's height depends on how it wraps, and
+ * wrapping depends on font metrics — the same measurement the drawing code does.
+ */
+export function surveyChoiceAt(
+  ctx: CanvasRenderingContext2D,
+  unit: Extract<Unit, { type: "$surveyunit" }>,
+  localY: number,
+): number | null {
+  ctx.save();
+  let y = unit.y + SURVEY_PADDING;
+  if (unit.question) {
+    ctx.font = "600 15px system-ui";
+    y += wrapText(ctx, unit.question, unit.width - SURVEY_PADDING * 2).length *
+      SURVEY_QUESTION_LINE + SURVEY_QUESTION_GAP;
+  }
+  ctx.restore();
+
+  const index = Math.floor((localY - y) / SURVEY_CHOICE_HEIGHT);
+  if (index < 0 || index >= unit.choices.length) return null;
+  return index;
+}
 
 export function drawPaper(ctx: CanvasRenderingContext2D, page: Page): void {
   const { paperWidth: w, paperHeight: h } = page;
@@ -228,6 +266,9 @@ function drawUnit(
       break;
     case "$form":
       drawFormUnit(ctx, unit);
+      break;
+    case "$surveyunit":
+      drawSurveyUnit(ctx, unit);
       break;
     case "$flipunit":
       drawFlipUnit(ctx, unit);
@@ -520,6 +561,97 @@ function drawFormUnit(
   if (unit.form === "table") path.rect(x, y, w, h);
 
   ctx.stroke(path);
+  ctx.restore();
+}
+
+/**
+ * The survey unit: question, choices, and the tally as a chart.
+ *
+ * docs/13 §1 records the original rasterising its chart to a bitmap and
+ * embedding it as a static image. Drawing it live keeps it sharp at any zoom and
+ * means a vote is reflected immediately, which is the whole point in a lesson.
+ */
+function drawSurveyUnit(
+  ctx: CanvasRenderingContext2D,
+  unit: Extract<Unit, { type: "$surveyunit" }>,
+): void {
+  const padding = 14;
+  ctx.save();
+
+  ctx.fillStyle = "rgba(255,255,255,0.96)";
+  ctx.fillRect(unit.x, unit.y, unit.width, unit.height);
+  ctx.strokeStyle = "rgba(120, 130, 145, 0.5)";
+  ctx.lineWidth = 1;
+  ctx.strokeRect(unit.x + 0.5, unit.y + 0.5, unit.width - 1, unit.height - 1);
+
+  let y = unit.y + padding;
+  const innerWidth = unit.width - padding * 2;
+
+  if (unit.question) {
+    ctx.fillStyle = "#1f2430";
+    ctx.font = "600 15px system-ui";
+    ctx.textAlign = "left";
+    ctx.textBaseline = "top";
+    for (const line of wrapText(ctx, unit.question, innerWidth)) {
+      ctx.fillText(line, unit.x + padding, y);
+      y += 21;
+    }
+    y += 6;
+  }
+
+  const total = Object.values(unit.result).reduce((sum, n) => sum + n, 0);
+
+  // Before anyone votes, or while results are withheld, show the choices
+  // themselves — an empty chart says nothing about what is being asked.
+  if (total === 0 || !unit.publish) {
+    ctx.font = "400 13px system-ui";
+    ctx.textBaseline = "alphabetic";
+    unit.choices.forEach((choice, i) => {
+      const marked = unit.answer.includes(i);
+      ctx.strokeStyle = "rgba(90, 100, 115, 0.7)";
+      ctx.fillStyle = marked ? "#2a78d6" : "transparent";
+
+      const boxY = y + 2;
+      if (unit.surveyKind === "radio") {
+        ctx.beginPath();
+        ctx.arc(unit.x + padding + 7, boxY + 5, 6, 0, Math.PI * 2);
+        if (marked) ctx.fill();
+        ctx.stroke();
+      } else {
+        if (marked) ctx.fillRect(unit.x + padding + 1, boxY - 1, 12, 12);
+        ctx.strokeRect(unit.x + padding + 1.5, boxY - 0.5, 11, 11);
+      }
+
+      ctx.fillStyle = "#3c4655";
+      ctx.fillText(choice, unit.x + padding + 24, boxY + 10);
+      y += 24;
+    });
+
+    if (!unit.publish && total > 0) {
+      ctx.fillStyle = "#6b7280";
+      ctx.font = "400 11px system-ui";
+      ctx.fillText(`回答 ${total} 件(結果は非公開)`, unit.x + padding, y + 12);
+    }
+    ctx.restore();
+    return;
+  }
+
+  const data = unit.choices.map((label, i) => ({
+    label,
+    value: unit.result[String(i)] ?? 0,
+  }));
+
+  drawChart(
+    ctx,
+    {
+      x: unit.x + padding,
+      y,
+      width: innerWidth,
+      height: unit.y + unit.height - padding - y,
+    },
+    { kind: unit.graphType, data },
+  );
+
   ctx.restore();
 }
 

@@ -265,6 +265,145 @@ export function UnitProperties() {
         </>
       )}
 
+      {unit.type === "$surveyunit" && (
+        <>
+          <div className="field">
+            <label htmlFor="question">{t("質問")}</label>
+            <textarea
+              id="question"
+              rows={2}
+              value={unit.question}
+              onChange={(e) => update(t("質問を変更"), { question: e.target.value })}
+            />
+          </div>
+
+          <h2>{t("選択肢")}</h2>
+          <div className="pen-list">
+            {unit.choices.map((choice, i) => (
+              <div key={i} className="layer-row">
+                <input
+                  className="layer-row__name"
+                  value={choice}
+                  onChange={(e) => {
+                    const choices = unit.choices.slice();
+                    choices[i] = e.target.value;
+                    update(t("選択肢を変更"), { choices });
+                  }}
+                />
+                <button
+                  type="button"
+                  className="layer-row__toggle"
+                  title={t("削除")}
+                  disabled={unit.choices.length <= 2}
+                  onClick={() => {
+                    // Removing a choice must take its tally with it, or the
+                    // counts would silently shift onto the wrong labels.
+                    const choices = unit.choices.filter((_, j) => j !== i);
+                    const result: Record<string, number> = {};
+                    unit.choices.forEach((_, j) => {
+                      if (j === i) return;
+                      const moved = j > i ? j - 1 : j;
+                      const count = unit.result[String(j)];
+                      if (count) result[String(moved)] = count;
+                    });
+                    update(t("選択肢を削除"), { choices, result });
+                  }}
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+          </div>
+          <button
+            type="button"
+            className="btn"
+            style={{ width: "100%" }}
+            disabled={unit.choices.length >= 12}
+            onClick={() =>
+              update(t("選択肢を追加"), {
+                choices: [...unit.choices, `${t("選択肢")} ${unit.choices.length + 1}`],
+              })
+            }
+          >
+            {t("+ 選択肢を追加")}
+          </button>
+
+          <h2>{t("回答方式")}</h2>
+          <div className="pen-list">
+            <button
+              type="button"
+              className="pen-row"
+              aria-pressed={unit.surveyKind === "radio"}
+              onClick={() => update(t("回答方式を変更"), { surveyKind: "radio" })}
+            >
+              {t("1つ選ぶ")}
+            </button>
+            <button
+              type="button"
+              className="pen-row"
+              aria-pressed={unit.surveyKind === "checkbox"}
+              onClick={() => update(t("回答方式を変更"), { surveyKind: "checkbox" })}
+            >
+              {t("複数選べる")}
+            </button>
+          </div>
+
+          <h2>{t("グラフ")}</h2>
+          <div className="pen-list">
+            {([
+              ["bar", "棒グラフ"],
+              ["pie", "円グラフ"],
+              ["table", "表"],
+            ] as const).map(([kind, label]) => (
+              <button
+                key={kind}
+                type="button"
+                className="pen-row"
+                aria-pressed={unit.graphType === kind}
+                onClick={() => update(t("グラフを変更"), { graphType: kind })}
+              >
+                {t(label)}
+              </button>
+            ))}
+          </div>
+
+          <div className="setting-row" style={{ padding: "4px 0" }}>
+            <label htmlFor="allow-answer">{t("回答を受け付ける")}</label>
+            <input
+              id="allow-answer"
+              type="checkbox"
+              checked={unit.allowAnswer}
+              onChange={(e) =>
+                update(t("回答受付を切り替え"), { allowAnswer: e.target.checked })
+              }
+            />
+          </div>
+          <div className="setting-row" style={{ padding: "4px 0" }}>
+            <label htmlFor="publish">{t("結果を公開する")}</label>
+            <input
+              id="publish"
+              type="checkbox"
+              checked={unit.publish}
+              onChange={(e) => update(t("公開を切り替え"), { publish: e.target.checked })}
+            />
+          </div>
+
+          <p className="setting-note">
+            {t("回答 {count} 件", {
+              count: Object.values(unit.result).reduce((sum, n) => sum + n, 0),
+            })}
+          </p>
+          <button
+            type="button"
+            className="btn btn--danger"
+            style={{ width: "100%" }}
+            onClick={() => update(t("回答をリセット"), { result: {}, answer: [] })}
+          >
+            {t("回答をリセット")}
+          </button>
+        </>
+      )}
+
       {unit.type === "$image" && (
         <div className="field">
           <label htmlFor="opacity">{t("不透明度")}</label>
@@ -339,6 +478,8 @@ function unitLabel(unit: Unit): string {
       return "図形";
     case "$form":
       return "表・罫線";
+    case "$surveyunit":
+      return "アンケート";
     case "$flipunit":
       return "付箋";
     case "$image":

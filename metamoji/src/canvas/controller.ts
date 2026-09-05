@@ -44,7 +44,12 @@ import {
   unitsInRect,
   type HandleType,
 } from "../render/hitTest";
-import { drawStroke, renderPage, type AssetResolver } from "../render/renderer";
+import {
+  drawStroke,
+  renderPage,
+  surveyChoiceAt,
+  type AssetResolver,
+} from "../render/renderer";
 import {
   fitRect,
   panBy,
@@ -71,6 +76,7 @@ export type ToolMode =
   | "image"
   | "shape"
   | "form"
+  | "survey"
   | "laser";
 
 export interface ControllerCallbacks {
@@ -628,6 +634,9 @@ export class CanvasController {
         break;
 
       case "select":
+        // Answering wins over selecting: a student tapping a choice means to
+        // vote, not to pick the unit up.
+        if (!e.shiftKey && this.tryAnswerSurvey(world)) break;
         this.beginSelectGesture(base, world, e.shiftKey);
         break;
 
@@ -648,6 +657,7 @@ export class CanvasController {
       case "text":
       case "sticky":
       case "image":
+      case "survey":
         this.callbacks.onPlace(this.tool, world);
         break;
     }
@@ -1051,6 +1061,73 @@ export class CanvasController {
     }
   };
 
+  /**
+   * A tap inside a survey's choice list records a vote.
+   *
+   * Answering has to be a plain click on the unit rather than a mode or a
+   * dialog: in a classroom the respondent is a student who was handed the note,
+   * and asking them to find a tool first would lose most of them.
+   */
+  private tryAnswerSurvey(world: Point): boolean {
+    const page = this.page();
+    const session = this.session;
+    if (!page || !session) return false;
+
+    const hit = hitTestUnit(page, world.x, world.y);
+    if (!hit || hit.unit.type !== "$surveyunit") return false;
+
+    const unit = hit.unit;
+    if (!unit.allowAnswer) return false;
+    // Results replace the choice list once they are showing, so there is
+    // nothing to click.
+    const total = Object.values(unit.result).reduce((sum, n) => sum + n, 0);
+    if (total > 0 && unit.publish) return false;
+
+    const ctx = this.sceneCtx;
+    if (!ctx) return false;
+    const local = toUnitLocal(unit, world.x, world.y);
+    const index = surveyChoiceAt(ctx, unit, local.y);
+    if (index === null) return false;
+
+    const wasChosen = unit.answer.includes(index);
+    const answer =
+      unit.surveyKind === "radio"
+        ? wasChosen
+          ? []
+          : [index]
+        : wasChosen
+          ? unit.answer.filter((a) => a !== index)
+          : [...unit.answer, index];
+
+    // The tally moves with the answer, so a changed mind does not leave a
+    // stale vote behind.
+    const result = { ...unit.result };
+    const bump = (i: number, by: number) => {
+      const next = (result[String(i)] ?? 0) + by;
+      if (next > 0) result[String(i)] = next;
+      else delete result[String(i)];
+    };
+    for (const previous of unit.answer) {
+      if (!answer.includes(previous)) bump(previous, -1);
+    }
+    for (const next of answer) {
+      if (!unit.answer.includes(next)) bump(next, 1);
+    }
+
+    session.transact("アンケートに回答", () => {
+      session.record({
+        kind: "unit.update",
+        pageId: page.id,
+        layerId: hit.layer.id,
+        unitId: unit.id,
+        before: { answer: unit.answer, result: unit.result },
+        after: { answer, result },
+      });
+    });
+    this.sceneDirty = true;
+    return true;
+  }
+
   private onDoubleClick = (e: MouseEvent): void => {
     const page = this.page();
     if (!page || !this.overlay) return;
@@ -1138,6 +1215,7 @@ function cursorForTool(tool: ToolMode): string {
       return "text";
     case "sticky":
     case "image":
+    case "survey":
       return "copy";
     default:
       return "default";

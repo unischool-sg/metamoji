@@ -14,6 +14,7 @@ import type {
   PdfUnit,
   ShapeKind,
   ShapeUnit,
+  SurveyUnit,
   TextUnit,
   DrawUnit,
 } from "./types";
@@ -218,5 +219,26 @@ export function createBgImageUnit(
     bgColor: "#ffffff",
     colorOpacity: 1,
     opacity: 1,
+  };
+}
+
+export function createSurveyUnit(x: number, y: number): SurveyUnit {
+  return {
+    id: newUnitId(),
+    type: "$surveyunit",
+    x,
+    y,
+    width: 420,
+    height: 300,
+    rotation: 0,
+    contentScale: 1,
+    question: "",
+    surveyKind: "radio",
+    choices: ["選択肢 1", "選択肢 2", "選択肢 3"],
+    graphType: "bar",
+    allowAnswer: true,
+    publish: true,
+    result: {},
+    answer: [],
   };
 }

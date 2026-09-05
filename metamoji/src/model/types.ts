@@ -215,6 +215,34 @@ export interface FormUnit extends UnitBase {
   backgroundOpacity: number;
 }
 
+/**
+ * Survey unit.
+ *
+ * Property names follow docs/05 §4's `$surveyunit`: `question`, `type`
+ * (CheckBox/RadioButton), `choices`, `graphType`, `allowAnswer`, `publish`,
+ * `result`. docs/13 §1 records the original storing aggregation as a
+ * `List<List<Any>>` of `[label, count, index]` triples; a keyed record carries
+ * the same information without positional decoding.
+ */
+export type SurveyKind = "radio" | "checkbox";
+export type SurveyGraph = "bar" | "pie" | "table";
+
+export interface SurveyUnit extends UnitBase {
+  type: "$surveyunit";
+  question: string;
+  surveyKind: SurveyKind;
+  choices: string[];
+  graphType: SurveyGraph;
+  /** Whether respondents may still answer. */
+  allowAnswer: boolean;
+  /** Whether the tally is visible to respondents (docs/05 §4 `publish`). */
+  publish: boolean;
+  /** Choice index -> number of responses. */
+  result: Record<string, number>;
+  /** This device's own answer, so the UI can show what was chosen. */
+  answer: number[];
+}
+
 /** Sticky note / flip card (docs/05 §4 `$flipunit`). */
 export interface FlipUnit extends UnitBase {
   type: "$flipunit";
@@ -247,6 +275,7 @@ export type Unit =
   | FlipUnit
   | ShapeUnit
   | FormUnit
+  | SurveyUnit
   | DummyUnit;
 
 export type UnitType = Unit["type"];
@@ -261,6 +290,7 @@ const _unitTypeCheck: Record<UnitType, UnitModelType> = {
   $flipunit: "$flipunit",
   $shape: "$shape",
   $form: "$form",
+  $surveyunit: "$surveyunit",
   $dummy: "$dummy",
 };
 void _unitTypeCheck;
