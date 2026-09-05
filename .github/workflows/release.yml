@@ -45,14 +45,31 @@ jobs:
             > macOS 版は署名していないため、初回起動時は「システム設定 > プライバシーとセキュリティ」から実行を許可してください。
         run: |
           set -euo pipefail
-          if ! gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+
+          # 下書きのリリースはタグに紐づいていない ─ 公開して初めてタグが付く。
+          # `releases/tags/$TAG` は公開済みのものしか返さないので、作ったばかりの
+          # 下書きを引きに行くと 404 になる。一覧のほうには下書きも出てきて、
+          # `tag_name` には公開予定のタグが入っている。
+          find_release() {
+            gh api "repos/$GITHUB_REPOSITORY/releases" --paginate \
+              --jq 'first(.[] | select(.tag_name == env.TAG) | .id) // empty'
+          }
+
+          id=$(find_release)
+          if [ -z "$id" ]; then
             gh release create "$TAG" \
               --repo "$GITHUB_REPOSITORY" \
               --title "MetaMoJi $TAG" \
               --draft \
               --notes "$NOTES"
+            id=$(find_release)
           fi
-          id=$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$TAG" --jq '.id')
+
+          if [ -z "$id" ]; then
+            echo "::error::リリース $TAG の ID を取得できませんでした"
+            exit 1
+          fi
+
           echo "release_id=$id" >> "$GITHUB_OUTPUT"
 
   build:
