@@ -49,6 +49,12 @@ export function ClassroomScreen() {
     };
   }, []);
 
+  // The account's own class boxes, so the common case — a student opening the
+  // app on a Tuesday — needs no join code at all.
+  useEffect(() => {
+    if (session) void useClassroomStore.getState().loadMyBoxes();
+  }, [session]);
+
   // The roster call is the only way to learn about people who joined before
   // us; the socket only reports changes from now on.
   useEffect(() => {
@@ -102,6 +108,41 @@ export function ClassroomScreen() {
       <Shell title={t("教室")} onBack={() => navigate("/")}>
         <main className="settings" style={{ maxWidth: 640 }}>
           {banner}
+
+          <section>
+            <h2>{t("自分のクラス")}</h2>
+            {store.loadingBoxes ? (
+              <p className="setting-note">{t("読み込み中…")}</p>
+            ) : store.myBoxes === null ? (
+              <button
+                type="button"
+                className="btn"
+                onClick={() => void store.loadMyBoxes()}
+              >
+                <Icon name="refresh" size={18} />
+                {t("読み込む")}
+              </button>
+            ) : store.myBoxes.length === 0 ? (
+              <p className="setting-note">
+                {t("所属しているクラスはありません。下から参加してください。")}
+              </p>
+            ) : (
+              <div className="pen-list">
+                {store.myBoxes.map((entry) => (
+                  <button
+                    key={entry.driveId}
+                    type="button"
+                    className="pen-row"
+                    onClick={() => void store.selectBox(entry)}
+                  >
+                    <Icon name="school" size={20} />
+                    <span style={{ flex: 1 }}>{entry.name ?? entry.driveId}</span>
+                    <Icon name="keyboard_arrow_right" size={20} />
+                  </button>
+                ))}
+              </div>
+            )}
+          </section>
 
           <section>
             <h2>{t("参加する")}</h2>
@@ -189,7 +230,7 @@ export function ClassroomScreen() {
   return (
     <Shell
       title={store.box.name ?? t("教室")}
-      onBack={() => navigate("/")}
+      onBack={() => void store.closeBox()}
       extra={
         <>
           <span

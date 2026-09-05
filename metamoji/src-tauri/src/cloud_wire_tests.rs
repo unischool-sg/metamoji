@@ -530,3 +530,64 @@ async fn the_session_file_is_not_world_readable() {
     let mode = std::fs::metadata(&path).unwrap().permissions().mode() & 0o777;
     assert_eq!(mode, 0o600, "it holds a credential");
 }
+
+#[tokio::test]
+async fn listing_drives_is_a_get_that_still_carries_a_body() {
+    // Two things at once, both easy to get wrong: `/drives/entry` is a `GET`,
+    // and this API sends a JSON body on `GET` anyway
+    // (docs/typespec/README.md §通信の基本仕様).
+    let stub = stub(vec![
+        ("200 OK", SCHOOL_OK.to_string()),
+        ("200 OK", login_ok()),
+        (
+            "200 OK",
+            r#"{"uid":"u-1","list":[
+                {"id":"d-1","name":"1年1組","groupId":"g-1","hidden":0},
+                {"id":"d-2","name":"職員","hidden":1},
+                {"name":"idがない"}]}"#
+                .to_string(),
+        ),
+    ]);
+
+    let client = client();
+    client.set_root_server(&stub.base);
+    client.login("school01", "student01", "x").await.unwrap();
+    let entries = client.drive_entries().await.unwrap();
+
+    let _ = stub.seen.recv().unwrap();
+    let _ = stub.seen.recv().unwrap();
+    let list = stub.seen.recv().unwrap();
+
+    assert_eq!(list.method, "GET");
+    assert_eq!(list.path, "/mmjeditor2/2.0/drives/entry");
+    assert_eq!(list.json()["productName"], "Android-Share-G-ClassRoom");
+
+    assert_eq!(entries.len(), 2, "the entry with no id is dropped");
+    assert_eq!(entries[0].name.as_deref(), Some("1年1組"));
+    assert!(entries[1].hidden);
+}
+
+#[tokio::test]
+async fn a_drives_home_is_fetched_with_get() {
+    // `sync-drive.tsp` hangs every drive path off this value, so getting the
+    // verb wrong here breaks the whole class-box feature and nothing else.
+    let stub = stub(vec![
+        ("200 OK", SCHOOL_OK.to_string()),
+        ("200 OK", login_ok()),
+        ("200 OK", r#"{"homeDir":"https://drive.example/x"}"#.to_string()),
+    ]);
+
+    let client = client();
+    client.set_root_server(&stub.base);
+    client.login("school01", "student01", "x").await.unwrap();
+    let home = client.drive_home("d-1").await.unwrap();
+
+    let _ = stub.seen.recv().unwrap();
+    let _ = stub.seen.recv().unwrap();
+    let seen = stub.seen.recv().unwrap();
+
+    assert_eq!(seen.method, "GET");
+    assert_eq!(seen.path, "/mmjeditor2/2.0/drives/d-1/home");
+    // Every drive path is concatenated onto this, so it needs the slash.
+    assert_eq!(home, "https://drive.example/x/");
+}

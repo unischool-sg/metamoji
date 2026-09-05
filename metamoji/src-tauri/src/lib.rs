@@ -225,6 +225,7 @@ pub fn run() {
             commands::classroom_attach_booth,
             commands::classroom_detach_booth,
             commands::classroom_current_room,
+            commands::classbox_list,
             commands::classbox_open,
             commands::classbox_revision,
             commands::classbox_open_note,

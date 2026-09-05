@@ -113,6 +113,18 @@ pub enum Credential {
     Qwd(String),
 }
 
+/// One drive the user belongs to.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DriveEntry {
+    pub drive_id: String,
+    pub name: Option<String>,
+    pub group_id: Option<String>,
+    pub team_id: Option<String>,
+    /// The user has hidden this drive from their own list.
+    pub hidden: bool,
+}
+
 /// A class box — the original's 「クラスボックス」, an online lesson room that
 /// owns a drive the whole class writes into.
 #[derive(Debug, Clone, Serialize)]
@@ -418,12 +430,29 @@ impl CloudClient {
         command: &str,
         params: Map<String, Value>,
     ) -> AppResult<Map<String, Value>> {
+        self.command(co_login_id, reqwest::Method::POST, command, params)
+            .await
+    }
+
+    /// A command with an explicit method.
+    ///
+    /// The verb is not decoration: `/drives/entry` and `/drives/{id}/home` are
+    /// `GET`, and the tenant answers a `POST` to them differently. The body
+    /// goes along regardless — `CsParamBaseAbstract#stringify()` is called for
+    /// every request and the client sends JSON on `GET` too, which is unusual
+    /// enough that `docs/typespec/README.md` calls it out.
+    async fn command(
+        &self,
+        co_login_id: &str,
+        method: reqwest::Method,
+        command: &str,
+        params: Map<String, Value>,
+    ) -> AppResult<Map<String, Value>> {
         let host = self.school_for(co_login_id).await?.server_url;
         // `getRestHost() + contextRoot + command`, exactly as
         // `CsHttpClient.sendRequestWithCommand` builds it.
         let url = format!("{host}{REST_BASE_PATH}{command}");
-        self.send(reqwest::Method::POST, &url, Some(Value::Object(params)))
-            .await
+        self.send(method, &url, Some(Value::Object(params))).await
     }
 
     /// One place where transport errors, the JSON envelope and `errorCode`
@@ -584,9 +613,42 @@ impl CloudClient {
         params.insert("driveId".into(), json!(drive_id));
 
         let body = self
-            .post_command(&co_login_id, &format!("/drives/{drive_id}/home"), params)
+            .command(
+                &co_login_id,
+                reqwest::Method::GET,
+                &format!("/drives/{drive_id}/home"),
+                params,
+            )
             .await?;
         Ok(with_trailing_slash(&required_str(&body, "homeDir")?))
+    }
+
+    /// The drives the signed-in user belongs to — their class boxes.
+    ///
+    /// This is what makes the classroom usable without a join code: a student
+    /// who joined last term should open the app and see their class, not be
+    /// asked for a code again.
+    ///
+    /// Entry fields are `DvmDriveBean`'s: `id`, `name`, `groupId`, `teamId`,
+    /// `hidden`. Note `id`, not `driveId` — the accessor reads `"id"`.
+    pub async fn drive_entries(&self) -> AppResult<Vec<DriveEntry>> {
+        let co_login_id = self.signed_in_school()?;
+        let body = self
+            .command(
+                &co_login_id,
+                reqwest::Method::GET,
+                "/drives/entry",
+                self.base_params(),
+            )
+            .await?;
+
+        let list = body
+            .get("list")
+            .and_then(Value::as_array)
+            .cloned()
+            .unwrap_or_default();
+
+        Ok(list.iter().filter_map(parse_drive_entry).collect())
     }
 
     // -- class boxes ---------------------------------------------------------
@@ -865,6 +927,31 @@ fn restrict_permissions(path: &std::path::Path) {
 #[cfg(not(unix))]
 fn restrict_permissions(_path: &std::path::Path) {}
 
+/// One entry of `/drives/entry`'s `list`.
+///
+/// An entry with no `id` is dropped: it cannot be opened, and a row that does
+/// nothing when clicked is worse than a shorter list.
+fn parse_drive_entry(value: &Value) -> Option<DriveEntry> {
+    let entry = value.as_object()?;
+    let text = |key: &str| {
+        entry
+            .get(key)
+            .and_then(Value::as_str)
+            .filter(|s| !s.is_empty())
+            .map(str::to_string)
+    };
+
+    Some(DriveEntry {
+        drive_id: text("id")?,
+        name: text("name"),
+        group_id: text("groupId"),
+        team_id: text("teamId"),
+        // `isHidden` compares against the integer 1, so anything else — absent,
+        // 0, a string — means visible.
+        hidden: entry.get("hidden").and_then(Value::as_i64) == Some(1),
+    })
+}
+
 fn opt_str(body: &Map<String, Value>, key: &str) -> Option<String> {
     body.get(key)
         .and_then(Value::as_str)
@@ -1017,6 +1104,43 @@ mod tests {
         .unwrap_err()
         .to_string();
         assert_eq!(err, "本日 22:00 まで停止しています");
+    }
+
+    #[test]
+    fn a_drive_entry_reads_the_bean_field_names() {
+        // `DvmDriveBean` reads `"id"`, not `"driveId"` — the field name and the
+        // key differ here as they do elsewhere in this API.
+        let entry = parse_drive_entry(&json!({
+            "id": "d-1",
+            "name": "1年1組",
+            "groupId": "g-1",
+            "teamId": "t-1",
+            "hidden": 0,
+        }))
+        .expect("a complete entry");
+
+        assert_eq!(entry.drive_id, "d-1");
+        assert_eq!(entry.name.as_deref(), Some("1年1組"));
+        assert_eq!(entry.group_id.as_deref(), Some("g-1"));
+        assert!(!entry.hidden);
+    }
+
+    #[test]
+    fn only_the_integer_one_means_hidden() {
+        // `isHidden` compares against 1; anything else is visible, and
+        // treating "absent" as hidden would empty the list.
+        assert!(parse_drive_entry(&json!({ "id": "d", "hidden": 1 })).unwrap().hidden);
+        assert!(!parse_drive_entry(&json!({ "id": "d", "hidden": 0 })).unwrap().hidden);
+        assert!(!parse_drive_entry(&json!({ "id": "d" })).unwrap().hidden);
+        assert!(!parse_drive_entry(&json!({ "id": "d", "hidden": "1" })).unwrap().hidden);
+    }
+
+    #[test]
+    fn an_entry_with_no_id_is_dropped() {
+        // It could not be opened; a row that does nothing is worse than none.
+        assert!(parse_drive_entry(&json!({ "name": "名前だけ" })).is_none());
+        assert!(parse_drive_entry(&json!({ "id": "" })).is_none());
+        assert!(parse_drive_entry(&json!("not an object")).is_none());
     }
 
     #[test]

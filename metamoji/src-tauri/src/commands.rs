@@ -10,7 +10,7 @@ use std::path::PathBuf;
 use base64::Engine as _;
 use tauri::State;
 
-use crate::cloud::{ClassBox, ClassGroup, CloudClient, CloudSession, School};
+use crate::cloud::{ClassBox, ClassGroup, CloudClient, CloudSession, DriveEntry, School};
 use crate::collabo::session::{ClassroomState, CollaboMember, CollaboRoom, EnterResult};
 use crate::drive::{self, listing::Listing, DriveClient};
 use crate::error::{AppError, AppResult};
@@ -655,6 +655,21 @@ pub fn classroom_current_room(classroom: State<'_, ClassroomState>) -> Option<St
 // service with its own host, its own session and its own conventions. Opening
 // one is therefore three steps, done together so a half-open box cannot exist:
 // find the drive's home, sign into it, and read its contents.
+
+/// The class boxes the signed-in user belongs to.
+///
+/// Hidden ones are filtered here rather than in the UI: `hidden` means the
+/// user has already said they do not want to see this drive, and every screen
+/// that showed it would have to remember to ask.
+#[tauri::command]
+pub async fn classbox_list(cloud: State<'_, CloudClient>) -> AppResult<Vec<DriveEntry>> {
+    Ok(cloud
+        .drive_entries()
+        .await?
+        .into_iter()
+        .filter(|entry| !entry.hidden)
+        .collect())
+}
 
 #[tauri::command]
 pub async fn classbox_open(

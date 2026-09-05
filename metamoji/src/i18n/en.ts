@@ -281,6 +281,10 @@ export const en: Record<string, string> = {
   "授業を終える": "End the lesson",
   "あなたは編集できる役割です({roles})。": "You may edit ({roles}).",
   "あなたは閲覧のみの役割です。": "You have view-only access.",
+  "自分のクラス": "My classes",
+  "読み込む": "Load",
+  "所属しているクラスはありません。下から参加してください。":
+    "You do not belong to any class yet — join one below.",
   "クラスボックスのノート": "Notes in the class box",
   "ノートはまだありません。": "No notes yet.",
   "中身を解釈できませんでした({count} 個のモデル、未知の種別: {types})。":

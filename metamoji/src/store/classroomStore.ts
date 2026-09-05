@@ -22,6 +22,7 @@ import type {
   ClassBoxListing,
   ClassroomEvent,
   CollaboMember,
+  DriveEntry,
   RelayInfo,
 } from "../ipc/api";
 
@@ -32,6 +33,9 @@ export interface ClassroomMember extends CollaboMember {
 }
 
 interface ClassroomState {
+  /** The class boxes this account belongs to. Null until first fetched. */
+  myBoxes: DriveEntry[] | null;
+  loadingBoxes: boolean;
   box: ClassBox | null;
   /** The class box's contents, or null before it has been opened. */
   listing: ClassBoxListing | null;
@@ -51,6 +55,8 @@ interface ClassroomState {
   error: string | null;
   busy: boolean;
 
+  loadMyBoxes: () => Promise<void>;
+  selectBox: (entry: DriveEntry) => Promise<void>;
   createBox: (name: string) => Promise<ClassBox | null>;
   joinBox: (joinCode: string) => Promise<ClassBox | null>;
   openBox: () => Promise<void>;
@@ -73,6 +79,8 @@ export function canEdit(roles: string[]): boolean {
 }
 
 export const useClassroomStore = create<ClassroomState>((set, get) => ({
+  myBoxes: null,
+  loadingBoxes: false,
   box: null,
   listing: null,
   openingBox: false,
@@ -87,6 +95,41 @@ export const useClassroomStore = create<ClassroomState>((set, get) => ({
   notice: null,
   error: null,
   busy: false,
+
+  /**
+   * The class boxes the account already belongs to.
+   *
+   * Without this the only way in is a join code, which a student would have to
+   * be given again every time they open the app — the membership is already on
+   * the server, so asking for it again is the app forgetting, not the user.
+   */
+  loadMyBoxes: async () => {
+    set({ loadingBoxes: true, error: null });
+    try {
+      set({ myBoxes: await api.classboxList(), loadingBoxes: false });
+    } catch (err) {
+      set({ loadingBoxes: false, myBoxes: null, error: message(err) });
+    }
+  },
+
+  /** Opens one of them. The entry has the drive id; the code is fetched. */
+  selectBox: async (entry) => {
+    set({
+      box: {
+        driveId: entry.driveId,
+        groupId: entry.groupId,
+        name: entry.name,
+        joinCode: null,
+        joinEnabled: null,
+      },
+      listing: null,
+      error: null,
+    });
+    // Both are useful and neither blocks the other: the contents are what the
+    // user came for, the code is what a teacher reads out.
+    void get().openBox();
+    void get().refreshCode(false);
+  },
 
   createBox: async (name) => {
     set({ busy: true, error: null });
@@ -134,6 +177,7 @@ export const useClassroomStore = create<ClassroomState>((set, get) => ({
   closeBox: async () => {
     await api.classboxClose();
     set({ box: null, listing: null });
+    void get().loadMyBoxes();
   },
 
   refreshCode: async (regenerate) => {

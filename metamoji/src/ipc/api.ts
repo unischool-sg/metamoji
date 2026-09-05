@@ -629,3 +629,18 @@ export async function classboxClose(): Promise<void> {
   if (!isTauri()) return;
   return invoke<void>("classbox_close");
 }
+
+/** A class box the signed-in user belongs to. */
+export interface DriveEntry {
+  driveId: string;
+  name: string | null;
+  groupId: string | null;
+  teamId: string | null;
+  hidden: boolean;
+}
+
+/** The user's class boxes. Hidden ones are already filtered out. */
+export async function classboxList(): Promise<DriveEntry[]> {
+  requireTauri();
+  return invoke<DriveEntry[]>("classbox_list");
+}
