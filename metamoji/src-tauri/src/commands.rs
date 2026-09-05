@@ -837,8 +837,14 @@ pub async fn classbox_send_strokes(
         let ledger = store.lock().unwrap().room_strokes()?;
         ledger
     };
-    let (waiting, removals) = collabo::send::changes(&tree, &ledger);
+    let (waiting, removals, stale) = collabo::send::changes(&tree, &ledger);
     if waiting.is_empty() && removals.is_empty() {
+        if stale > 0 {
+            return Err(AppError::other(
+                "このノートは古い形式で取り込まれているため、教室に送れません。\
+                 クラスボックスから開き直してください。",
+            ));
+        }
         return Ok(0);
     }
 

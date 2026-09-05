@@ -82,6 +82,45 @@ import { strokeBounds } from "./stroke";
 /** Key under which un-consumed properties are parked so round-trips are lossless. */
 const EXTRA_KEY = "_extra";
 
+/**
+ * Properties a page or a layer carries that this app has no field for.
+ *
+ * They are not decoration: a page from a class note is addressed by the
+ * `pageId` the classroom gave it, and its layers by their own `layerId`. Both
+ * were being replaced by this app's model ids on the first save, which quietly
+ * cut the note off from the room it came from — everything written on it went
+ * to a channel nobody was listening to.
+ */
+const PAGE_KEYS = new Set([
+  // `pageId` and `layerId` are deliberately *not* here: they are parked and
+  // written back as they came, so the classroom's names survive a save.
+  "paperWidth",
+  "paperHeight",
+  "paperStyle",
+  "paperColor",
+  "currentLayer",
+  "header",
+  "footer",
+  "showFurniture",
+]);
+const LAYER_KEYS = new Set(["layerType", "name", "visible", "locked"]);
+
+function park<T>(value: T, props: PropDict, consumed: Set<string>): T {
+  const extra: PropDict = {};
+  let has = false;
+  for (const [key, item] of Object.entries(props)) {
+    if (consumed.has(key)) continue;
+    extra[key] = item;
+    has = true;
+  }
+  if (has) (value as T & { [EXTRA_KEY]?: PropDict })[EXTRA_KEY] = extra;
+  return value;
+}
+
+function parkedProps(value: unknown): PropDict {
+  return (value as { [EXTRA_KEY]?: PropDict })[EXTRA_KEY] ?? {};
+}
+
 const DEFAULT_PEN: PenAttributes = {
   color: "#1f1f1f",
   width: 2.4,
@@ -123,6 +162,11 @@ export function toGeneric(doc: NoteDocument): GenericTree {
               showFurniture: page.furniture.show,
             }
           : {}),
+        // Last, so a document that brought its own wins. A page from a class
+        // note is named by the classroom — `pageId` is how the room addresses
+        // it — and overwriting that with this app's model id makes everything
+        // written on the page unsendable.
+        ...parkedProps(page),
       },
     });
 
@@ -137,6 +181,7 @@ export function toGeneric(doc: NoteDocument): GenericTree {
           name: layer.name,
           visible: layer.visible,
           locked: layer.locked,
+          ...parkedProps(layer),
         },
       });
 
@@ -359,7 +404,7 @@ function pageFromGeneric(tree: GenericTree, node: GenericModel): Page {
   const footer = getString(node.props, "footer", "");
   const showFurniture = getBool(node.props, "showFurniture", false);
 
-  return {
+  const page: Page = {
     id: node.id,
     paperWidth: getNumber(node.props, "paperWidth", 1240),
     paperHeight: getNumber(node.props, "paperHeight", 1754),
@@ -371,6 +416,7 @@ function pageFromGeneric(tree: GenericTree, node: GenericModel): Page {
       ? { furniture: { header, footer, show: showFurniture } }
       : {}),
   };
+  return park(page, node.props, PAGE_KEYS);
 }
 
 function layerFromGeneric(tree: GenericTree, node: GenericModel): Layer {
@@ -379,7 +425,7 @@ function layerFromGeneric(tree: GenericTree, node: GenericModel): Layer {
     const unit = unitFromGeneric(child);
     if (unit) units.push(unit);
   }
-  return {
+  const layer: Layer = {
     id: node.id,
     layerType: getString(node.props, "layerType", "content") as LayerType,
     name: getString(node.props, "name", "Layer"),
@@ -387,6 +433,7 @@ function layerFromGeneric(tree: GenericTree, node: GenericModel): Layer {
     locked: getBool(node.props, "locked", false),
     units,
   };
+  return park(layer, node.props, LAYER_KEYS);
 }
 
 const BASE_KEYS = new Set(["unitId", "x", "y", "width", "height", "rotation", "contentScale"]);

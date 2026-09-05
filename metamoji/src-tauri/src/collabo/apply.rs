@@ -211,9 +211,13 @@ fn direction_type_name(value: i64) -> &'static str {
 /// `D` — the drawing engine's direction. Only "add" carries content.
 fn drawing_changes(doc: &ParsedDocument, index: usize) -> Vec<Change> {
     const ADD: i64 = 0;
+    const ERASE: i64 = 10;
 
     let model = &doc.models[&index];
     let kind = model.props.get("T").and_then(Value::as_i64).unwrap_or(-1);
+    if kind == ERASE {
+        return erase_changes(doc, index);
+    }
     if kind != ADD {
         return vec![Change::Unsupported {
             kind: format!("D {}", direction_type_name(kind)),
@@ -304,6 +308,38 @@ fn stroke_change(doc: &ParsedDocument, index: usize) -> Option<Change> {
         .unwrap_or_else(|| format!("e{index}"));
     let stroke = crate::atdoc::ink::build_stroke(doc, index, &styles, &|_| id.clone())?;
     Some(Change::Stroke { id, stroke })
+}
+
+/// The eraser. Every element a record names is taken out.
+///
+/// The original erases *ranges*: a record carries `r`, the fraction of the
+/// stroke rubbed out, and the drawing engine keeps whatever is left as new
+/// fragment elements. This app has no partial stroke to keep, so a stroke
+/// touched by the eraser goes entirely. It shows a little less than the
+/// original would; the alternative is showing ink the user rubbed out, which
+/// is what happened while this direction was ignored — erased strokes came
+/// back on every download.
+fn erase_changes(doc: &ParsedDocument, index: usize) -> Vec<Change> {
+    let mut out = Vec::new();
+    for record in doc.children.get(&(index as i32)).cloned().unwrap_or_default() {
+        let props = &doc.models[&record].props;
+        // Both the element erased and, where the engine split one, the
+        // fragment it named: neither survives here.
+        for key in ["i", "b"] {
+            if let Some(id) = props.get(key).and_then(Value::as_str) {
+                let change = Change::Remove { id: id.to_string() };
+                if !out.contains(&change) {
+                    out.push(change);
+                }
+            }
+        }
+    }
+    if out.is_empty() {
+        out.push(Change::Unsupported {
+            kind: "D ERASE without an element id".into(),
+        });
+    }
+    out
 }
 
 fn attachment_changes(doc: &ParsedDocument, index: usize) -> Vec<Change> {

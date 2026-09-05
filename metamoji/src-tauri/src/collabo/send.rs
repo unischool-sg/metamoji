@@ -400,12 +400,30 @@ fn personal_strokes(tree: &GenericTree) -> Vec<Pending> {
     out
 }
 
+/// The mark of a real booth id. A layer the room addresses is named
+/// `{pageId}_[layer-…]`; anything else is a name this app made up.
+const BOOTH_MARK: &str = "_[layer-";
+
 /// What has changed since the room was last told.
 ///
 /// `ledger` is what the room has been told so far. A stroke it does not know
 /// is new; an entry whose stroke is no longer in the note was erased.
-pub fn changes(tree: &GenericTree, ledger: &[Ledger]) -> (Vec<Pending>, Vec<Ledger>) {
-    let here = personal_strokes(tree);
+///
+/// The third number is strokes that cannot be sent because their layer is not
+/// named the way the room names layers — a note taken by a build that replaced
+/// those names with its own model ids. There is nothing to do about such a
+/// note but take it from the class box again, and saying so beats posting to a
+/// channel nobody is listening to.
+pub fn changes(tree: &GenericTree, ledger: &[Ledger]) -> (Vec<Pending>, Vec<Ledger>, usize) {
+    let all = personal_strokes(tree);
+    let stale = all
+        .iter()
+        .filter(|p| !p.layer_id.contains(BOOTH_MARK))
+        .count();
+    let here: Vec<Pending> = all
+        .into_iter()
+        .filter(|p| p.layer_id.contains(BOOTH_MARK))
+        .collect();
     let known: std::collections::HashSet<&str> =
         ledger.iter().map(|l| l.stroke_id.as_str()).collect();
     let added: Vec<Pending> = here
@@ -429,7 +447,7 @@ pub fn changes(tree: &GenericTree, ledger: &[Ledger]) -> (Vec<Pending>, Vec<Ledg
         .filter(|l| layers.contains(&l.layer_id))
         .cloned()
         .collect();
-    (added, removed)
+    (added, removed, stale)
 }
 
 fn layer_ids(tree: &GenericTree) -> std::collections::HashSet<String> {
@@ -703,7 +721,7 @@ mod queue_tests {
     #[test]
     fn a_stroke_the_room_has_not_been_told_about_goes_out() {
         let tree = note_with(json!([{ "id": "a" }, { "id": "b" }]), "system:personal");
-        let (added, removed) = changes(&tree, &[ledger("a")]);
+        let (added, removed, _) = changes(&tree, &[ledger("a")]);
         assert_eq!(added.len(), 1);
         assert_eq!(added[0].stroke_id, "b");
         assert_eq!(added[0].layer_id, "P1_[layer-forUser]_9");
@@ -713,7 +731,7 @@ mod queue_tests {
     #[test]
     fn a_stroke_no_longer_in_the_note_is_reported_as_erased() {
         let tree = note_with(json!([{ "id": "a" }]), "system:personal");
-        let (added, removed) = changes(&tree, &[ledger("a"), ledger("gone")]);
+        let (added, removed, _) = changes(&tree, &[ledger("a"), ledger("gone")]);
         assert!(added.is_empty());
         assert_eq!(removed, vec![ledger("gone")]);
     }
@@ -730,7 +748,7 @@ mod queue_tests {
               "width": 2.0, "penType": "ballpoint", "opacity": 1.0 },
         ]);
         let tree = note_with(saved, "system:personal");
-        let (added, removed) = changes(&tree, &[ledger("a")]);
+        let (added, removed, _) = changes(&tree, &[ledger("a")]);
         assert!(added.is_empty(), "nothing new to send");
         assert!(removed.is_empty(), "and nothing to erase");
     }
@@ -739,20 +757,20 @@ mod queue_tests {
     fn a_stroke_moved_to_another_layer_has_not_been_erased() {
         let mut tree = note_with(json!([{ "id": "a" }]), "system:edit");
         // The ledger remembers it from when it was on a personal layer.
-        let (added, removed) = changes(&tree, &[ledger("a")]);
+        let (added, removed, _) = changes(&tree, &[ledger("a")]);
         assert!(added.is_empty());
         assert!(removed.is_empty(), "still in the note, just not here");
 
         // Gone from the note entirely is a different matter.
         tree.models.get_mut("draw").unwrap().props = json!({ "strokes": [] });
-        let (_, removed) = changes(&tree, &[ledger("a")]);
+        let (_, removed, _) = changes(&tree, &[ledger("a")]);
         assert_eq!(removed.len(), 1);
     }
 
     #[test]
     fn a_layer_the_room_has_no_booth_for_is_not_sent_from() {
         let tree = note_with(json!([{ "id": "a" }]), "system:edit");
-        let (added, _) = changes(&tree, &[]);
+        let (added, _, _) = changes(&tree, &[]);
         assert!(added.is_empty());
     }
 
@@ -781,7 +799,7 @@ mod guard_tests {
             element_id: "el a".into(),
             layer_id: "P1_[layer-forUser]_9".into(),
         }];
-        let (added, removed) = changes(&tree, &ledger);
+        let (added, removed, _) = changes(&tree, &ledger);
         assert!(added.is_empty());
         assert!(removed.is_empty(), "an absent layer is not an erasure");
     }
@@ -802,5 +820,49 @@ mod guard_tests {
             layer_id: "P1_[layer-forUser]_9".into(),
         }];
         assert_eq!(changes(&tree, &ledger).1.len(), 1);
+    }
+}
+
+#[cfg(test)]
+mod stale_tests {
+    use super::*;
+    use crate::model::GenericModel;
+
+    fn note_with_layer(layer_id: &str) -> GenericTree {
+        let mut tree = GenericTree::new("root", "$sharenote");
+        tree.insert(GenericModel {
+            id: "layer".into(),
+            parent_id: Some("root".into()),
+            model_type: "$layer".into(),
+            props: json!({ "layerId": layer_id, "layerType": "system:personal" }),
+            children: Vec::new(),
+        });
+        tree.insert(GenericModel {
+            id: "draw".into(),
+            parent_id: Some("layer".into()),
+            model_type: "$draw".into(),
+            props: json!({ "strokes": [{ "id": "a" }] }),
+            children: Vec::new(),
+        });
+        tree
+    }
+
+    #[test]
+    fn a_layer_named_the_way_the_room_names_them_is_sendable() {
+        let tree = note_with_layer("__subId_v2_[x]_[page]_4_[layer-forUser]_9");
+        let (added, _, stale) = changes(&tree, &[]);
+        assert_eq!(added.len(), 1);
+        assert_eq!(stale, 0);
+    }
+
+    #[test]
+    fn a_layer_this_app_named_itself_is_reported_rather_than_posted() {
+        // A note taken by a build that overwrote the classroom's names with
+        // its own model ids. Posting to that name reaches nobody, and looks
+        // from the outside exactly like sending working.
+        let tree = note_with_layer("note_abc_l___subId_v2__x___page__4__layer_forUser__9");
+        let (added, _, stale) = changes(&tree, &[]);
+        assert!(added.is_empty());
+        assert_eq!(stale, 1);
     }
 }

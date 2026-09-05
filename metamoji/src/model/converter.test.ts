@@ -372,3 +372,51 @@ describe("current layer", () => {
     expect(pageWith(99).currentLayerId).toBe("l1");
   });
 });
+
+describe("names a class note is addressed by", () => {
+  const classNote = () => {
+    const tree = emptyTree("root", MT_NOTE);
+    addNode(tree, {
+      id: "m14",
+      parentId: "root",
+      modelType: MT_PAGE,
+      props: { pageId: "__subId_v2_[abc]_[page]_4", forSchoolPageType: 1, paperWidth: 841.92 },
+    });
+    addNode(tree, {
+      id: "m15",
+      parentId: "m14",
+      modelType: MT_LAYER,
+      props: {
+        layerId: "__subId_v2_[abc]_[page]_4_[layer-forUser]_9",
+        layerType: "system:personal",
+      },
+    });
+    tree.models.m14.children = ["m15"];
+    return tree;
+  };
+
+  it("keeps the page and layer ids the classroom uses across a save", () => {
+    // They are how the room addresses the page and the layer. Replacing them
+    // with this app's model ids sent everything written on the note to a
+    // channel nobody was listening to.
+    const saved = toGeneric(fromGeneric(classNote()));
+    const page = Object.values(saved.models).find((m) => m.modelType === MT_PAGE)!;
+    const layer = Object.values(saved.models).find((m) => m.modelType === MT_LAYER)!;
+    expect(page.props.pageId).toBe("__subId_v2_[abc]_[page]_4");
+    expect(layer.props.layerId).toBe("__subId_v2_[abc]_[page]_4_[layer-forUser]_9");
+    expect(layer.props.layerType).toBe("system:personal");
+  });
+
+  it("keeps what else the page carried", () => {
+    const saved = toGeneric(fromGeneric(classNote()));
+    const page = Object.values(saved.models).find((m) => m.modelType === MT_PAGE)!;
+    expect(page.props.forSchoolPageType).toBe(1);
+  });
+
+  it("still names a locally made page after itself", () => {
+    const doc = createDocument("plain");
+    const saved = toGeneric(doc);
+    const page = Object.values(saved.models).find((m) => m.modelType === MT_PAGE)!;
+    expect(page.props.pageId).toBe(doc.pages[0].id);
+  });
+});

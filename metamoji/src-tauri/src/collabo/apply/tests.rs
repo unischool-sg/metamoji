@@ -380,3 +380,63 @@ fn a_page_level_booth_has_no_layer_to_make() {
     let mut tree = note();
     assert!(!ensure_booth_layer(&mut tree, "P1"));
 }
+
+#[test]
+fn the_erasers_own_direction_takes_the_stroke_out() {
+    // `D ERASE` is what the original app sends when the user rubs something
+    // out. Ignoring it meant every download brought the erased strokes back.
+    let mut tree = note();
+    let add = decode(&wire("booth_[unit]_draw", |tree| {
+        tree.insert(detached(model("d", Some("direction"), "D", json!({ "T": 0 }))));
+        tree.insert(model("i0", Some("d"), "i", json!({ "i": "el-1", "m": { "$ref": "e" } })));
+        tree.insert(detached(model(
+            "e",
+            Some("direction"),
+            "E",
+            json!({ "I": "el-1", "T": 1, "P": { "$points": [1.0, 2.0, 3.0, 4.0] },
+                    "BX": 1.0, "BY": 2.0, "BW": 2.0, "BH": 2.0 }),
+        )));
+        json!({ "$ref": "d" })
+    }))
+    .unwrap();
+    apply(&mut tree, "P1_[layer-forUser]_9876", &add, &Default::default());
+
+    // A partial erase: the range is a fraction of the stroke, and the engine
+    // would keep the rest as a fragment.
+    let erase = decode(&wire("booth_[unit]_draw", |tree| {
+        tree.insert(detached(model("d", Some("direction"), "D", json!({ "T": 10 }))));
+        tree.insert(model(
+            "i0",
+            Some("d"),
+            "i",
+            json!({ "i": "el-1", "r": [0.0, 0.93], "s": 0, "e": 1 }),
+        ));
+        json!({ "$ref": "d" })
+    }))
+    .unwrap();
+    assert_eq!(erase.changes, vec![Change::Remove { id: "el-1".into() }]);
+
+    let applied = apply(&mut tree, "P1_[layer-forUser]_9876", &erase, &Default::default());
+    assert_eq!(applied.removed, 1);
+    let draw = tree.models.values().find(|m| m.model_type == "$draw").unwrap();
+    assert!(draw.props["strokes"].as_array().unwrap().is_empty());
+}
+
+#[test]
+fn a_fragment_named_by_the_eraser_goes_too() {
+    // A record for a piece the engine split off names the stroke it came from
+    // in `b`; both ids refer to ink that is no longer whole.
+    let erase = decode(&wire("b", |tree| {
+        tree.insert(detached(model("d", Some("direction"), "D", json!({ "T": 10 }))));
+        tree.insert(model("i0", Some("d"), "i", json!({ "i": "el-4", "b": "el-1" })));
+        json!({ "$ref": "d" })
+    }))
+    .unwrap();
+    assert_eq!(
+        erase.changes,
+        vec![
+            Change::Remove { id: "el-4".into() },
+            Change::Remove { id: "el-1".into() },
+        ]
+    );
+}

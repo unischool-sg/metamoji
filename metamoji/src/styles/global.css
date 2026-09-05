@@ -1369,6 +1369,9 @@ input.layer-row__name {
 /* A drawer destination: 56px tall, fully rounded, tonal when current. */
 .sidebar-item {
   flex: 1;
+  /* A button shrinks to fit by default; standalone destinations (all notes,
+     trash) have no .sidebar-row to stretch them, so span the drawer. */
+  width: 100%;
   display: flex;
   align-items: center;
   gap: var(--space-3);
