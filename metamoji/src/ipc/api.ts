@@ -86,6 +86,8 @@ export interface RoomPull {
 export interface ClassOrigin {
   driveId: string;
   documentId: string;
+  /** The room that carries what everyone writes on the note. */
+  roomId: string | null;
 }
 
 export interface AtdocImportResult {
@@ -95,6 +97,8 @@ export interface AtdocImportResult {
   title: string | null;
   /** Absent for a file on disk, which belongs to no room. */
   room: RoomPull | null;
+  /** The room the note belongs to, to be remembered alongside it. */
+  roomId: string | null;
 }
 
 export interface ExportPagePayload {
@@ -661,9 +665,10 @@ export async function classboxLink(
   noteId: string,
   driveId: string,
   documentId: string,
+  roomId: string | null,
 ): Promise<void> {
   if (!isTauri()) return;
-  await invoke("classbox_link", { noteId, driveId, documentId });
+  await invoke("classbox_link", { noteId, driveId, documentId, roomId });
 }
 
 export async function classboxOrigin(noteId: string): Promise<ClassOrigin | null> {

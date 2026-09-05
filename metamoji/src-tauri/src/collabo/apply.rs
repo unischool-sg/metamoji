@@ -29,6 +29,9 @@ use crate::model::{GenericModel, GenericTree};
 /// The marker that separates a page id from a layer id in a booth.
 const LAYER_MARK: &str = "_[layer-";
 const PERSONAL_LAYER_TYPE: &str = "system:personal";
+/// The drawing-engine element id a unit arrived under, kept so a later removal
+/// can name it.
+const ELEMENT_ID_KEY: &str = "$roomElementId";
 const COMMON_LAYER_TYPE: &str = "system:common";
 
 #[derive(Debug, Clone, PartialEq)]
@@ -50,6 +53,8 @@ pub enum Change {
         mime: String,
         bytes: Vec<u8>,
     },
+    /// An element the room says is gone.
+    Remove { id: String },
     /// A payload this build does not act on, named so it can be reported.
     Unsupported { kind: String },
 }
@@ -199,10 +204,21 @@ fn drawing_changes(doc: &ParsedDocument, index: usize) -> Vec<Change> {
 
     let mut out = Vec::new();
     for record in doc.children.get(&(index as i32)).cloned().unwrap_or_default() {
-        // `m` is the element; without one the record is a removal or a move,
-        // which this build does not apply.
-        let Some(element) = doc.models[&record]
-            .props
+        let props = &doc.models[&record].props;
+
+        // `t` is the execution type: a removal names the element and nothing
+        // else, because the receiver already has it.
+        if props.get("t").and_then(Value::as_i64) == Some(super::send::EXECUTION_REMOVE) {
+            match props.get("i").and_then(Value::as_str) {
+                Some(id) => out.push(Change::Remove { id: id.to_string() }),
+                None => out.push(Change::Unsupported {
+                    kind: "removal without an element id".into(),
+                }),
+            }
+            continue;
+        }
+
+        let Some(element) = props
             .get("m")
             .and_then(|m| m.get("$ref"))
             .and_then(Value::as_u64)
@@ -234,9 +250,21 @@ fn drawing_changes(doc: &ParsedDocument, index: usize) -> Vec<Change> {
         let Some(unit_model) = doc.models.get(&(unit as usize)) else {
             continue;
         };
+        let mut models = subtree(doc, unit as usize);
+        if let Some(root) = models.first_mut() {
+            if let Value::Object(props) = &mut root.props {
+                if let Some(id) = doc.models[&(element as usize)]
+                    .props
+                    .get("I")
+                    .and_then(Value::as_str)
+                {
+                    props.insert(ELEMENT_ID_KEY.into(), Value::String(id.to_string()));
+                }
+            }
+        }
         out.push(Change::Unit {
             unit_id: unit_id_of(unit_model, ""),
-            models: subtree(doc, unit as usize),
+            models,
         });
     }
     out
@@ -438,6 +466,11 @@ fn collect_refs(value: &Value, out: &mut Vec<usize>) {
 pub struct Applied {
     pub units: usize,
     pub strokes: usize,
+    pub removed: usize,
+    /// Strokes now in the note, by the id the room knows them by, with the
+    /// layer they are on. The caller records these so a later erase can name
+    /// them.
+    pub stroke_ids: Vec<(String, String)>,
     pub assets: Vec<(String, String, Vec<u8>)>,
     pub unsupported: Vec<String>,
 }
@@ -469,6 +502,14 @@ pub fn apply(tree: &mut GenericTree, booth_id: &str, direction: &Direction) -> A
             Change::Stroke { id, stroke } => {
                 if place_stroke(tree, &place, id, stroke) {
                     applied.strokes += 1;
+                    if let Some(layer) = place.layer_id.clone() {
+                        applied.stroke_ids.push((id.clone(), layer));
+                    }
+                }
+            }
+            Change::Remove { id } => {
+                if remove_element(tree, id) {
+                    applied.removed += 1;
                 }
             }
         }
@@ -581,7 +622,17 @@ fn place_stroke(tree: &mut GenericTree, place: &Placement, id: &str, stroke: &Va
         _ => Vec::new(),
     };
     strokes.retain(|s| s.get("id").and_then(Value::as_str) != Some(id));
-    strokes.push(stroke.clone());
+    let mut stroke = stroke.clone();
+    if let Value::Object(map) = &mut stroke {
+        // The room already has this one, under this id — which is what a later
+        // erase has to name.
+        map.insert(super::send::SENT_KEY.into(), Value::Bool(true));
+        map.insert(
+            super::send::ELEMENT_KEY.into(),
+            Value::String(id.to_string()),
+        );
+    }
+    strokes.push(stroke);
 
     // The renderer culls by frame before it looks at a stroke, so the unit has
     // to grow to hold what it now contains.
@@ -594,6 +645,50 @@ fn place_stroke(tree: &mut GenericTree, place: &Placement, id: &str, stroke: &Va
         props.insert("height".into(), json!(h));
     }
     true
+}
+
+/// Takes out whatever the room says is gone: a stroke by the id it is known
+/// by, or a unit whose element carried that id.
+fn remove_element(tree: &mut GenericTree, element_id: &str) -> bool {
+    let mut gone = false;
+
+    let draws: Vec<String> = tree
+        .models
+        .values()
+        .filter(|m| m.model_type == "$draw")
+        .map(|m| m.id.clone())
+        .collect();
+    for id in draws {
+        let Some(draw) = tree.models.get_mut(&id) else {
+            continue;
+        };
+        let Value::Object(props) = &mut draw.props else {
+            continue;
+        };
+        let Some(Value::Array(strokes)) = props.get_mut("strokes") else {
+            continue;
+        };
+        let before = strokes.len();
+        strokes.retain(|stroke| {
+            stroke.get(super::send::ELEMENT_KEY).and_then(Value::as_str) != Some(element_id)
+                && stroke.get("id").and_then(Value::as_str) != Some(element_id)
+        });
+        if strokes.len() != before {
+            gone = true;
+        }
+    }
+
+    let units: Vec<String> = tree
+        .models
+        .values()
+        .filter(|m| m.props.get(ELEMENT_ID_KEY).and_then(Value::as_str) == Some(element_id))
+        .map(|m| m.id.clone())
+        .collect();
+    for id in units {
+        detach(tree, &id);
+        gone = true;
+    }
+    gone
 }
 
 fn stroke_bounds(strokes: &[Value]) -> Option<(f64, f64, f64, f64)> {

@@ -146,6 +146,14 @@ impl Catalog {
             self.conn
                 .execute("ALTER TABLE documents ADD COLUMN class_document_id TEXT", [])?;
         }
+        // Kept with the rest rather than looked up when needed: the lookup
+        // goes through the drive service, which is only signed in while a
+        // class box is being browsed, and sending happens whenever the user
+        // saves.
+        if !self.has_column("documents", "class_room_id")? {
+            self.conn
+                .execute("ALTER TABLE documents ADD COLUMN class_room_id TEXT", [])?;
+        }
 
         self.conn.execute(
             "INSERT OR REPLACE INTO meta(key, value) VALUES ('schema_version', ?1)",
@@ -561,28 +569,58 @@ impl Catalog {
     /// back means knowing which document in which drive it belongs to, and the
     /// note itself has nowhere to keep that — the editor rewrites the root
     /// model's properties on every save.
-    pub fn set_class_origin(&self, id: &str, drive_id: &str, document_id: &str) -> AppResult<()> {
+    pub fn set_class_origin(
+        &self,
+        id: &str,
+        drive_id: &str,
+        document_id: &str,
+        room_id: Option<&str>,
+    ) -> AppResult<()> {
         self.conn.execute(
-            "UPDATE documents SET class_drive_id = ?2, class_document_id = ?3 WHERE id = ?1",
-            params![id, drive_id, document_id],
+            "UPDATE documents
+                SET class_drive_id = ?2, class_document_id = ?3, class_room_id = ?4
+              WHERE id = ?1",
+            params![id, drive_id, document_id, room_id],
         )?;
         Ok(())
     }
 
-    pub fn class_origin(&self, id: &str) -> AppResult<Option<(String, String)>> {
+    pub fn class_origin(&self, id: &str) -> AppResult<Option<ClassOrigin>> {
         let row = self
             .conn
             .query_row(
-                "SELECT class_drive_id, class_document_id FROM documents WHERE id = ?1",
+                "SELECT class_drive_id, class_document_id, class_room_id
+                   FROM documents WHERE id = ?1",
                 params![id],
-                |r| Ok((r.get::<_, Option<String>>(0)?, r.get::<_, Option<String>>(1)?)),
+                |r| {
+                    Ok((
+                        r.get::<_, Option<String>>(0)?,
+                        r.get::<_, Option<String>>(1)?,
+                        r.get::<_, Option<String>>(2)?,
+                    ))
+                },
             )
             .optional()?;
         Ok(match row {
-            Some((Some(drive), Some(document))) => Some((drive, document)),
+            Some((Some(drive_id), Some(document_id), room_id)) => Some(ClassOrigin {
+                drive_id,
+                document_id,
+                room_id,
+            }),
             _ => None,
         })
     }
+}
+
+/// Where a note came from, when it came from a class box.
+#[derive(Debug, Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ClassOrigin {
+    pub drive_id: String,
+    pub document_id: String,
+    /// The room that carries what everyone writes on it. `None` for a document
+    /// that has none, which is a note nobody can share.
+    pub room_id: Option<String>,
 }
 
 /// Filters for the library list.
@@ -712,6 +750,15 @@ impl NoteStore {
                 props_json TEXT NOT NULL
             );
             CREATE INDEX IF NOT EXISTS idx_models_parent ON models(parent_id, ord);
+            -- Which strokes the note's classroom already has, by the id it
+            -- knows them by. The note itself cannot answer this: a stroke the
+            -- user erased is gone from the tree, and erasing is exactly what
+            -- has to be reported.
+            CREATE TABLE IF NOT EXISTS room_strokes (
+                element_id TEXT PRIMARY KEY,
+                layer_id   TEXT NOT NULL
+            );
+
             CREATE TABLE IF NOT EXISTS assets (
                 id       TEXT PRIMARY KEY,
                 mime     TEXT NOT NULL,
@@ -863,6 +910,32 @@ impl NoteStore {
             },
         )?;
         Ok(row)
+    }
+
+    // -- classroom bookkeeping -------------------------------------------------
+
+    pub fn remember_room_stroke(&self, element_id: &str, layer_id: &str) -> AppResult<()> {
+        self.conn.execute(
+            "INSERT OR REPLACE INTO room_strokes(element_id, layer_id) VALUES (?1, ?2)",
+            params![element_id, layer_id],
+        )?;
+        Ok(())
+    }
+
+    pub fn room_strokes(&self) -> AppResult<Vec<(String, String)>> {
+        let mut stmt = self
+            .conn
+            .prepare("SELECT element_id, layer_id FROM room_strokes ORDER BY element_id")?;
+        let rows = stmt.query_map([], |r| Ok((r.get(0)?, r.get(1)?)))?;
+        Ok(rows.collect::<Result<Vec<_>, _>>()?)
+    }
+
+    pub fn forget_room_stroke(&self, element_id: &str) -> AppResult<()> {
+        self.conn.execute(
+            "DELETE FROM room_strokes WHERE element_id = ?1",
+            params![element_id],
+        )?;
+        Ok(())
     }
 
     // -- assets --------------------------------------------------------------

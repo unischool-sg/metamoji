@@ -43,7 +43,14 @@ pub struct RoomPull {
     pub directions: usize,
     pub units: usize,
     pub strokes: usize,
+    /// Elements the room says have been erased since.
+    pub removed: usize,
     pub assets: usize,
+    /// Strokes now in the note, by the id the room knows them by, and the
+    /// layer they are on. The caller records these so a later erase can be
+    /// reported.
+    #[serde(skip)]
+    pub stroke_ids: Vec<(String, String)>,
     /// Edit kinds this build received but does not apply, named and counted.
     pub unsupported: Vec<String>,
     /// Set when the room could not be reached. The note still opens.
@@ -96,9 +103,10 @@ pub async fn post_strokes(
     classroom: &ClassroomState,
     room_id: &str,
     strokes: &[send::Pending],
-) -> AppResult<usize> {
-    if strokes.is_empty() {
-        return Ok(0);
+    removals: &[(String, String)],
+) -> AppResult<Posted> {
+    if strokes.is_empty() && removals.is_empty() {
+        return Ok(Posted::default());
     }
     let Some(session) = cloud.session() else {
         return Err(crate::error::AppError::other("サインインしていません"));
@@ -139,29 +147,24 @@ pub async fn post_strokes(
     };
 
     let mut ids = send::IdGenerator::fresh();
-    let mut sent = 0;
+    let mut posted = Posted::default();
+
     for pending in strokes {
-        let payload = send::add_stroke(&pending.stroke, &pending.layer_id, &mut ids, &author, None)?;
-        connection
-            .commands
-            .send(Command::PostData {
-                booth_id: pending.layer_id.clone(),
-                payload,
-                // No echo — we already have the stroke. `save` is the whole
-                // point: it is what makes the relay keep it for anyone who
-                // opens the note later, this user included.
-                send_back: false,
-                save: true,
-                rip_off_size: "0".to_string(),
-            })
-            .await
-            .ok();
-        sent += 1;
+        let (payload, element_id) =
+            send::add_stroke(&pending.stroke, &pending.layer_id, &mut ids, &author, None)?;
+        post(&connection, &pending.layer_id, payload).await;
+        posted.sent.push(element_id);
+    }
+    for (element_id, layer_id) in removals {
+        let payload = send::remove_element(element_id, layer_id, &mut ids, None)?;
+        post(&connection, layer_id, payload).await;
+        posted.removed.push(element_id.clone());
     }
 
     // The posts are queued on the writer task; leaving at once would drop
     // them. Wait for the acknowledgements to have had time to come back.
-    tokio::time::sleep(Duration::from_millis(300 + 80 * sent.min(50) as u64)).await;
+    let count = (posted.sent.len() + posted.removed.len()).min(50) as u64;
+    tokio::time::sleep(Duration::from_millis(300 + 80 * count)).await;
 
     let _ = connection
         .commands
@@ -170,7 +173,31 @@ pub async fn post_strokes(
         })
         .await;
     let _ = connection.commands.send(Command::Disconnect).await;
-    Ok(sent)
+    Ok(posted)
+}
+
+/// What went out. The ids matter: a stroke can only be erased later by the id
+/// it was sent under.
+#[derive(Debug, Default, Clone)]
+pub struct Posted {
+    pub sent: Vec<String>,
+    pub removed: Vec<String>,
+}
+
+async fn post(connection: &socket::Connection, booth_id: &str, payload: Vec<u8>) {
+    let _ = connection
+        .commands
+        .send(Command::PostData {
+            booth_id: booth_id.to_string(),
+            payload,
+            // No echo — we already have it. `save` is the whole point: it is
+            // what makes the relay keep it for whoever opens the note next,
+            // this user included.
+            send_back: false,
+            save: true,
+            rip_off_size: "0".to_string(),
+        })
+        .await;
 }
 
 /// Joins the room, replays every booth, and folds the result into `tree`.
@@ -284,11 +311,15 @@ fn fold(
         let Applied {
             units,
             strokes,
+            removed,
+            stroke_ids,
             assets: found,
             unsupported: kinds,
         } = apply::apply(tree, &booth_id, &direction);
         pull.units += units;
         pull.strokes += strokes;
+        pull.removed += removed;
+        pull.stroke_ids.extend(stroke_ids);
         assets.extend(found);
         for kind in kinds {
             *unsupported.entry(kind).or_default() += 1;

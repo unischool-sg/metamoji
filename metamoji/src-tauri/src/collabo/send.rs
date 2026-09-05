@@ -37,6 +37,9 @@ const CHARSET: &[u8; 92] =
 const ELEMENT_TYPE_STROKE: i64 = 1;
 const BASE_TYPE_POINTS: i64 = 0;
 const STROKE_TYPE_SIMPLE: i64 = 0;
+/// `DrAddRemoveDirection$DrExecutionType`, a plain ordinal this time.
+const EXECUTION_ADD: i64 = 0;
+pub(crate) const EXECUTION_REMOVE: i64 = 1;
 const DIRECTION_ADD_REMOVE: i64 = 0;
 /// What the original sends, and what its receiver checks against.
 const MODULE_VERSION: i64 = 5;
@@ -108,7 +111,7 @@ pub fn add_stroke(
     ids: &mut IdGenerator,
     author: &Author,
     edit_status_id: Option<&str>,
-) -> AppResult<Vec<u8>> {
+) -> AppResult<(Vec<u8>, String)> {
     let element_id = ids.next_id();
     let style_id = ids.next_id();
     let collaboration_id = ids.next_id();
@@ -138,6 +141,7 @@ pub fn add_stroke(
             "m": { "$ref": "e" },
             "s": 0,
             "e": count.max(1) - 1,
+            "t": EXECUTION_ADD,
         }),
         children: Vec::new(),
     });
@@ -181,12 +185,15 @@ pub fn add_stroke(
         children: Vec::new(),
     }));
 
-    direction::encode(
+    let payload = direction::encode(
         DirectionData::Model(tree),
         &format!("{layer_id}_[unit]_draw"),
         edit_status_id,
         Default::default(),
-    )
+    )?;
+    // The caller has to keep this: a stroke can only be erased later by the id
+    // it was sent under.
+    Ok((payload, element_id))
 }
 
 fn detached(mut model: GenericModel) -> GenericModel {
@@ -235,9 +242,47 @@ fn now_seconds() -> f64 {
         .unwrap_or_default()
 }
 
+/// Removes an element the room already has.
+///
+/// The same `ADD_REMOVE` direction as an add, with the record marked `REMOVE`
+/// and carrying only the element's id: the receiver finds the element in its
+/// own document (`removeElementWithInternal` calls `getElementById`), so
+/// sending a copy of it would be sending back what it already has.
+pub fn remove_element(
+    element_id: &str,
+    layer_id: &str,
+    ids: &mut IdGenerator,
+    edit_status_id: Option<&str>,
+) -> AppResult<Vec<u8>> {
+    let mut tree = GenericTree::new("d", "D");
+    if let Value::Object(props) = &mut tree.models.get_mut("d").unwrap().props {
+        props.insert("T".into(), json!(DIRECTION_ADD_REMOVE));
+        props.insert("V".into(), json!(DIRECTION_VERSION));
+        props.insert("M".into(), json!(MODULE_VERSION));
+        props.insert("O".into(), json!(MODULE_ACCEPTABLE_VERSION));
+        props.insert("C".into(), json!(ids.next_id()));
+    }
+    tree.insert(GenericModel {
+        id: "i0".into(),
+        parent_id: Some("d".into()),
+        model_type: "i".into(),
+        props: json!({ "i": element_id, "t": EXECUTION_REMOVE }),
+        children: Vec::new(),
+    });
+
+    direction::encode(
+        DirectionData::Model(tree),
+        &format!("{layer_id}_[unit]_draw"),
+        edit_status_id,
+        Default::default(),
+    )
+}
+
 /// A stroke that has been posted is marked here, so a second send does not
 /// draw it on everyone's screen twice.
 pub const SENT_KEY: &str = "$sentToRoom";
+/// The id the room knows a stroke by, which is what a later removal names.
+pub const ELEMENT_KEY: &str = "$roomStrokeId";
 
 /// One stroke waiting to go out, and where it belongs.
 #[derive(Debug, Clone)]
@@ -246,6 +291,31 @@ pub struct Pending {
     pub stroke_index: usize,
     pub layer_id: String,
     pub stroke: Value,
+}
+
+/// Every stroke the room knows about, by the id it knows it by.
+///
+/// A stroke that came from the room is keyed by its own element id; one this
+/// app sent carries the id it was sent under. Used to work out what has been
+/// erased since the last send.
+pub fn known_element_ids(tree: &GenericTree) -> Vec<String> {
+    let mut out = Vec::new();
+    for draw in tree.models.values() {
+        if draw.model_type != "$draw" {
+            continue;
+        }
+        let Some(strokes) = draw.props.get("strokes").and_then(Value::as_array) else {
+            continue;
+        };
+        for stroke in strokes {
+            if let Some(id) = stroke.get(ELEMENT_KEY).and_then(Value::as_str) {
+                out.push(id.to_string());
+            }
+        }
+    }
+    out.sort();
+    out.dedup();
+    out
 }
 
 /// Every stroke on a personal layer that has not been posted yet.
@@ -292,8 +362,8 @@ pub fn pending(tree: &GenericTree) -> Vec<Pending> {
     out
 }
 
-/// Marks a stroke as posted.
-pub fn mark_sent(tree: &mut GenericTree, draw_id: &str, stroke_index: usize) {
+/// Marks a stroke as posted, under the id the room now knows it by.
+pub fn mark_sent(tree: &mut GenericTree, draw_id: &str, stroke_index: usize, element_id: &str) {
     let Some(draw) = tree.models.get_mut(draw_id) else {
         return;
     };
@@ -305,6 +375,7 @@ pub fn mark_sent(tree: &mut GenericTree, draw_id: &str, stroke_index: usize) {
     };
     if let Some(Value::Object(stroke)) = strokes.get_mut(stroke_index) {
         stroke.insert(SENT_KEY.into(), Value::Bool(true));
+        stroke.insert(ELEMENT_KEY.into(), Value::String(element_id.to_string()));
     }
 }
 
@@ -336,7 +407,7 @@ mod tests {
     }
 
     fn built() -> crate::atdoc::ParsedDocument {
-        let bytes = add_stroke(
+        let (bytes, _) = add_stroke(
             &stroke(),
             "P1_[layer-forUser]_213163099101",
             &mut IdGenerator::new(1),
@@ -439,7 +510,7 @@ mod tests {
     fn what_it_builds_is_what_the_reader_reads_back() {
         // The proof that the two halves agree: decode our own direction with
         // the code that decodes the room's.
-        let bytes = add_stroke(
+        let (bytes, element_id) = add_stroke(
             &stroke(),
             "P1_[layer-forUser]_9",
             &mut IdGenerator::new(7),
@@ -447,6 +518,7 @@ mod tests {
             None,
         )
         .unwrap();
+        assert!(element_id.contains(' '), "{element_id}");
         let direction = super::super::apply::decode(&bytes).unwrap();
         match direction.changes.as_slice() {
             [super::super::apply::Change::Stroke { stroke, .. }] => {
@@ -518,8 +590,24 @@ mod queue_tests {
     #[test]
     fn strokes_that_came_from_the_room_are_marked_when_posted() {
         let mut tree = note_with(json!([{ "id": "a" }]), "system:personal");
-        mark_sent(&mut tree, "draw", 0);
+        mark_sent(&mut tree, "draw", 0, "prefix 1");
         assert!(pending(&tree).is_empty());
+        // And under the id a later erase will name it by.
+        assert_eq!(known_element_ids(&tree), vec!["prefix 1".to_string()]);
+    }
+
+    #[test]
+    fn a_removal_names_only_the_element() {
+        let bytes = remove_element("prefix 1", "P1_[layer-forUser]_9", &mut IdGenerator::new(3), None)
+            .unwrap();
+        let doc = crate::atdoc::parse_document(&bytes).unwrap();
+        let record = doc.models.values().find(|m| m.model_type == "i").unwrap();
+        assert_eq!(record.props["i"], json!("prefix 1"));
+        assert_eq!(record.props["t"], json!(EXECUTION_REMOVE));
+        assert!(record.props.get("m").is_none());
+
+        let d = doc.models.values().find(|m| m.model_type == "D").unwrap();
+        assert_eq!(d.props["T"], json!(0));
     }
 
     #[test]

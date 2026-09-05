@@ -287,3 +287,65 @@ fn a_common_layer_does_not_steal_the_cursor() {
     apply(&mut tree, "P1_[layer-common]", &direction);
     assert!(tree.models["page"].props.get("currentLayer").is_none());
 }
+
+#[test]
+fn an_erased_stroke_is_taken_out_again() {
+    // The room replays adds and removals in order; a note that applied the add
+    // and ignored the removal would keep showing what someone rubbed out.
+    let mut tree = note();
+    let add = decode(&wire("booth_[unit]_draw", |tree| {
+        tree.insert(detached(model("d", Some("direction"), "D", json!({ "T": 0 }))));
+        tree.insert(model("i0", Some("d"), "i", json!({ "i": "el-1", "m": { "$ref": "e" } })));
+        tree.insert(detached(model(
+            "e",
+            Some("direction"),
+            "E",
+            json!({
+                "I": "el-1",
+                "T": 1,
+                "P": { "$points": [1.0, 2.0, 3.0, 4.0] },
+                "BX": 1.0, "BY": 2.0, "BW": 2.0, "BH": 2.0,
+            }),
+        )));
+        json!({ "$ref": "d" })
+    }))
+    .unwrap();
+    let applied = apply(&mut tree, "P1_[layer-forUser]_9876", &add);
+    assert_eq!(applied.strokes, 1);
+    assert_eq!(applied.stroke_ids, vec![("el-1".to_string(), "P1_[layer-forUser]_9876".to_string())]);
+
+    let remove = decode(&wire("booth_[unit]_draw", |tree| {
+        tree.insert(detached(model("d", Some("direction"), "D", json!({ "T": 0 }))));
+        tree.insert(model("i0", Some("d"), "i", json!({ "i": "el-1", "t": 1 })));
+        json!({ "$ref": "d" })
+    }))
+    .unwrap();
+    assert_eq!(remove.changes, vec![Change::Remove { id: "el-1".into() }]);
+
+    let applied = apply(&mut tree, "P1_[layer-forUser]_9876", &remove);
+    assert_eq!(applied.removed, 1);
+    let draw = tree.models.values().find(|m| m.model_type == "$draw").unwrap();
+    assert_eq!(draw.props["strokes"].as_array().unwrap().len(), 0);
+}
+
+#[test]
+fn a_removal_for_something_this_note_does_not_have_changes_nothing() {
+    let mut tree = note();
+    let remove = decode(&wire("b", |tree| {
+        tree.insert(detached(model("d", Some("direction"), "D", json!({ "T": 0 }))));
+        tree.insert(model("i0", Some("d"), "i", json!({ "i": "gone", "t": 1 })));
+        json!({ "$ref": "d" })
+    }))
+    .unwrap();
+    let applied = apply(&mut tree, "P1_[layer-forUser]_9876", &remove);
+    assert_eq!(applied.removed, 0);
+}
+
+#[test]
+fn a_unit_remembers_the_element_id_it_arrived_under() {
+    let mut tree = note();
+    let direction = decode(&add_unit_payload("$text", "u-1")).unwrap();
+    apply(&mut tree, "P1_[layer-forUser]_9876", &direction);
+    let unit = tree.models.values().find(|m| m.model_type == "$text").unwrap();
+    assert_eq!(unit.props["$roomElementId"], json!("e1"));
+}

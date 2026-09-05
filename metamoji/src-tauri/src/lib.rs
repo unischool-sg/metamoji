@@ -32,6 +32,9 @@ pub struct AtdocImportResult {
     pub title: Option<String>,
     /// What the note's classroom room added, for a note that has one.
     pub room: Option<collabo::pull::RoomPull>,
+    /// The room itself, so the caller can remember it with the note.
+    #[serde(rename = "roomId")]
+    pub room_id: Option<String>,
 }
 
 /// Imports a `.atdoc` file the user picked in a dialog.
@@ -55,6 +58,7 @@ fn atdoc_import(
         title: result.title,
         // A file on disk belongs to no room.
         room: None,
+        room_id: None,
     })
 }
 

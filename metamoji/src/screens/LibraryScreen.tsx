@@ -224,7 +224,7 @@ export function LibraryScreen() {
       );
       // Remembered so what the user writes on this copy can go back to the
       // class it came from.
-      await api.classboxLink(summary.id, view.id, documentId);
+      await api.classboxLink(summary.id, view.id, documentId, result.roomId);
       // The note is in the library either way. But if the classroom could not
       // be reached, everything written on it is missing, and opening it
       // straight away would look like the note is simply blank.

@@ -86,6 +86,7 @@ export function EditorScreen() {
   const [classSync, setClassSync] = useState<
     { kind: "sent"; strokes: number } | { kind: "failed"; message: string } | null
   >(null);
+  const [showClassError, setShowClassError] = useState(false);
   const [editingUnitId, setEditingUnitId] = useState<ModelId | null>(null);
   // The live viewport is kept in a ref so panning and zooming never re-render
   // the editor. It is mirrored into state only while a text box is open, since
@@ -171,6 +172,7 @@ export function EditorScreen() {
         setClassSync(sent > 0 ? { kind: "sent", strokes: sent } : null);
       } catch (err) {
         setClassSync({ kind: "failed", message: String(err) });
+        setShowClassError(true);
       }
     } catch (err) {
       console.error("save failed", err);
@@ -598,16 +600,20 @@ export function EditorScreen() {
           </span>
         )}
         {classSync && (
-          <span
+          <button
+            type="button"
             className="save-chip"
             data-state={classSync.kind === "failed" ? "error" : "saved"}
-            title={classSync.kind === "failed" ? classSync.message : undefined}
+            // The reason matters more than the fact: "could not send" alone
+            // leaves nothing to act on, and the server's own words usually
+            // name the step that failed.
+            onClick={() => classSync.kind === "failed" && setShowClassError(true)}
           >
             <Icon name={classSync.kind === "failed" ? "error" : "school"} size={16} />
             {classSync.kind === "failed"
               ? t("教室に送れませんでした")
               : t("教室に送信: {count}", { count: classSync.strokes })}
-          </span>
+          </button>
         )}
         <div className="topbar__spacer" />
 
@@ -683,6 +689,20 @@ export function EditorScreen() {
           <span className="sr-only">{t("やり直す")}</span>
         </button>
       </header>
+
+      {showClassError && classSync?.kind === "failed" && (
+        <div className="notice notice--error" style={{ margin: "var(--space-3)" }}>
+          <Icon name="error" size={20} />
+          <span>{classSync.message}</span>
+          <button
+            type="button"
+            className="btn btn--text"
+            onClick={() => setShowClassError(false)}
+          >
+            {t("閉じる")}
+          </button>
+        </div>
+      )}
 
       <div className="editor">
         <Toolbar />

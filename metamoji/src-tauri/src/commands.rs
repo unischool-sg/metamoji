@@ -767,7 +767,8 @@ pub async fn classbox_open_note(
     // The file the drive hands out holds only what the teacher put in it.
     // Everything the student wrote is in the note's room, so opening the note
     // means asking the room for its history as well.
-    let room = match room_id_of(&drive, &drive_id, &document_id).await {
+    let room_id = room_id_of(&drive, &drive_id, &document_id).await.ok().flatten();
+    let room = match room_id.clone() {
         Some(room_id) => {
             match collabo::pull::fetch(&cloud, &classroom, &room_id, &mut tree).await {
                 Ok((pull, assets)) => {
@@ -775,6 +776,11 @@ pub async fn classbox_open_note(
                     let store = store.lock().unwrap();
                     for (ticket, mime, bytes) in assets {
                         store.put_asset(&ticket, &mime, &bytes)?;
+                    }
+                    // Remembered so that erasing one of these later can be
+                    // reported to the room by the id it knows it by.
+                    for (element_id, layer_id) in &pull.stroke_ids {
+                        store.remember_room_stroke(element_id, layer_id)?;
                     }
                     Some(pull)
                 }
@@ -795,6 +801,7 @@ pub async fn classbox_open_note(
         report: result.report,
         title: result.title,
         room,
+        room_id,
     })
 }
 
@@ -812,7 +819,8 @@ pub async fn classbox_send_strokes(
     drive: State<'_, DriveClient>,
     note_id: String,
 ) -> AppResult<usize> {
-    let Some((drive_id, document_id)) = state.catalog.lock().unwrap().class_origin(&note_id)? else {
+    let Some(origin) = state.catalog.lock().unwrap().class_origin(&note_id)? else {
+        // Not a copy of anything: an ordinary note has nowhere to send to.
         return Ok(0);
     };
     let tree = {
@@ -822,26 +830,63 @@ pub async fn classbox_send_strokes(
     };
 
     let waiting = collabo::send::pending(&tree);
-    if waiting.is_empty() {
+    // What the room has that the note no longer does: the user erased it.
+    let removals: Vec<(String, String)> = {
+        let store = state.note(&note_id)?;
+        let store = store.lock().unwrap();
+        let alive = collabo::send::known_element_ids(&tree);
+        store
+            .room_strokes()?
+            .into_iter()
+            .filter(|(element_id, _)| !alive.contains(element_id))
+            .collect()
+    };
+    if waiting.is_empty() && removals.is_empty() {
         return Ok(0);
     }
 
-    let room_id = room_id_of(&drive, &drive_id, &document_id)
-        .await
-        .ok_or_else(|| AppError::other("このノートには教室がありません"))?;
+    // The room id is kept with the note precisely so this does not need the
+    // drive service, which is only signed in while a class box is open. The
+    // lookup is the fallback for notes taken before it was recorded.
+    let room_id = match origin.room_id.clone() {
+        Some(room_id) => room_id,
+        None => {
+            let room_id = room_id_of(&drive, &origin.drive_id, &origin.document_id)
+                .await
+                .map_err(|e| {
+                    AppError::other(format!(
+                        "このノートの教室が分かりません。クラスボックスから開き直してください ({e})"
+                    ))
+                })?
+                .ok_or_else(|| AppError::other("このノートには教室がありません"))?;
+            state.catalog.lock().unwrap().set_class_origin(
+                &note_id,
+                &origin.drive_id,
+                &origin.document_id,
+                Some(&room_id),
+            )?;
+            room_id
+        }
+    };
 
-    let sent = collabo::pull::post_strokes(&cloud, &classroom, &room_id, &waiting).await?;
+    let posted =
+        collabo::pull::post_strokes(&cloud, &classroom, &room_id, &waiting, &removals).await?;
 
-    // Marked only after the relay has had them, and only as far as it got.
+    // Recorded only after the relay has had them, and only as far as it got.
     let store = state.note(&note_id)?;
     let mut store = store.lock().unwrap();
     let mut tree = tree;
-    for pending in waiting.iter().take(sent) {
-        collabo::send::mark_sent(&mut tree, &pending.draw_id, pending.stroke_index);
+    for (pending, element_id) in waiting.iter().zip(posted.sent.iter()) {
+        collabo::send::mark_sent(&mut tree, &pending.draw_id, pending.stroke_index, element_id);
+        store.remember_room_stroke(element_id, &pending.layer_id)?;
     }
+    for element_id in &posted.removed {
+        store.forget_room_stroke(element_id)?;
+    }
+
     let (title, created_at, _updated_at, revision, _page_count) = store.meta()?;
     store.write_tree(&tree, &title, &created_at, &now_iso(), revision)?;
-    Ok(sent)
+    Ok(posted.sent.len() + posted.removed.len())
 }
 
 /// Records that a note is a copy of a class-box document.
@@ -851,12 +896,14 @@ pub fn classbox_link(
     note_id: String,
     drive_id: String,
     document_id: String,
+    room_id: Option<String>,
 ) -> AppResult<()> {
-    state
-        .catalog
-        .lock()
-        .unwrap()
-        .set_class_origin(&note_id, &drive_id, &document_id)
+    state.catalog.lock().unwrap().set_class_origin(
+        &note_id,
+        &drive_id,
+        &document_id,
+        room_id.as_deref(),
+    )
 }
 
 /// Where a note came from, when it came from a class box.
@@ -864,23 +911,8 @@ pub fn classbox_link(
 pub fn classbox_origin(
     state: State<'_, AppState>,
     note_id: String,
-) -> AppResult<Option<ClassOrigin>> {
-    Ok(state
-        .catalog
-        .lock()
-        .unwrap()
-        .class_origin(&note_id)?
-        .map(|(drive_id, document_id)| ClassOrigin {
-            drive_id,
-            document_id,
-        }))
-}
-
-#[derive(Debug, Clone, serde::Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ClassOrigin {
-    pub drive_id: String,
-    pub document_id: String,
+) -> AppResult<Option<crate::storage::ClassOrigin>> {
+    state.catalog.lock().unwrap().class_origin(&note_id)
 }
 
 /// The room a class-box document belongs to, if it has one.
@@ -888,14 +920,18 @@ pub struct ClassOrigin {
 /// The drive's own record is the authority here; the note carries a room id in
 /// its share settings too, but that one is whatever was true when the file was
 /// last written.
-async fn room_id_of(drive: &DriveClient, drive_id: &str, document_id: &str) -> Option<String> {
-    let envelope = drive.document_meta(drive_id, document_id).await.ok()?;
-    envelope
+async fn room_id_of(
+    drive: &DriveClient,
+    drive_id: &str,
+    document_id: &str,
+) -> AppResult<Option<String>> {
+    let envelope = drive.document_meta(drive_id, document_id).await?;
+    Ok(envelope
         .get("meta")
         .and_then(|meta| meta.get("roomId"))
         .and_then(|v| v.as_str())
         .filter(|id| !id.is_empty())
-        .map(str::to_string)
+        .map(str::to_string))
 }
 
 /// Writes the binaries an import lifted out of the model tree into the note's
