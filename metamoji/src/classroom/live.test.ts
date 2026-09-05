@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { editFor } from "./live";
+import { editFor, forgetEdit } from "./live";
 import { applyCompound } from "../editor/delta";
 import type { ClassNoteChange } from "../ipc/api";
 import { fromGeneric } from "../model/converter";
@@ -123,5 +123,34 @@ describe("live classroom changes", () => {
     const text = next.pages[0].layers[0].units.find((u) => u.type === "$text");
     expect(text).toBeDefined();
     expect(text && "text" in text ? text.text : "").toBe("こんにちは");
+  });
+});
+
+describe("matching the room", () => {
+  it("stops showing what the room no longer holds", () => {
+    let doc = classNote();
+    doc = applyCompound(doc, editFor(doc, strokeChange("el 1"))!, false);
+    doc = applyCompound(doc, editFor(doc, strokeChange("el 2"))!, false);
+    expect(inkOf(doc)[0].strokes).toHaveLength(2);
+
+    const edit = forgetEdit(doc, ["el 1"]);
+    doc = applyCompound(doc, edit!, false);
+    const left = inkOf(doc)[0].strokes;
+    expect(left).toHaveLength(1);
+    expect(left[0].id).toBe("el 2");
+  });
+
+  it("does nothing when the note is already in step", () => {
+    const doc = classNote();
+    expect(forgetEdit(doc, ["el 1", "el 2"])).toBeNull();
+    expect(forgetEdit(doc, [])).toBeNull();
+  });
+
+  it("leaves alone what the room never knew about", () => {
+    // A stroke drawn here and not yet sent is not the room's to remove.
+    let doc = classNote();
+    doc = applyCompound(doc, editFor(doc, strokeChange("el 1"))!, false);
+    expect(forgetEdit(doc, ["something else"])).toBeNull();
+    expect(inkOf(doc)[0].strokes).toHaveLength(1);
   });
 });

@@ -48,7 +48,7 @@ import {
 import { currentLayer, searchableText } from "../model/types";
 import { IDENTITY_VIEWPORT, type Viewport } from "../render/viewport";
 import { EXPORT_DPI, renderPagesForExport, renderPageToDataUrl } from "../io/pageRender";
-import { editFor } from "../classroom/live";
+import { editFor, forgetEdit } from "../classroom/live";
 import { parsePageRange, readPdfInfo, renderPdfPages } from "../io/pdf";
 import { useAssetCache } from "../hooks/useAssetCache";
 import { useEditorStore } from "../store/editorStore";
@@ -222,6 +222,7 @@ export function EditorScreen() {
         // the attach that follows then asks for the room from the beginning.
         // Anything the note already has is dropped on the way in.
         const report = await api.classnoteResync(noteId);
+        applyGone(report?.gone ?? []);
         if (report && (report.neverArrived > 0 || report.sent > 0)) {
           setClassSync({ kind: "sent", strokes: report.sent });
         }
@@ -281,6 +282,15 @@ export function EditorScreen() {
    * drift without either noticing — a post that did not land looks exactly
    * like one that did from here. Nothing to diagnose first: press it.
    */
+  /** Stops showing what the room no longer holds. */
+  const applyGone = (ids: readonly string[]) => {
+    if (ids.length === 0) return;
+    const { session, doc } = useEditorStore.getState();
+    if (!session || !doc) return;
+    const edit = forgetEdit(doc, ids);
+    if (edit) session.applyRemote(edit);
+  };
+
   const resync = useCallback(async () => {
     const id = useEditorStore.getState().noteId;
     if (!id 
@@ -289,6 +299,7 @@ export function EditorScreen() {
     setShowClassError(false);
     try {
       const report = await api.classnoteResync(id);
+      applyGone(report?.gone ?? []);
       if (report && report.problems.length > 0) {
         setClassSync({ kind: "failed", message: report.problems.join(" / ") });
         setShowClassError(true);

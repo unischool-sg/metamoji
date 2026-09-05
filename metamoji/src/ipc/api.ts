@@ -722,6 +722,8 @@ export interface Resync {
   neverArrived: number;
   erasedElsewhere: number;
   sent: number;
+  /** Element ids the room does not hold; the note has to stop showing them. */
+  gone: string[];
   problems: string[];
 }
 

@@ -914,6 +914,10 @@ pub struct Resync {
     pub erased_elsewhere: usize,
     /// Local strokes sent because the room did not have them.
     pub sent: usize,
+    /// Elements the room does not hold. The note may still be showing them —
+    /// something erased elsewhere, or a stroke that never arrived — and the
+    /// editor takes them out.
+    pub gone: Vec<String>,
     /// What it could not fix, said plainly.
     pub problems: Vec<String>,
 }
@@ -981,23 +985,65 @@ pub async fn classnote_resync(
                 report.never_arrived += 1;
             }
             held.forget_room_stroke(&entry.stroke_id)?;
+            // The note is probably still showing it. Whether it was erased
+            // elsewhere or never arrived, the room does not have it, and the
+            // room is what this is syncing to.
+            report.gone.push(entry.stroke_id.clone());
+        }
+    }
+    // Anything the room saw and dropped, whether or not this note ever knew
+    // about it: an erasure made on the other device has to land here too.
+    for id in &room.removed {
+        if !report.gone.contains(id) {
+            report.gone.push(id.clone());
         }
     }
 
-    // With the ledger honest, the ordinary send finds what is missing.
-    let sent = classbox_send_strokes(
-        state.clone(),
-        cloud.clone(),
-        classroom.clone(),
-        drive.clone(),
-        note_id.clone(),
-    )
-    .await;
+    // With the ledger honest, the ordinary send finds what is missing — but
+    // never sends back something the room already has under that id. A stroke
+    // that arrived from the room carries the room's own id, and pushing it
+    // again is how two devices end up trading one stroke for ever.
+    let sent = send_missing(&state, &cloud, &classroom, &drive, &note_id, &room).await;
     match sent {
         Ok(count) => report.sent = count,
         Err(err) => report.problems.push(err.to_string()),
     }
     Ok(report)
+}
+
+/// Sends what the room has never seen, and only that.
+async fn send_missing(
+    state: &State<'_, AppState>,
+    cloud: &State<'_, CloudClient>,
+    classroom: &State<'_, ClassroomState>,
+    drive: &State<'_, DriveClient>,
+    note_id: &str,
+    room: &collabo::pull::RoomState,
+) -> AppResult<usize> {
+    let (tree, ledger) = {
+        let store = state.note(note_id)?;
+        let held = store.lock().unwrap();
+        (held.read_tree()?, held.room_strokes()?)
+    };
+    let (waiting, _, _) = collabo::send::changes(&tree, &ledger);
+    // The guard: a stroke whose id the room already knows came *from* the
+    // room, whatever the ledger says about it.
+    if waiting.iter().any(|p| room.added.contains(&p.stroke_id)) {
+        let store = state.note(note_id)?;
+        let held = store.lock().unwrap();
+        for pending in waiting.iter().filter(|p| room.added.contains(&p.stroke_id)) {
+            held.remember_room_stroke(&pending.stroke_id, &pending.stroke_id, &pending.layer_id)?;
+        }
+    }
+
+    classbox_send_strokes(
+        state.clone(),
+        cloud.clone(),
+        classroom.clone(),
+        drive.clone(),
+        note_id.to_string(),
+    )
+    .await
 }
 
 /// Watches the classroom of an open note, so edits made elsewhere show up here

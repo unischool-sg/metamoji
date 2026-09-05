@@ -22,6 +22,18 @@ const ELEMENT_KEY = "$roomStrokeId";
 const UNIT_ELEMENT_KEY = "$roomElementId";
 
 /**
+ * Takes out everything in `ids` — what a resync found the room no longer
+ * holds. Erased on another device, or never delivered; either way the note is
+ * showing something the class is not.
+ */
+export function forgetEdit(doc: NoteDocument, ids: readonly string[]): CompoundEdit | null {
+  const children: ModelDelta[] = [];
+  for (const id of ids) children.push(...removeDeltas(doc, id));
+  if (children.length === 0) return null;
+  return { editId: newId("edit"), label: "教室に合わせる", children, at: Date.now() };
+}
+
+/**
  * Builds the edit a change asks for, or `null` when the note has nowhere to
  * put it — a page that was never downloaded, most often.
  */

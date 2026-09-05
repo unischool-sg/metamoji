@@ -200,7 +200,7 @@ pub async fn start(
             return;
         };
         let place = apply::placement_of(&booth_id);
-        let changes = wire_changes(direction.changes, &sink);
+        let changes = wire_changes(direction.changes, &sink, place.layer_id.as_deref());
         if changes.is_empty() {
             return;
         }
@@ -272,6 +272,7 @@ pub async fn start(
 fn wire_changes(
     changes: Vec<Change>,
     store: &Arc<Mutex<crate::storage::NoteStore>>,
+    layer_id: Option<&str>,
 ) -> Vec<WireChange> {
     let known: std::collections::HashSet<String> = store
         .lock()
@@ -291,6 +292,17 @@ fn wire_changes(
                 // again would draw the user's stroke twice.
                 if known.contains(&id) {
                     continue;
+                }
+                // Written down before it goes up. The editor will save it like
+                // any other stroke, and the next send asks "what has the room
+                // not seen?" — a stroke that came *from* the room and is not
+                // written down here answers "this one", and goes back out. Two
+                // devices then trade the same stroke for ever.
+                if let Some(layer_id) = layer_id {
+                    let _ = store
+                        .lock()
+                        .unwrap()
+                        .remember_room_stroke(&id, &id, layer_id);
                 }
                 out.push(WireChange::Stroke { id, stroke })
             }
@@ -337,6 +349,7 @@ mod tests {
                 bytes: vec![1, 2, 3],
             }],
             &store,
+            Some("L1"),
         );
         assert!(matches!(&out[0], WireChange::Asset { ticket } if ticket == "t-1"));
         let (mime, bytes) = store.lock().unwrap().get_asset("t-1").unwrap();
@@ -351,6 +364,7 @@ mod tests {
                 kind: "D ROTATE".into(),
             }],
             &store(),
+            Some("L1"),
         );
         assert!(out.is_empty());
     }
@@ -363,6 +377,7 @@ mod tests {
                 stroke: json!({ "id": "el 1", "color": "#000000" }),
             }],
             &store(),
+            Some("L1"),
         );
         match &out[0] {
             WireChange::Stroke { id, stroke } => {
@@ -407,8 +422,81 @@ mod echo_tests {
                 },
             ],
             &store,
+            Some("L1"),
         );
         assert_eq!(out.len(), 1, "only the one that came from elsewhere");
         assert!(matches!(&out[0], WireChange::Stroke { id, .. } if id == "el 2"));
+    }
+}
+
+#[cfg(test)]
+mod ledger_tests {
+    use super::*;
+    use serde_json::json;
+
+    fn store() -> Arc<Mutex<crate::storage::NoteStore>> {
+        let dir = std::env::temp_dir().join(format!("watch-{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir_all(&dir).unwrap();
+        Arc::new(Mutex::new(
+            crate::storage::NoteStore::open(&dir.join("n.mmnote")).unwrap(),
+        ))
+    }
+
+    #[test]
+    fn a_stroke_from_the_room_is_written_down_on_the_way_past() {
+        // Otherwise the next save asks "what has the room not seen?", this
+        // stroke answers, and the two devices trade it back and forth for
+        // ever — send, receive, save, send.
+        let store = store();
+        let out = wire_changes(
+            vec![Change::Stroke {
+                id: "el 9".into(),
+                stroke: json!({ "id": "el 9" }),
+            }],
+            &store,
+            Some("P1_[layer-forUser]_9"),
+        );
+        assert_eq!(out.len(), 1);
+
+        let ledger = store.lock().unwrap().room_strokes().unwrap();
+        assert_eq!(ledger.len(), 1);
+        assert_eq!(ledger[0].stroke_id, "el 9");
+        assert_eq!(ledger[0].element_id, "el 9");
+        assert_eq!(ledger[0].layer_id, "P1_[layer-forUser]_9");
+    }
+
+    #[test]
+    fn and_is_then_not_something_the_note_needs_to_send() {
+        let store = store();
+        wire_changes(
+            vec![Change::Stroke {
+                id: "el 9".into(),
+                stroke: json!({ "id": "el 9" }),
+            }],
+            &store,
+            Some("P1_[layer-forUser]_9"),
+        );
+
+        // The note, as the editor would save it after applying that change.
+        let mut tree = crate::model::GenericTree::new("root", "$sharenote");
+        tree.insert(crate::model::GenericModel {
+            id: "layer".into(),
+            parent_id: Some("root".into()),
+            model_type: "$layer".into(),
+            props: json!({ "layerId": "P1_[layer-forUser]_9", "layerType": "system:personal" }),
+            children: Vec::new(),
+        });
+        tree.insert(crate::model::GenericModel {
+            id: "draw".into(),
+            parent_id: Some("layer".into()),
+            model_type: "$draw".into(),
+            props: json!({ "strokes": [{ "id": "el 9" }] }),
+            children: Vec::new(),
+        });
+
+        let ledger = store.lock().unwrap().room_strokes().unwrap();
+        let (added, removed, _) = super::super::send::changes(&tree, &ledger);
+        assert!(added.is_empty(), "the room already has it");
+        assert!(removed.is_empty());
     }
 }
