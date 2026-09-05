@@ -11,6 +11,7 @@ import { create } from "zustand";
 import { attachClassroomBridge, detachClassroomBridge } from "../classroom/bridge";
 import { ClassroomSession, type ConnectionState } from "../classroom/session";
 import { applyCompound, type CompoundEdit } from "../editor/delta";
+import { beginOfflineEditing, mergeOfflineEditing } from "../editor/offline";
 import type { Member, PresenceEntry, RelayDirection, Room, RoomRole } from "../sync/client";
 import { useAuthStore } from "./authStore";
 import { useEditorStore } from "./editorStore";
@@ -61,8 +62,14 @@ export const useClassroomStore = create<ClassroomState>((set, get) => ({
     get().session?.disconnect();
 
     const session = new ClassroomSession(roomId, client.socketUrl(roomId), {
-      onState: (connection) =>
-        set({ connection, pendingCount: get().session?.pendingCount ?? 0 }),
+      onState: (connection) => {
+        set({ connection, pendingCount: get().session?.pendingCount ?? 0 });
+        // docs/14 §2: work done while disconnected goes into an isolated layer,
+        // which is merged back when the connection returns. Isolating it is what
+        // makes a conflict impossible rather than merely resolvable.
+        if (connection === "offline") enterOfflineEditing();
+        else if (connection === "online") leaveOfflineEditing();
+      },
 
       onDirection: (direction) => applyRemoteDirection(direction),
 
@@ -198,6 +205,34 @@ export const useClassroomStore = create<ClassroomState>((set, get) => ({
       }));
   },
 }));
+
+/**
+ * Isolates further edits into their own layer while disconnected.
+ *
+ * Nothing else changes: the tools, the renderer and the undo stack carry on
+ * exactly as before, because "where new units go" is already a property of the
+ * page rather than of any tool.
+ */
+function enterOfflineEditing(): void {
+  const state = useEditorStore.getState();
+  const page = state.doc?.pages[state.pageIndex];
+  if (!state.session || !page) return;
+  beginOfflineEditing(state.session, page);
+}
+
+/** Folds the isolated layer back in once the connection returns. */
+function leaveOfflineEditing(): void {
+  const state = useEditorStore.getState();
+  const page = state.doc?.pages[state.pageIndex];
+  if (!state.session || !page) return;
+
+  const result = mergeOfflineEditing(state.session, page);
+  if (result.moved > 0) {
+    useClassroomStore.setState({
+      lastNotice: `オフライン中の編集 ${result.moved} 件を反映しました`,
+    });
+  }
+}
 
 /**
  * Applies an edit that came from a peer.
