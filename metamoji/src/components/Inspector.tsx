@@ -10,6 +10,7 @@
 import { useState } from "react";
 
 import { useTranslation } from "../i18n/useTranslation";
+import { UnitProperties } from "./UnitProperties";
 
 import { ERASER_SIZES, PEN_COLORS, PEN_PRESETS, PEN_WIDTHS } from "../editor/tools";
 import {
@@ -42,6 +43,7 @@ export function Inspector() {
       {/* Selection actions follow the selection, not the tool: a lasso leaves
           you with something selected and nothing to do with it otherwise. */}
       {(activeTool === "select" || hasSelection) && <SelectionSection />}
+      <UnitProperties />
       {activeTool === "lasso" && <LassoSection />}
       {activeTool === "shape" && <ShapeSection />}
       {activeTool === "form" && <FormSection />}
