@@ -61,16 +61,22 @@ fn folders_come_from_their_paths() {
 }
 
 #[test]
-fn a_folder_claims_its_notes_through_children_order() {
-    // `/`-delimited, per `SdUtils.tagsFromPath`.
+fn a_note_names_its_own_folder_through_tags() {
+    // Membership is the document's `tags`, `/`-delimited — the same path the
+    // folder is keyed by. `SdDriveSyncProcess$19$1` reads it as a string and
+    // hands it to `SdUtils.tagsFromPath`.
+    //
+    // Reading membership from the folder's `childrenOrder` instead put every
+    // note at the top level: that field is empty on the way down, and the
+    // hierarchy still looked right, so only the notes were wrong.
     let listing = parse(archive(&[
-        (
-            "folderdefs_1.json",
-            r#"[{"absPath":"/算数/","childrenOrder":"/doc-a/doc-b/"}]"#,
-        ),
+        ("folderdefs_1.json", r#"[{"absPath":"/算数/"}]"#),
         (
             "documents_1.json",
-            r#"[{"id":"doc-a"},{"id":"doc-b"},{"id":"doc-c"}]"#,
+            r#"[{"id":"doc-a","tags":"/算数/"},
+                {"id":"doc-b","tags":"算数"},
+                {"id":"doc-c"},
+                {"id":"doc-d","tags":""}]"#,
         ),
     ]))
     .unwrap();
@@ -85,24 +91,83 @@ fn a_folder_claims_its_notes_through_children_order() {
             .clone()
     };
     assert_eq!(folder_of("doc-a"), "/算数/");
+    // The slashes are not always there; the path is what matters.
     assert_eq!(folder_of("doc-b"), "/算数/");
-    assert_eq!(folder_of("doc-c"), "/", "unclaimed notes go to the top");
+    assert_eq!(folder_of("doc-c"), "/", "no tags means the top level");
+    assert_eq!(folder_of("doc-d"), "/", "and so does an empty one");
 }
 
 #[test]
-fn a_children_order_naming_subfolders_does_not_invent_notes() {
-    // `childrenOrder` names both notes and subfolders; a name matching no note
-    // is simply not a note.
+fn a_nested_folder_holds_its_own_notes() {
     let listing = parse(archive(&[
         (
             "folderdefs_1.json",
-            r#"[{"absPath":"/算数/","childrenOrder":"/4月/doc-a/"}]"#,
+            r#"[{"absPath":"/算数/"},{"absPath":"/算数/4月/","parentAbsPath":"/算数/"}]"#,
         ),
-        ("documents_1.json", r#"[{"id":"doc-a"}]"#),
+        (
+            "documents_1.json",
+            r#"[{"id":"a","tags":"/算数/"},{"id":"b","tags":"/算数/4月/"}]"#,
+        ),
     ]))
     .unwrap();
 
-    assert_eq!(ids(&listing), ["doc-a"]);
+    let folder_of = |id: &str| {
+        listing.documents.iter().find(|d| d.document_id == id).unwrap().folder_path.clone()
+    };
+    assert_eq!(folder_of("a"), "/算数/");
+    assert_eq!(folder_of("b"), "/算数/4月/");
+}
+
+#[test]
+fn a_parent_given_outright_is_used_rather_than_inferred() {
+    // No risk of inferring it differently from the server.
+    let listing = parse(archive(&[(
+        "folderdefs_1.json",
+        r#"[{"absPath":"/算数/4月/","parentAbsPath":"算数"}]"#,
+    )]))
+    .unwrap();
+    assert_eq!(listing.folders[0].parent_path.as_deref(), Some("/算数/"));
+}
+
+#[test]
+fn the_drives_own_arrangement_orders_a_folders_contents() {
+    // `childrenorders_` is ordering, not membership — its own entries, not a
+    // field on the folder record.
+    let listing = parse(archive(&[
+        ("folderdefs_1.json", r#"[{"absPath":"/算数/"}]"#),
+        (
+            "childrenorders_1.json",
+            r#"[{"absPath":"/算数/","childrenOrder":"/c/a/b/"}]"#,
+        ),
+        (
+            "documents_1.json",
+            r#"[{"id":"a","title":"あ","tags":"/算数/"},
+                {"id":"b","title":"い","tags":"/算数/"},
+                {"id":"c","title":"う","tags":"/算数/"}]"#,
+        ),
+    ]))
+    .unwrap();
+
+    // Not title order: the drive said otherwise.
+    assert_eq!(ids(&listing), ["c", "a", "b"]);
+}
+
+#[test]
+fn a_note_the_arrangement_omits_falls_to_the_end() {
+    let listing = parse(archive(&[
+        (
+            "childrenorders_1.json",
+            r#"[{"absPath":"/","childrenOrder":"/b/"}]"#,
+        ),
+        (
+            "documents_1.json",
+            r#"[{"id":"a","title":"あ"},{"id":"b","title":"ん"},{"id":"c","title":"う"}]"#,
+        ),
+    ]))
+    .unwrap();
+
+    // `b` is placed; the rest keep a stable title order behind it.
+    assert_eq!(ids(&listing), ["b", "a", "c"]);
 }
 
 #[test]
@@ -146,7 +211,6 @@ fn the_archives_other_entries_are_not_reported_as_faults() {
         ("tagorder.json", r#"{"tagOrder":""}"#),
         ("drive.json", r#"{"lastUpdateRevision":"9"}"#),
         ("meta.json", r#"{}"#),
-        ("childrenorders_1.json", r#"[]"#),
     ]))
     .unwrap();
 

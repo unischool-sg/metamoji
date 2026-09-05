@@ -17,10 +17,17 @@
 //! and the symptom was "archive contains no MetaMoJi document", which reads
 //! like a corrupt download rather than a wrong guess.)
 //!
-//! **Folders are paths, not ids.** `SdMOFolder` is keyed by `absPath`, so the
-//! hierarchy is in the strings and needs no joining. Membership is the other
-//! way round: a folder's `childrenOrder` names its children, `/`-delimited —
-//! `SdUtils.tagsFromPath` strips the outer slashes and splits on the rest.
+//! **Folders are paths, and membership is tags.** `SdMOFolder` is keyed by
+//! `absPath`, so the hierarchy is in the strings and needs no joining. A
+//! *document* names its folder in its own `tags` field, which is the same
+//! `/`-delimited path — hence `SdUtils.tagsFromPath`, which the document parser
+//! calls on it (`SdDriveSyncProcess$19$1`). Folders carry `tags` too, and a
+//! `parentAbsPath` besides.
+//!
+//! `childrenOrder` is **ordering, not membership**, and it lives in its own
+//! `childrenorders_` entries rather than on the folder records
+//! (`SdDriveSyncProcess$18$1`). Reading membership from it put every note at
+//! the top level, because the field it was read from is empty on the way down.
 
 use std::collections::HashMap;
 use std::io::{Cursor, Read};
@@ -50,13 +57,9 @@ pub struct Listing {
 /// reported as a fault.
 const DOCUMENTS: &str = "documents_";
 const FOLDERS: &str = "folderdefs_";
-const KNOWN_BUT_UNUSED: [&str; 5] = [
-    "childrenorders_",
-    "tagdefs_",
-    "tagorder.json",
-    "drive.json",
-    "meta.json",
-];
+const ORDERS: &str = "childrenorders_";
+const KNOWN_BUT_UNUSED: [&str; 4] =
+    ["tagdefs_", "tagorder.json", "drive.json", "meta.json"];
 
 /// Decodes the zip a drive hands back.
 pub fn parse(bytes: Vec<u8>) -> AppResult<Listing> {
@@ -65,8 +68,8 @@ pub fn parse(bytes: Vec<u8>) -> AppResult<Listing> {
 
     let mut documents: Vec<DriveDocument> = Vec::new();
     let mut folders: Vec<DriveFolder> = Vec::new();
-    // Document id → the folder that claims it.
-    let mut owner: HashMap<String, String> = HashMap::new();
+    // Folder path → the drive's own arrangement of its children.
+    let mut orders: HashMap<String, Vec<String>> = HashMap::new();
     let mut unrecognised = Vec::new();
     let mut record_count = 0usize;
 
@@ -94,30 +97,37 @@ pub fn parse(bytes: Vec<u8>) -> AppResult<Listing> {
         if name.starts_with(DOCUMENTS) {
             record_count += collect_documents(&value, &mut documents);
         } else if name.starts_with(FOLDERS) {
-            record_count += collect_folders(&value, &mut folders, &mut owner);
+            record_count += collect_folders(&value, &mut folders);
+        } else if name.starts_with(ORDERS) {
+            record_count += collect_orders(&value, &mut orders);
         } else if !KNOWN_BUT_UNUSED.iter().any(|k| name.starts_with(k)) {
             unrecognised.push(name);
         }
     }
 
-    for document in &mut documents {
-        document.folder_path = owner
-            .get(&document.document_id)
-            .cloned()
-            // A note no folder claims belongs at the top level rather than
-            // nowhere; hiding it would be worse than putting it in the root.
-            .unwrap_or_else(|| "/".to_string());
-    }
-
-    // The archive's order is not the drive's, and the server sends no ordering
-    // of its own here — `childrenorders_` is the drive's own arrangement and is
-    // not read yet, so a stable one beats an arbitrary one.
-    folders.sort_by(|a, b| a.abs_path.cmp(&b.abs_path));
+    // The drive's own arrangement first; anything it does not mention falls to
+    // the end in title order, which is at least stable.
+    let rank = |path: &str, id: &str| {
+        orders
+            .get(path)
+            .and_then(|list| list.iter().position(|child| child == id))
+            .unwrap_or(usize::MAX)
+    };
+    folders.sort_by(|a, b| {
+        let parent = a.parent_path.clone().unwrap_or_else(|| "/".to_string());
+        rank(&parent, &a.name)
+            .cmp(&rank(&parent, &b.name))
+            .then_with(|| a.abs_path.cmp(&b.abs_path))
+    });
     documents.sort_by(|a, b| {
-        a.title
-            .as_deref()
-            .unwrap_or(&a.document_id)
-            .cmp(b.title.as_deref().unwrap_or(&b.document_id))
+        rank(&a.folder_path, &a.document_id)
+            .cmp(&rank(&b.folder_path, &b.document_id))
+            .then_with(|| {
+                a.title
+                    .as_deref()
+                    .unwrap_or(&a.document_id)
+                    .cmp(b.title.as_deref().unwrap_or(&b.document_id))
+            })
     });
     unrecognised.sort();
     unrecognised.dedup();
@@ -155,18 +165,22 @@ fn collect_documents(value: &Value, out: &mut Vec<DriveDocument>) -> usize {
             revision: text(object.get("contentsRevision")).or_else(|| text(object.get("revision"))),
             updated_at: text(object.get("contentsUpdate"))
                 .or_else(|| text(object.get("lastUpdate"))),
-            // Filled in once every folder has been read.
-            folder_path: "/".to_string(),
+            // A note names its own folder. `SdDriveSyncProcess$19$1` reads this
+            // as a string and hands it to `SdUtils.tagsFromPath`, so it is the
+            // folder's path in the same `/`-delimited form.
+            folder_path: object
+                .get("tags")
+                .and_then(Value::as_str)
+                .map(normalise_path)
+                // A note with no tags is at the top level, which is also where
+                // one whose folder is missing belongs — better than hidden.
+                .unwrap_or_else(|| "/".to_string()),
         });
     }
     seen
 }
 
-fn collect_folders(
-    value: &Value,
-    out: &mut Vec<DriveFolder>,
-    owner: &mut HashMap<String, String>,
-) -> usize {
+fn collect_folders(value: &Value, out: &mut Vec<DriveFolder>) -> usize {
     let Some(records) = records(value) else {
         return 0;
     };
@@ -176,30 +190,58 @@ fn collect_folders(
         let Some(object) = record.as_object() else {
             continue;
         };
-        // Not `text`: an empty `absPath` is the root, not a missing value, and
-        // the root's `childrenOrder` is what claims the top-level notes.
+        // Not `text`: an empty `absPath` is the root, not a missing value.
         let Some(raw_path) = object.get("absPath").and_then(Value::as_str) else {
             continue;
         };
         seen += 1;
 
         let path = normalise_path(raw_path);
-        if !deleted(object) && path != "/" {
-            let name = path.trim_matches('/').rsplit('/').next().unwrap_or_default();
-            out.push(DriveFolder {
-                name: name.to_string(),
-                parent_path: parent_of(&path),
-                depth: path.trim_matches('/').split('/').count(),
-                abs_path: path.clone(),
-            });
+        // The root is where everything already is; a row for it would be a loop.
+        if deleted(object) || path == "/" {
+            continue;
         }
 
-        // `childrenOrder` is a `/`-delimited list, per `SdUtils.tagsFromPath`.
-        // It names both notes and subfolders; a name that matches no note is
-        // simply not a note.
-        for child in split_children(text(object.get("childrenOrder")).as_deref()) {
-            owner.insert(child, path.clone());
-        }
+        let name = path.trim_matches('/').rsplit('/').next().unwrap_or_default();
+        out.push(DriveFolder {
+            name: name.to_string(),
+            // Given outright, so there is no need to infer it — and no risk of
+            // inferring it differently from the server.
+            parent_path: object
+                .get("parentAbsPath")
+                .and_then(Value::as_str)
+                .map(normalise_path)
+                .or_else(|| parent_of(&path)),
+            depth: path.trim_matches('/').split('/').count(),
+            abs_path: path,
+        });
+    }
+    seen
+}
+
+/// `childrenorders_N.json`: the drive's own arrangement, one record per folder.
+///
+/// Ordering only. Membership is the document's `tags`; reading it from here
+/// would put every note at the top level, since these records name children in
+/// a form that does not always match a document id.
+fn collect_orders(value: &Value, out: &mut HashMap<String, Vec<String>>) -> usize {
+    let Some(records) = records(value) else {
+        return 0;
+    };
+
+    let mut seen = 0;
+    for record in records {
+        let Some(object) = record.as_object() else {
+            continue;
+        };
+        let Some(raw_path) = object.get("absPath").and_then(Value::as_str) else {
+            continue;
+        };
+        seen += 1;
+        out.insert(
+            normalise_path(raw_path),
+            split_children(text(object.get("childrenOrder")).as_deref()),
+        );
     }
     seen
 }
