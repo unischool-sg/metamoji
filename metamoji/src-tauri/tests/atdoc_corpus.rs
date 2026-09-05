@@ -230,3 +230,107 @@ fn an_imported_document_survives_being_saved_and_reopened() {
     eprintln!("imported and round-tripped {before} strokes");
     std::fs::remove_dir_all(&dir).ok();
 }
+
+// ---------------------------------------------------------------------------
+// Writing
+// ---------------------------------------------------------------------------
+
+/// Every model as `type|version|properties`, with references named by what
+/// they point at rather than by table index.
+///
+/// Indices are allocation order and mean nothing across two writes of the same
+/// document, so comparing them would fail on files that are otherwise
+/// identical. Comparing this as a multiset is the real question: are the same
+/// models, with the same properties, still there?
+fn model_bag(bytes: &[u8]) -> Vec<String> {
+    use serde_json::{Map, Value};
+
+    let doc = atdoc::parse_document(bytes).expect("parse");
+
+    fn resolve(value: &Value, types: &std::collections::HashMap<usize, String>) -> Value {
+        match value {
+            Value::Object(map) => {
+                if let Some(Value::Number(n)) = map.get("$ref") {
+                    let target = n.as_u64().unwrap_or(0) as usize;
+                    // Named by what it points at, not by where it landed.
+                    return Value::String(format!(
+                        "->{}",
+                        types.get(&target).cloned().unwrap_or_else(|| "?".into())
+                    ));
+                }
+                let mut out = Map::new();
+                for (k, v) in map {
+                    out.insert(k.clone(), resolve(v, types));
+                }
+                Value::Object(out)
+            }
+            Value::Array(items) => {
+                Value::Array(items.iter().map(|v| resolve(v, types)).collect())
+            }
+            other => other.clone(),
+        }
+    }
+
+    let types: std::collections::HashMap<usize, String> = doc
+        .models
+        .iter()
+        .map(|(i, m)| (*i, m.model_type.clone()))
+        .collect();
+
+    let mut bag: Vec<String> = doc
+        .models
+        .values()
+        .map(|m| {
+            format!(
+                "{}|{}|{}",
+                m.model_type,
+                m.version,
+                resolve(&m.props, &types)
+            )
+        })
+        .collect();
+    bag.sort();
+    bag
+}
+
+#[test]
+fn every_bundled_document_survives_being_written_back() {
+    let files = corpus_files();
+    if files.is_empty() {
+        eprintln!("no corpus; skipping");
+        return;
+    }
+
+    for path in files {
+        let raw = std::fs::read(&path).expect("read");
+        let original = match atdoc::unwrap_container(raw) {
+            Ok(bytes) => bytes,
+            Err(_) => continue,
+        };
+
+        let imported = atdoc::import(original.clone(), "root").expect("import");
+        let mut tree = imported.tree;
+        let assets: std::collections::HashMap<String, (String, Vec<u8>)> = imported
+            .assets
+            .into_iter()
+            .map(|a| (a.ticket, (a.mime, a.bytes)))
+            .collect();
+        let missing = atdoc::restore_assets(&mut tree, &assets);
+        assert!(missing.is_empty(), "{}: unresolved assets {missing:?}", path.display());
+
+        let written = atdoc::write_document(&tree, &atdoc::write_meta(&tree))
+            .unwrap_or_else(|e| panic!("{}: {e}", path.display()));
+
+        assert_eq!(
+            model_bag(&written),
+            model_bag(&original),
+            "{} did not survive the round trip",
+            path.display()
+        );
+
+        // A document the app wrote is one the app can read.
+        let reimported = atdoc::import(written, "root").expect("re-import");
+        assert_eq!(reimported.tree.models.len(), tree.models.len());
+        assert_eq!(reimported.report.stroke_count, imported.report.stroke_count);
+    }
+}

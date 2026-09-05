@@ -171,6 +171,62 @@ fn sniff(bytes: &[u8]) -> &'static str {
     }
 }
 
+/// Puts the binaries back, turning `{"$asset": …}` into the blob it replaced.
+///
+/// The inverse of `extract`, and the step that has to run before a document
+/// this app imported can be written back out: the original has no notion of an
+/// asset store, so a reference to one is a hole in the file.
+pub fn restore_assets(tree: &mut GenericTree, assets: &HashMap<String, (String, Vec<u8>)>) -> Vec<String> {
+    let mut missing = Vec::new();
+    for model in tree.models.values_mut() {
+        put_back(&mut model.props, assets, &mut missing);
+    }
+    missing.sort();
+    missing.dedup();
+    missing
+}
+
+fn put_back(
+    value: &mut Value,
+    assets: &HashMap<String, (String, Vec<u8>)>,
+    missing: &mut Vec<String>,
+) {
+    match value {
+        Value::Object(map) => {
+            if let Some(Value::String(ticket)) = map.get("$asset") {
+                let ticket = ticket.clone();
+                match assets.get(&ticket) {
+                    Some((mime, bytes)) => {
+                        use base64::Engine as _;
+                        let mut blob = Map::new();
+                        blob.insert(
+                            "$blob".into(),
+                            Value::String(
+                                base64::engine::general_purpose::STANDARD.encode(bytes),
+                            ),
+                        );
+                        blob.insert("$mime".into(), Value::String(mime.clone()));
+                        *value = Value::Object(blob);
+                    }
+                    // Named rather than guessed at: a document written with a
+                    // hole where its PDF was is worse than one not written.
+                    None => missing.push(ticket),
+                }
+                return;
+            }
+            for child in map.values_mut() {
+                put_back(child, assets, missing);
+            }
+        }
+        Value::Array(items) => {
+            for item in items {
+                put_back(item, assets, missing);
+            }
+        }
+        _ => {}
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -250,6 +306,40 @@ mod tests {
         assert_eq!(assets[0].ticket, "root_m9:list[0].img");
         assert_eq!(assets[0].mime, "application/octet-stream");
         assert_eq!(assets[0].bytes, vec![1, 2, 3]);
+    }
+
+    #[test]
+    fn an_asset_reference_becomes_the_blob_it_replaced() {
+        let mut tree = tree_with(vec![
+            model("root_m5", "attachments", json!({ "tkt-1": { "$ref": "root_m6" } })),
+            model(
+                "root_m6",
+                "attachment",
+                json!({ "$blob": { "$blob": "JVBERi0=", "$mime": "application/pdf" } }),
+            ),
+        ]);
+        let assets = extract(&mut tree);
+        let stored: HashMap<String, (String, Vec<u8>)> = assets
+            .into_iter()
+            .map(|a| (a.ticket, (a.mime, a.bytes)))
+            .collect();
+
+        assert!(restore_assets(&mut tree, &stored).is_empty());
+        assert_eq!(
+            tree.models["root_m6"].props["$blob"],
+            json!({ "$blob": "JVBERi0=", "$mime": "application/pdf" })
+        );
+    }
+
+    #[test]
+    fn a_missing_asset_is_named_rather_than_written_as_a_hole() {
+        let mut tree = tree_with(vec![model(
+            "root_m6",
+            "attachment",
+            json!({ "$blob": { "$asset": "gone", "$mime": "application/pdf" } }),
+        )]);
+        assert_eq!(restore_assets(&mut tree, &HashMap::new()), vec!["gone".to_string()]);
+        assert!(tree.models["root_m6"].props["$blob"].get("$asset").is_some());
     }
 
     #[test]

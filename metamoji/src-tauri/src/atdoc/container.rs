@@ -207,14 +207,17 @@ pub struct ExtraTable {
     pub type_dict: Vec<String>,
     /// Per-model preload properties, indexed by model index.
     pub preload: Vec<PreloadItem>,
+    /// The `vi` table: the schema version each model type is current at. The
+    /// importer does not consult it, but the writer needs it — a model written
+    /// at the wrong version invites the reader to migrate it.
+    pub version_info: HashMap<String, u16>,
 }
 
 #[derive(Debug, Clone, Copy, Default)]
 pub struct PreloadItem {
     pub type_index: u16,
-    /// Model schema version. Unused today; it is what a future importer would
-    /// consult to migrate an older model's property names.
-    #[allow(dead_code)]
+    /// Model schema version. The importer does not migrate on it, but the
+    /// writer has to put it back.
     pub version: u16,
 }
 
@@ -285,8 +288,19 @@ fn parse_extra_table_v1_v2(buf: &[u8], header: &Header) -> AppResult<ExtraTable>
         .map(parse_type_dict)
         .unwrap_or_default();
 
+    let version_info = if header.format_version >= 2 {
+        let mut r = Reader::at(block, 8);
+        r.u64().ok().map(|pos| read_version_info(buf, pos)).unwrap_or_default()
+    } else {
+        HashMap::new()
+    };
+
     let preload = parse_preload_table(&block[header_len..])?;
-    Ok(ExtraTable { type_dict, preload })
+    Ok(ExtraTable {
+        type_dict,
+        preload,
+        version_info,
+    })
 }
 
 /// V3 replaces the fixed header with a `PlainValueSerializer` map keyed
@@ -316,7 +330,38 @@ fn parse_extra_table_v3(buf: &[u8], header: &Header) -> AppResult<ExtraTable> {
         None => Vec::new(),
     };
 
-    Ok(ExtraTable { type_dict, preload })
+    Ok(ExtraTable {
+        type_dict,
+        preload,
+        version_info: offset_of("vi")
+            .map(|pos| read_version_info(buf, pos))
+            .unwrap_or_default(),
+    })
+}
+
+/// `{modelType: {version}}`. The version rides in a one-member set, so this
+/// takes the first number it finds rather than assuming a shape.
+fn read_version_info(buf: &[u8], pos: u64) -> HashMap<String, u16> {
+    let Ok(block) = read_block(buf, pos) else {
+        return HashMap::new();
+    };
+    let mut r = Reader::new(block);
+    let Ok(Value::Object(map)) = read_value(&mut r) else {
+        return HashMap::new();
+    };
+
+    let mut out = HashMap::new();
+    for (name, value) in map {
+        let version = match &value {
+            Value::Number(n) => n.as_u64(),
+            Value::Array(items) => items.first().and_then(Value::as_u64),
+            _ => None,
+        };
+        if let Some(version) = version {
+            out.insert(name, version as u16);
+        }
+    }
+    out
 }
 
 // ---------------------------------------------------------------------------
@@ -327,6 +372,8 @@ fn parse_extra_table_v3(buf: &[u8], header: &Header) -> AppResult<ExtraTable> {
 pub struct ParsedModel {
     pub index: usize,
     pub model_type: String,
+    /// The schema version this model was written at.
+    pub version: u16,
     pub parent: i32,
     pub props: Value,
     /// Set when the property block would not decode; the model still occupies
@@ -337,6 +384,8 @@ pub struct ParsedModel {
 #[derive(Debug, Clone)]
 pub struct ParsedDocument {
     pub format_version: u16,
+    /// Schema version per model type, from the `vi` table.
+    pub version_info: HashMap<String, u16>,
     pub root_index: i32,
     pub models: HashMap<usize, ParsedModel>,
     /// Child order per parent index, taken from the sibling links.
@@ -357,24 +406,31 @@ pub fn parse_document(buf: &[u8]) -> AppResult<ParsedDocument> {
         if dead.contains(&i) || undo.contains(&i) {
             continue;
         }
-        if item.data_position == u64::MAX || item.data_position == 0 {
-            continue;
-        }
+        // A live slot may have no data block at all: the drawing engine
+        // allocates its element managers (`M`) up front and only writes them
+        // once there is ink. They are still models, and still referenced by
+        // `$ref` from the `$draw` unit that owns them — dropping them leaves a
+        // dangling reference that nothing downstream can resolve.
+        let unallocated = item.data_position == u64::MAX || item.data_position == 0;
 
         let model_type = extra
             .model_type(index)
             .map(str::to_string)
             .unwrap_or_else(|| "$dummy".to_string());
 
-        let (props, decode_error) = match read_block(buf, item.data_position) {
-            Ok(payload) => {
-                let mut r = Reader::new(payload);
-                match read_value(&mut r) {
-                    Ok(value) => (value, None),
-                    Err(err) => (Value::Object(Default::default()), Some(err.to_string())),
+        let (props, decode_error) = if unallocated {
+            (Value::Object(Default::default()), None)
+        } else {
+            match read_block(buf, item.data_position) {
+                Ok(payload) => {
+                    let mut r = Reader::new(payload);
+                    match read_value(&mut r) {
+                        Ok(value) => (value, None),
+                        Err(err) => (Value::Object(Default::default()), Some(err.to_string())),
+                    }
                 }
+                Err(err) => (Value::Object(Default::default()), Some(err.to_string())),
             }
-            Err(err) => (Value::Object(Default::default()), Some(err.to_string())),
         };
 
         models.insert(
@@ -382,6 +438,7 @@ pub fn parse_document(buf: &[u8]) -> AppResult<ParsedDocument> {
             ParsedModel {
                 index,
                 model_type,
+                version: extra.preload.get(index).map(|p| p.version).unwrap_or(0),
                 parent: item.parent,
                 props,
                 decode_error,
@@ -416,6 +473,7 @@ pub fn parse_document(buf: &[u8]) -> AppResult<ParsedDocument> {
 
     Ok(ParsedDocument {
         format_version: header.format_version,
+        version_info: extra.version_info.clone(),
         root_index: table.root_index,
         models,
         children,
@@ -500,6 +558,7 @@ mod tests {
         block.extend_from_slice(&2u16.to_le_bytes()); // version
 
         let extra = ExtraTable {
+            version_info: HashMap::new(),
             type_dict: vec!["$page".into(), "$layer".into()],
             preload: parse_preload_table(&block).unwrap(),
         };
@@ -513,6 +572,7 @@ mod tests {
         block.extend_from_slice(&INVALID_TYPE_INDEX.to_le_bytes());
         block.extend_from_slice(&[0, 0, 0, 0]);
         let extra = ExtraTable {
+            version_info: HashMap::new(),
             type_dict: vec!["$page".into()],
             preload: parse_preload_table(&block).unwrap(),
         };

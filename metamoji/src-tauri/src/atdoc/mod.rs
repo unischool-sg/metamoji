@@ -30,9 +30,11 @@
 
 mod assets;
 mod container;
+mod encode;
 mod ink;
 mod reader;
 mod value;
+mod writer;
 
 use std::collections::HashMap;
 use std::io::Read;
@@ -46,7 +48,19 @@ use crate::model::{GenericModel, GenericTree};
 const DOCMETA_TYPE: &str = "docmeta";
 const PAGE_TYPE: &str = "$page";
 
-pub use assets::ImportedAsset;
+pub use assets::{restore_assets, ImportedAsset};
+pub use writer::{write_document, DocumentMeta};
+
+/// Debug helper: reads one block payload out of a raw container.
+pub fn read_block_at(buf: &[u8], pos: u64) -> AppResult<&[u8]> {
+    container::read_block(buf, pos)
+}
+
+/// Debug helper: decodes one `PlainValueSerializer` value.
+pub fn read_value_bytes(bytes: &[u8]) -> AppResult<Value> {
+    let mut r = reader::Reader::new(bytes);
+    value::read_value(&mut r)
+}
 pub use container::{parse_document, parse_header, ParsedDocument};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -148,7 +162,27 @@ fn build_tree(parsed: &ParsedDocument, new_root_id: &str) -> AtdocImport {
         }
     };
 
-    let mut tree = GenericTree::new(new_root_id, "$freenote");
+    // The root's own type, not an assumed one: a note shared with a class is a
+    // `$sharenote`, and writing it back as a `$freenote` would change what kind
+    // of document it is.
+    let root_type = parsed
+        .models
+        .get(&(parsed.root_index.max(0) as usize))
+        .map(|m| m.model_type.clone())
+        .unwrap_or_else(|| "$freenote".to_string());
+    let mut tree = GenericTree::new(new_root_id, root_type);
+
+    // The root's own properties. It is not in the child walk below — the walk
+    // starts *from* it — so without this the document loses everything hung
+    // directly off the root: its attachment index, its settings, its
+    // `docMetaData` reference.
+    if let Some(root_model) = parsed.models.get(&(parsed.root_index.max(0) as usize)) {
+        let mut props = root_model.props.clone();
+        rewrite_refs(&mut props, &id_for);
+        if let Some(root) = tree.models.get_mut(new_root_id) {
+            root.props = props;
+        }
+    }
 
     // Insert parents before children so `GenericTree::insert` can link them.
     let mut queue: Vec<i32> = vec![parsed.root_index];
@@ -191,11 +225,31 @@ fn build_tree(parsed: &ParsedDocument, new_root_id: &str) -> AtdocImport {
             id_for(model.parent as usize)
         };
 
+        let detached = model.parent == container::NONE_I32
+            || !parsed.models.contains_key(&(model.parent as usize));
+
         let mut props = model.props.clone();
         rewrite_refs(&mut props, &id_for);
-        if let Some(err) = &model.decode_error {
-            if let Value::Object(map) = &mut props {
+        if let Value::Object(map) = &mut props {
+            if let Some(err) = &model.decode_error {
                 map.insert("_decodeError".into(), Value::String(err.clone()));
+            }
+            // Hung off the root so it survives being saved and walked, but
+            // remembered as parentless so writing it back does not adopt it.
+            if detached && index as i32 != parsed.root_index {
+                note_meta(map, |meta| {
+                    meta.insert("detached".into(), Value::Bool(true));
+                });
+            }
+            // Usually a model sits at its type's current version, so the `vi`
+            // table covers it. Usually — a document that has been through a
+            // schema change carries pages at two different versions at once,
+            // and writing them all at the current one would tell the reader
+            // they had been migrated when they had not.
+            if parsed.version_info.get(&model.model_type) != Some(&model.version) {
+                note_meta(map, |meta| {
+                    meta.insert("version".into(), Value::from(model.version));
+                });
             }
         }
 
@@ -211,6 +265,7 @@ fn build_tree(parsed: &ParsedDocument, new_root_id: &str) -> AtdocImport {
     // Fold the drawing-engine element graph into stroke lists the app can render.
     let strokes = ink::attach_strokes(&mut tree, parsed, &id_for);
     fit_unit_frames(&mut tree);
+    record_write_meta(&mut tree, parsed);
     let title = apply_docmeta(&mut tree);
     let assets = assets::extract(&mut tree);
 
@@ -250,6 +305,94 @@ fn build_tree(parsed: &ParsedDocument, new_root_id: &str) -> AtdocImport {
     }
 }
 
+/// Edits the reserved `$atdoc` object on one model's properties.
+fn note_meta(props: &mut serde_json::Map<String, Value>, edit: impl FnOnce(&mut serde_json::Map<String, Value>)) {
+    let mut meta = match props.remove(writer::META_KEY) {
+        Some(Value::Object(map)) => map,
+        _ => serde_json::Map::new(),
+    };
+    edit(&mut meta);
+    props.insert(writer::META_KEY.into(), Value::Object(meta));
+}
+
+/// Records that this app added `keys` to a model the document already had, so
+/// the writer can take them off again.
+pub(super) fn mark_injected(props: &mut serde_json::Map<String, Value>, keys: &[&str]) {
+    note_meta(props, |meta| {
+        let mut list = match meta.remove("injected") {
+            Some(Value::Array(items)) => items,
+            _ => Vec::new(),
+        };
+        for key in keys {
+            let value = Value::String((*key).to_string());
+            if !list.contains(&value) {
+                list.push(value);
+            }
+        }
+        meta.insert("injected".into(), Value::Array(list));
+    });
+}
+
+/// Parks what the writer will need on the root, where it survives being saved
+/// and reloaded.
+///
+/// The generic tree has no room for a format version or a per-type schema
+/// version, and both have to come back unchanged: this document is going to be
+/// read by the app it came from.
+fn record_write_meta(tree: &mut GenericTree, parsed: &ParsedDocument) {
+    let mut versions = parsed.version_info.clone();
+    if versions.is_empty() {
+        // No `vi` table (a V1 document). The next best source is the models
+        // themselves — every model of a type shares its version.
+        for model in parsed.models.values() {
+            versions
+                .entry(model.model_type.clone())
+                .or_insert(model.version);
+        }
+    }
+
+    let mut type_versions = serde_json::Map::new();
+    let mut names: Vec<&String> = versions.keys().collect();
+    names.sort();
+    for name in names {
+        type_versions.insert(name.clone(), Value::from(versions[name]));
+    }
+
+    let root_id = tree.root_id.clone();
+    if let Some(root) = tree.models.get_mut(&root_id) {
+        if let Value::Object(props) = &mut root.props {
+            note_meta(props, |meta| {
+                meta.insert("formatVersion".into(), Value::from(parsed.format_version));
+                meta.insert("typeVersions".into(), Value::Object(type_versions));
+            });
+        }
+    }
+}
+
+/// Reads back what `record_write_meta` parked, for a document about to be
+/// written. Absent or damaged, the defaults are what a fresh note would use.
+pub fn write_meta(tree: &GenericTree) -> writer::DocumentMeta {
+    let mut meta = writer::DocumentMeta::default();
+    let Some(root) = tree.models.get(&tree.root_id) else {
+        return meta;
+    };
+    let Some(saved) = root.props.get(writer::META_KEY) else {
+        return meta;
+    };
+
+    if let Some(version) = saved.get("formatVersion").and_then(Value::as_u64) {
+        meta.format_version = version as u16;
+    }
+    if let Some(Value::Object(map)) = saved.get("typeVersions") {
+        for (name, value) in map {
+            if let Some(version) = value.as_u64() {
+                meta.type_versions.insert(name.clone(), version as u16);
+            }
+        }
+    }
+    meta
+}
+
 /// Copies the document's own metadata onto the root, and returns its title.
 ///
 /// The app reads a note's title, creation and update time from the root
@@ -274,15 +417,22 @@ fn apply_docmeta(tree: &mut GenericTree) -> Option<String> {
 
     let root = tree.models.get_mut(&root_id)?;
     if let Value::Object(props) = &mut root.props {
+        let mut added: Vec<&str> = Vec::new();
         if let Some(title) = &title {
             props.insert("title".into(), Value::String(title.clone()));
+            added.push("title");
         }
         if let Some(created) = created {
             props.insert("createdAt".into(), Value::String(created));
+            added.push("createdAt");
         }
         if let Some(updated) = updated {
             props.insert("updatedAt".into(), Value::String(updated));
+            added.push("updatedAt");
         }
+        // They are a copy of `docmeta`, not properties of the root, and the
+        // document they came from has to get back exactly what it gave.
+        mark_injected(props, &added);
     }
     title
 }
@@ -348,6 +498,7 @@ fn fit_unit_frames(tree: &mut GenericTree) {
                     props.insert("y".into(), json_num(y));
                     props.insert("width".into(), json_num(w));
                     props.insert("height".into(), json_num(h));
+                    mark_injected(props, &["x", "y", "width", "height"]);
                 }
             }
         }

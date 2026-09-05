@@ -60,6 +60,11 @@ pub fn attach_strokes(
         if let Some(node) = tree.models.get_mut(&id_for(draw_index)) {
             if let Value::Object(props) = &mut node.props {
                 props.insert("strokes".into(), Value::Array(strokes));
+                // A view of the element graph, not a property of the unit. The
+                // elements are still there as models; writing this back would
+                // add a property the original never had, next to the data it
+                // was derived from.
+                crate::atdoc::mark_injected(props, &["strokes"]);
             }
         }
     }
