@@ -82,6 +82,12 @@ export interface RoomPull {
   error: string | null;
 }
 
+/** Where a note came from, when it came from a class box. */
+export interface ClassOrigin {
+  driveId: string;
+  documentId: string;
+}
+
 export interface AtdocImportResult {
   tree: GenericTree;
   report: ImportReport;
@@ -643,6 +649,36 @@ export async function classboxOpenNote(
     revision,
     newRootId,
   });
+}
+
+/**
+ * Records that a note is a copy of a class-box document.
+ *
+ * Without it the note is just a local file: sending what the user writes on it
+ * back to the class needs to know which document it is a copy of.
+ */
+export async function classboxLink(
+  noteId: string,
+  driveId: string,
+  documentId: string,
+): Promise<void> {
+  if (!isTauri()) return;
+  await invoke("classbox_link", { noteId, driveId, documentId });
+}
+
+export async function classboxOrigin(noteId: string): Promise<ClassOrigin | null> {
+  if (!isTauri()) return null;
+  return invoke<ClassOrigin | null>("classbox_origin", { noteId });
+}
+
+/**
+ * Sends everything written on this note's own layers to its classroom, and
+ * returns how many strokes went. Already-sent strokes are skipped, so calling
+ * it after every save is the intended use.
+ */
+export async function classboxSendStrokes(noteId: string): Promise<number> {
+  if (!isTauri()) return 0;
+  return invoke<number>("classbox_send_strokes", { noteId });
 }
 
 export async function classboxNoteThumbnail(

@@ -17,6 +17,7 @@ use std::time::Duration;
 use serde::Serialize;
 
 use super::apply::{self, Applied};
+use super::send;
 use super::session::ClassroomState;
 use super::socket::{self, CollaboEvent, Command};
 use crate::cloud::CloudClient;
@@ -83,6 +84,93 @@ pub fn booths_for(tree: &GenericTree, user_id: &str) -> Vec<String> {
     out.sort();
     out.dedup();
     out
+}
+
+/// Posts strokes into the room, one Direction each.
+///
+/// Joins, sends, leaves — the same shape as `fetch`, and for the same reason:
+/// a session that stays open belongs to the editor, not to a one-off write.
+/// Returns how many went out; the caller marks those as sent.
+pub async fn post_strokes(
+    cloud: &CloudClient,
+    classroom: &ClassroomState,
+    room_id: &str,
+    strokes: &[send::Pending],
+) -> AppResult<usize> {
+    if strokes.is_empty() {
+        return Ok(0);
+    }
+    let Some(session) = cloud.session() else {
+        return Err(crate::error::AppError::other("サインインしていません"));
+    };
+
+    let device_id = classroom.device_id(cloud).await?;
+    let relay = classroom.rest(cloud).await?.login_room(room_id, None).await?;
+
+    // The room hands out its own id for us on login, and stamps it on every
+    // element. Until it arrives there is nothing honest to put there.
+    let room_user_id: Arc<Mutex<Option<String>>> = Arc::new(Mutex::new(None));
+    let seen = Arc::clone(&room_user_id);
+    let connection = socket::connect(&relay.host, relay.port, move |event| {
+        if let CollaboEvent::LoggedIn { user_id, .. } = event {
+            *seen.lock().unwrap() = user_id;
+        }
+    })
+    .await?;
+
+    connection
+        .commands
+        .send(Command::Login {
+            room_id: room_id.to_string(),
+            device_id,
+            session_id: relay.session_id.clone(),
+            nickname: session.name.clone(),
+        })
+        .await
+        .ok();
+    tokio::time::sleep(LOGIN_GRACE).await;
+
+    let author = send::Author {
+        user_id: session.user_id.clone(),
+        name: session.name.clone(),
+        company_id: session.company_id.clone().unwrap_or_default(),
+        room_id: room_id.to_string(),
+        room_user_id: room_user_id.lock().unwrap().clone().unwrap_or_default(),
+    };
+
+    let mut ids = send::IdGenerator::fresh();
+    let mut sent = 0;
+    for pending in strokes {
+        let payload = send::add_stroke(&pending.stroke, &pending.layer_id, &mut ids, &author, None)?;
+        connection
+            .commands
+            .send(Command::PostData {
+                booth_id: pending.layer_id.clone(),
+                payload,
+                // No echo — we already have the stroke. `save` is the whole
+                // point: it is what makes the relay keep it for anyone who
+                // opens the note later, this user included.
+                send_back: false,
+                save: true,
+                rip_off_size: "0".to_string(),
+            })
+            .await
+            .ok();
+        sent += 1;
+    }
+
+    // The posts are queued on the writer task; leaving at once would drop
+    // them. Wait for the acknowledgements to have had time to come back.
+    tokio::time::sleep(Duration::from_millis(300 + 80 * sent.min(50) as u64)).await;
+
+    let _ = connection
+        .commands
+        .send(Command::Logout {
+            room_id: room_id.to_string(),
+        })
+        .await;
+    let _ = connection.commands.send(Command::Disconnect).await;
+    Ok(sent)
 }
 
 /// Joins the room, replays every booth, and folds the result into `tree`.

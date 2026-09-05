@@ -9,7 +9,8 @@ import {
   createShapeUnit,
   createTextUnit,
 } from "./factory";
-import { addNode, isGenericTree, type GenericTree } from "./generic";
+import { addNode, emptyTree, isGenericTree, type GenericTree } from "./generic";
+import { MT_LAYER, MT_NOTE, MT_PAGE } from "./modelTypes";
 import { newStrokeId } from "./ids";
 import { strokeBounds } from "./stroke";
 import { searchableText, type DrawUnit, type NoteDocument, type Stroke } from "./types";
@@ -335,5 +336,39 @@ describe("isGenericTree", () => {
         models: { a: { id: "a", parentId: null, modelType: "$freenote", props: {} } },
       }),
     ).toBe(false);
+  });
+});
+
+describe("current layer", () => {
+  const pageWith = (currentLayer: number | { $ref: string } | undefined) => {
+    const tree = emptyTree("root", MT_NOTE);
+    addNode(tree, {
+      id: "p",
+      parentId: "root",
+      modelType: MT_PAGE,
+      props: currentLayer === undefined ? {} : { currentLayer },
+    });
+    for (const [id, type] of [["l0", "system:background"], ["l1", "system:edit"]]) {
+      addNode(tree, { id, parentId: "p", modelType: MT_LAYER, props: { layerType: type } });
+    }
+    tree.models.p.children = ["l0", "l1"];
+    return fromGeneric(tree).pages[0];
+  };
+
+  it("follows a reference", () => {
+    expect(pageWith({ $ref: "l1" }).currentLayerId).toBe("l1");
+  });
+
+  it("reads a number as the index an imported document means by it", () => {
+    // A class handout says `currentLayer: 4`. Read as "no answer" it fell back
+    // to layer 0 — the background the PDF sits on — and everything drawn went
+    // behind the page.
+    expect(pageWith(0).currentLayerId).toBe("l0");
+    expect(pageWith(1).currentLayerId).toBe("l1");
+  });
+
+  it("falls back to the topmost layer rather than the backmost", () => {
+    expect(pageWith(undefined).currentLayerId).toBe("l1");
+    expect(pageWith(99).currentLayerId).toBe("l1");
   });
 });

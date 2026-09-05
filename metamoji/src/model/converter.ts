@@ -342,11 +342,18 @@ function pageFromGeneric(tree: GenericTree, node: GenericModel): Page {
     });
   }
 
+  // A page names its current layer either by reference — which is what this
+  // app writes — or by index, which is what an imported document carries. An
+  // index read as "no answer" fell back to the first layer, and on a class
+  // handout the first layer is the background the PDF sits on: everything the
+  // user drew went behind the page.
   const currentRef = node.props.currentLayer;
   const currentLayerId =
     currentRef && typeof currentRef === "object" && "$ref" in currentRef
       ? (currentRef as { $ref: string }).$ref
-      : layers[0].id;
+      : typeof currentRef === "number" && layers[currentRef]
+        ? layers[currentRef].id
+        : layers[layers.length - 1].id;
 
   const header = getString(node.props, "header", "");
   const footer = getString(node.props, "footer", "");

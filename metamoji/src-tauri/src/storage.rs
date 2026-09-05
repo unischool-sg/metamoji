@@ -135,6 +135,17 @@ impl Catalog {
             self.conn
                 .execute("ALTER TABLE documents ADD COLUMN synced_revision INTEGER", [])?;
         }
+        // Where a note came from, when it came from a class box. A local copy
+        // is not much use without it: sending what the user writes back means
+        // knowing which document in which drive it belongs to.
+        if !self.has_column("documents", "class_drive_id")? {
+            self.conn
+                .execute("ALTER TABLE documents ADD COLUMN class_drive_id TEXT", [])?;
+        }
+        if !self.has_column("documents", "class_document_id")? {
+            self.conn
+                .execute("ALTER TABLE documents ADD COLUMN class_document_id TEXT", [])?;
+        }
 
         self.conn.execute(
             "INSERT OR REPLACE INTO meta(key, value) VALUES ('schema_version', ?1)",
@@ -541,6 +552,37 @@ impl Catalog {
         }
         Ok(())
     }
+
+    // -- class-box origin ------------------------------------------------------
+
+    /// Remembers which class-box document a note is a copy of.
+    ///
+    /// A local copy is not much use without it: sending what the user writes
+    /// back means knowing which document in which drive it belongs to, and the
+    /// note itself has nowhere to keep that — the editor rewrites the root
+    /// model's properties on every save.
+    pub fn set_class_origin(&self, id: &str, drive_id: &str, document_id: &str) -> AppResult<()> {
+        self.conn.execute(
+            "UPDATE documents SET class_drive_id = ?2, class_document_id = ?3 WHERE id = ?1",
+            params![id, drive_id, document_id],
+        )?;
+        Ok(())
+    }
+
+    pub fn class_origin(&self, id: &str) -> AppResult<Option<(String, String)>> {
+        let row = self
+            .conn
+            .query_row(
+                "SELECT class_drive_id, class_document_id FROM documents WHERE id = ?1",
+                params![id],
+                |r| Ok((r.get::<_, Option<String>>(0)?, r.get::<_, Option<String>>(1)?)),
+            )
+            .optional()?;
+        Ok(match row {
+            Some((Some(drive), Some(document))) => Some((drive, document)),
+            _ => None,
+        })
+    }
 }
 
 /// Filters for the library list.
@@ -628,6 +670,7 @@ mod fts_tests {
             assert_eq!(fts_query(junk), None, "expected None for {junk:?}");
         }
     }
+
 }
 
 // ---------------------------------------------------------------------------

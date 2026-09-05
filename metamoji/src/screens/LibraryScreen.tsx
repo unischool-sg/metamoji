@@ -222,6 +222,9 @@ export function LibraryScreen() {
         // there does not rewrite the document inside it.
         title ?? result.title ?? t("クラスボックスのノート"),
       );
+      // Remembered so what the user writes on this copy can go back to the
+      // class it came from.
+      await api.classboxLink(summary.id, view.id, documentId);
       // The note is in the library either way. But if the classroom could not
       // be reached, everything written on it is missing, and opening it
       // straight away would look like the note is simply blank.

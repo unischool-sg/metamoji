@@ -623,22 +623,41 @@ fn ensure_layer(tree: &mut GenericTree, page_id: &str, place: &Placement) -> Opt
             .or_else(|| first_layer(tree, page_id));
     };
 
-    if let Some(existing) = find_by_prop(tree, "$layer", "layerId", layer_id) {
-        return Some(existing);
-    }
+    let existing = find_by_prop(tree, "$layer", "layerId", layer_id);
+    let id = match existing {
+        Some(id) => id,
+        None => {
+            let id = format!("{}_l_{}", tree.root_id, sanitise(layer_id));
+            tree.insert(GenericModel {
+                id: id.clone(),
+                parent_id: Some(page_id.to_string()),
+                model_type: "$layer".into(),
+                props: json!({
+                    "layerId": layer_id,
+                    "layerType": place
+                        .layer_type
+                        .clone()
+                        .unwrap_or_else(|| PERSONAL_LAYER_TYPE.into()),
+                    "visible": true,
+                }),
+                children: Vec::new(),
+            });
+            id
+        }
+    };
 
-    let id = format!("{}_l_{}", tree.root_id, sanitise(layer_id));
-    tree.insert(GenericModel {
-        id: id.clone(),
-        parent_id: Some(page_id.to_string()),
-        model_type: "$layer".into(),
-        props: json!({
-            "layerId": layer_id,
-            "layerType": place.layer_type.clone().unwrap_or_else(|| PERSONAL_LAYER_TYPE.into()),
-            "visible": true,
-        }),
-        children: Vec::new(),
-    });
+    // Draw on your own layer. Without this the page's own choice stands, and
+    // on a class handout that is a system layer the student is not supposed to
+    // be writing on — and one the room has no booth for, so nothing drawn
+    // there could ever be sent.
+    if place.layer_type.as_deref() == Some(PERSONAL_LAYER_TYPE) {
+        if let Some(page) = tree.models.get_mut(page_id) {
+            if let Value::Object(props) = &mut page.props {
+                props.insert("currentLayer".into(), json!({ "$ref": id }));
+                crate::atdoc::mark_injected(props, &["currentLayer"]);
+            }
+        }
+    }
     Some(id)
 }
 

@@ -260,3 +260,30 @@ fn what_a_unit_references_comes_with_it() {
     // The element graph is not a child of the unit; it hangs off a reference.
     assert!(tree.models[referenced].parent_id.is_none());
 }
+
+#[test]
+fn the_personal_layer_becomes_the_one_being_drawn_on() {
+    // Otherwise the page's own choice stands, which on a class handout is a
+    // system layer the room has no booth for — nothing drawn there could be
+    // sent back.
+    let mut tree = note();
+    let direction = decode(&add_unit_payload("$text", "u-1")).unwrap();
+    apply(&mut tree, "P1_[layer-forUser]_9876", &direction);
+
+    let personal = tree
+        .models
+        .values()
+        .find(|m| m.props.get("layerType").and_then(Value::as_str) == Some("system:personal"))
+        .unwrap()
+        .id
+        .clone();
+    assert_eq!(tree.models["page"].props["currentLayer"]["$ref"], json!(personal));
+}
+
+#[test]
+fn a_common_layer_does_not_steal_the_cursor() {
+    let mut tree = note();
+    let direction = decode(&add_unit_payload("$text", "u-1")).unwrap();
+    apply(&mut tree, "P1_[layer-common]", &direction);
+    assert!(tree.models["page"].props.get("currentLayer").is_none());
+}

@@ -798,6 +798,91 @@ pub async fn classbox_open_note(
     })
 }
 
+/// Sends everything written on this note's personal layers to its classroom.
+///
+/// The note is a local copy; what makes a student's writing visible to the
+/// teacher is the room, not the file. Each stroke goes as its own Direction on
+/// the booth of the layer it is on, and is marked so a second send does not
+/// draw it twice.
+#[tauri::command]
+pub async fn classbox_send_strokes(
+    state: State<'_, AppState>,
+    cloud: State<'_, CloudClient>,
+    classroom: State<'_, ClassroomState>,
+    drive: State<'_, DriveClient>,
+    note_id: String,
+) -> AppResult<usize> {
+    let Some((drive_id, document_id)) = state.catalog.lock().unwrap().class_origin(&note_id)? else {
+        return Ok(0);
+    };
+    let tree = {
+        let store = state.note(&note_id)?;
+        let tree = store.lock().unwrap().read_tree()?;
+        tree
+    };
+
+    let waiting = collabo::send::pending(&tree);
+    if waiting.is_empty() {
+        return Ok(0);
+    }
+
+    let room_id = room_id_of(&drive, &drive_id, &document_id)
+        .await
+        .ok_or_else(|| AppError::other("このノートには教室がありません"))?;
+
+    let sent = collabo::pull::post_strokes(&cloud, &classroom, &room_id, &waiting).await?;
+
+    // Marked only after the relay has had them, and only as far as it got.
+    let store = state.note(&note_id)?;
+    let mut store = store.lock().unwrap();
+    let mut tree = tree;
+    for pending in waiting.iter().take(sent) {
+        collabo::send::mark_sent(&mut tree, &pending.draw_id, pending.stroke_index);
+    }
+    let (title, created_at, _updated_at, revision, _page_count) = store.meta()?;
+    store.write_tree(&tree, &title, &created_at, &now_iso(), revision)?;
+    Ok(sent)
+}
+
+/// Records that a note is a copy of a class-box document.
+#[tauri::command]
+pub fn classbox_link(
+    state: State<'_, AppState>,
+    note_id: String,
+    drive_id: String,
+    document_id: String,
+) -> AppResult<()> {
+    state
+        .catalog
+        .lock()
+        .unwrap()
+        .set_class_origin(&note_id, &drive_id, &document_id)
+}
+
+/// Where a note came from, when it came from a class box.
+#[tauri::command]
+pub fn classbox_origin(
+    state: State<'_, AppState>,
+    note_id: String,
+) -> AppResult<Option<ClassOrigin>> {
+    Ok(state
+        .catalog
+        .lock()
+        .unwrap()
+        .class_origin(&note_id)?
+        .map(|(drive_id, document_id)| ClassOrigin {
+            drive_id,
+            document_id,
+        }))
+}
+
+#[derive(Debug, Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ClassOrigin {
+    pub drive_id: String,
+    pub document_id: String,
+}
+
 /// The room a class-box document belongs to, if it has one.
 ///
 /// The drive's own record is the authority here; the note carries a room id in

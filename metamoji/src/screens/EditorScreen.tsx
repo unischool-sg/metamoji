@@ -82,6 +82,10 @@ export function EditorScreen() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [showPages, setShowPages] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
+  /** What the last attempt to send this note's writing to its class did. */
+  const [classSync, setClassSync] = useState<
+    { kind: "sent"; strokes: number } | { kind: "failed"; message: string } | null
+  >(null);
   const [editingUnitId, setEditingUnitId] = useState<ModelId | null>(null);
   // The live viewport is kept in a ref so panning and zooming never re-render
   // the editor. It is mirrored into state only while a text box is open, since
@@ -156,6 +160,18 @@ export function EditorScreen() {
         );
       }
       markSaved();
+
+      // A note copied out of a class box is only half saved when it is on
+      // disk: what the user wrote is theirs to share, and the class sees it
+      // through the room rather than through the file. Failing to send is not
+      // a failed save — the writing is safe locally either way — so it is
+      // reported on its own line.
+      try {
+        const sent = await api.classboxSendStrokes(state.noteId);
+        setClassSync(sent > 0 ? { kind: "sent", strokes: sent } : null);
+      } catch (err) {
+        setClassSync({ kind: "failed", message: String(err) });
+      }
     } catch (err) {
       console.error("save failed", err);
       setSaveState("error");
@@ -579,6 +595,18 @@ export function EditorScreen() {
           <span className="save-chip">
             <Icon name="pending" size={16} />
             {busy}
+          </span>
+        )}
+        {classSync && (
+          <span
+            className="save-chip"
+            data-state={classSync.kind === "failed" ? "error" : "saved"}
+            title={classSync.kind === "failed" ? classSync.message : undefined}
+          >
+            <Icon name={classSync.kind === "failed" ? "error" : "school"} size={16} />
+            {classSync.kind === "failed"
+              ? t("教室に送れませんでした")
+              : t("教室に送信: {count}", { count: classSync.strokes })}
           </span>
         )}
         <div className="topbar__spacer" />

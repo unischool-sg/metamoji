@@ -206,7 +206,15 @@ pub(crate) fn collect_pen_styles(parsed: &ParsedDocument) -> HashMap<usize, PenS
 
 /// Colours are stored as bare hex (`"ffbf47"`), sometimes with alpha.
 fn normalize_color(raw: &str) -> String {
-    let hex: String = raw.trim_start_matches('#').chars().take(8).collect();
+    // Lower case throughout: the original writes `0000FB`, this app writes
+    // `#0000fb`, and a colour that changes case on a round trip compares
+    // unequal to itself.
+    let hex: String = raw
+        .trim_start_matches('#')
+        .chars()
+        .take(8)
+        .flat_map(char::to_lowercase)
+        .collect();
     match hex.len() {
         6 => format!("#{hex}"),
         // 8 digits are AARRGGBB; alpha travels separately in `A`.

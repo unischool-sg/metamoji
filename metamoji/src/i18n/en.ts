@@ -124,6 +124,8 @@ export const en: Record<string, string> = {
   "未保存": "Unsaved",
   "保存中…": "Saving…",
   "保存に失敗": "Save failed",
+  "教室に送れませんでした": "Could not send to the classroom",
+  "教室に送信: {count}": "Sent to the classroom: {count}",
   "保存": "Save",
   "読み込み中…": "Loading…",
   "ファイル": "File",
