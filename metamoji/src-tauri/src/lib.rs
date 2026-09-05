@@ -96,31 +96,31 @@ fn device_name() -> String {
 
 /// A stable per-install identity for the collabo relay.
 ///
-/// Written next to the library rather than derived from the machine: a
-/// hardware identifier would follow the user to a reinstall, and there is no
-/// reason for the relay to be able to correlate those.
-fn device_identity(data_dir: &std::path::Path) -> AppResult<(String, String)> {
+/// The *code* is ours to invent — `NsCollaboBgTaskForCreateUniqueID` uses a
+/// random positive `int` — and is written next to the library rather than
+/// derived from the machine, so a reinstall is a new device rather than the
+/// same one. The *id* is not ours: the service issues it in exchange for the
+/// code, and an invented one is refused. It is fetched on first use and saved
+/// here beside the code.
+fn device_identity(data_dir: &std::path::Path) -> (String, Option<String>, std::path::PathBuf) {
     let path = data_dir.join("device.json");
-    if let Ok(text) = std::fs::read_to_string(&path) {
-        if let Ok(saved) = serde_json::from_str::<serde_json::Value>(&text) {
-            let get = |key: &str| {
-                saved
-                    .get(key)
-                    .and_then(|v| v.as_str())
-                    .filter(|s| !s.is_empty())
-                    .map(str::to_string)
-            };
-            if let (Some(id), Some(code)) = (get("deviceId"), get("deviceCode")) {
-                return Ok((id, code));
-            }
-        }
-    }
+    let saved = std::fs::read_to_string(&path)
+        .ok()
+        .and_then(|text| serde_json::from_str::<serde_json::Value>(&text).ok());
+    let get = |key: &str| {
+        saved
+            .as_ref()
+            .and_then(|v| v.get(key))
+            .and_then(|v| v.as_str())
+            .filter(|s| !s.is_empty())
+            .map(str::to_string)
+    };
 
-    let id = uuid::Uuid::new_v4().to_string();
-    let code = uuid::Uuid::new_v4().to_string();
-    let json = serde_json::json!({ "deviceId": id, "deviceCode": code });
-    std::fs::write(&path, serde_json::to_vec_pretty(&json)?)?;
-    Ok((id, code))
+    let code = get("deviceCode").unwrap_or_else(|| {
+        let bytes = uuid::Uuid::new_v4().as_u128() as u32 & 0x7fff_ffff;
+        bytes.to_string()
+    });
+    (code, get("deviceId"), path)
 }
 
 fn locale() -> String {
@@ -183,8 +183,12 @@ pub fn run() {
             // The relay recognises a returning device by these, so they are
             // generated once and kept — the original stores the same pair
             // under `CollaboDeviceId` / `CollaboDeviceCode`.
-            let (device_id, device_code) = device_identity(&state_dir)?;
-            app.manage(collabo::session::ClassroomState::new(device_id, device_code));
+            let (device_code, device_id, device_path) = device_identity(&state_dir);
+            app.manage(collabo::session::ClassroomState::new(
+                device_code,
+                device_id,
+                Some(device_path),
+            ));
 
             // The drive service keeps its own session, so it gets its own
             // client rather than a few more methods on the cloud one.

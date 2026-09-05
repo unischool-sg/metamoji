@@ -1,9 +1,14 @@
 //! The `cosmos/*` room API.
 //!
-//! A different service from `users3/*`, and it shows: the base URL is the root
-//! server rather than the tenant, every call is `multipart/form-data` with JSON
-//! parts, and it authenticates **per request** through an `authInfo` part
-//! instead of the session cookie (`NsCollaboURLConnection.createAuthInfoParam`).
+//! A different service from `users3/*`, and it shows: every call is
+//! `multipart/form-data` with JSON parts, and it authenticates **per request**
+//! through an `authInfo` part instead of the session cookie
+//! (`NsCollaboURLConnection.createAuthInfoParam`).
+//!
+//! The base URL is the *tenant* host, not the root server:
+//! `ModelInfo$BuildOptions.DIGITAL_CABINET_URL_BASE()` returns
+//! `CsCloudServiceContext.getRestHost()`. Sending these to the root server
+//! answers 404.
 //! That last point is why `CloudClient` has to keep the credential — see
 //! `cloud::Credential`.
 //!
@@ -74,7 +79,17 @@ impl<'a> CollaboRest<'a> {
         info.insert("deviceID".into(), json!(self.device_id));
         info.insert("deviceCode".into(), json!(self.device_code));
         info.insert("authType".into(), json!("cabinet"));
-        info.insert("userID".into(), json!(session.user_id));
+        // The account's *email*, not its numeric id. Every caller of
+        // `createAuthInfoParam` passes its `email` field in this position
+        // (`ScCollaboURLConnectionForSetScore` and siblings), and a school
+        // account's email is its login name. The numeric id is refused with
+        // "bad user", which reads like a wrong password and is not.
+        let user = session
+            .email
+            .clone()
+            .filter(|e| !e.is_empty())
+            .unwrap_or_else(|| session.login_name.clone());
+        info.insert("userID".into(), json!(user));
         // Exactly one of the two, never both — `createAuthInfoParam` has a
         // separate format string for each.
         match credential {
@@ -95,7 +110,11 @@ impl<'a> CollaboRest<'a> {
     }
 
     async fn post(&self, command: &str, parts: Vec<(&str, String)>) -> AppResult<Map<String, Value>> {
-        let url = format!("{}{command}", self.cloud.root_server());
+        let base = self
+            .cloud
+            .rest_host()
+            .unwrap_or_else(|| self.cloud.root_server());
+        let url = format!("{base}{command}");
 
         let mut form = reqwest::multipart::Form::new();
         for (name, body) in parts {
@@ -145,6 +164,31 @@ impl<'a> CollaboRest<'a> {
             return Err(AppError::other(message));
         }
         Ok(body)
+    }
+
+    /// Registers this install with the collabo service and returns the device
+    /// id it assigns.
+    ///
+    /// Every other command carries `deviceID` + `deviceCode` in its `authInfo`
+    /// and is refused with "bad user" without them, so this runs once and the
+    /// pair is kept. The code is ours — `NsCollaboBgTaskForCreateUniqueID`
+    /// makes it a random positive `int` as a decimal string — and the id is
+    /// the service's answer to it.
+    pub async fn create_unique_id(&self) -> AppResult<String> {
+        let auth = json!({
+            "deviceCode": self.device_code,
+            // Not a typo: registration is anonymous even for a signed-in user.
+            "authType": "guest",
+            "productName": PRODUCT_NAME,
+            "productVersion": PRODUCT_VERSION,
+            "locale": self.cloud.locale(),
+        });
+
+        let body = self
+            .post("cosmos/CreateUniqueID", vec![("authInfo", auth.to_string())])
+            .await?;
+        str_of(&body, "deviceID")
+            .ok_or_else(|| AppError::other("応答に deviceID がありません"))
     }
 
     pub async fn create_room(&self, title: &str, room_type: &str) -> AppResult<Room> {

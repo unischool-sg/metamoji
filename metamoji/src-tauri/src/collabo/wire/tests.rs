@@ -136,3 +136,23 @@ fn packet_numbers_are_the_documented_sequence() {
     assert_eq!(counter.next(), "C1");
     assert_eq!(counter.next(), "C2");
 }
+
+#[test]
+fn the_servers_carriage_return_does_not_end_up_in_a_value() {
+    // Real frames from the relay end `\r\n`. Left on, the CR rides along on
+    // the *last* parameter — `status:0` arrives as `"0\r"` and matches nothing,
+    // which reads exactly like every login and every booth being refused.
+    let frames = decode_all(&[b"\n*\tS1\tcmd:AttachBoothResult bid:page-1 status:0\r\n"]);
+    assert_eq!(frames.len(), 1);
+    assert_eq!(frames[0].get("status"), Some("0"));
+    assert_eq!(frames[0].get("bid"), Some("page-1"));
+}
+
+#[test]
+fn a_carriage_return_before_a_payload_is_not_taken_from_the_payload() {
+    let mut wire = Vec::from(&b"\n*\tS1\tcmd:PostData seq:7 binary:3\r\n"[..]);
+    wire.extend_from_slice(&[1, 2, 3]);
+    let frames = decode_all(&[&wire]);
+    assert_eq!(frames[0].get("seq"), Some("7"));
+    assert_eq!(frames[0].payload, vec![1, 2, 3]);
+}

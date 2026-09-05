@@ -93,6 +93,12 @@ pub enum CollaboEvent {
         packet_no: String,
         ok: bool,
     },
+    /// Answer to `AttachBooth`. A refusal is why a booth stays silent, so it
+    /// is worth having rather than inferring from the absence of edits.
+    BoothAttached {
+        booth_id: String,
+        ok: bool,
+    },
     /// The room ended. The original logs out immediately on this.
     Finished,
     Disconnected {
@@ -105,7 +111,12 @@ pub enum CollaboEvent {
 pub enum Command {
     Login {
         room_id: String,
-        drive_id: String,
+        /// The id the collabo service issued this install (`cosmos/CreateUniqueID`).
+        /// `did` is *not* the drive id, despite the name: `NsCollaboManager$8`
+        /// passes `NsCollaboDeviceInfo.getDeviceId()`. Sending a drive id here
+        /// is accepted, and lands you in the room as a `visitor` who cannot
+        /// attach a single booth.
+        device_id: String,
         session_id: String,
         nickname: String,
     },
@@ -139,14 +150,21 @@ impl Command {
         match self {
             Command::Login {
                 room_id,
-                drive_id,
+                device_id,
                 session_id,
                 nickname,
-            } => Frame::new("LoginRoom")
-                .param("rid", room_id)
-                .param("did", drive_id)
-                .param("sid", session_id)
-                .param("name", nickname),
+            } => {
+                use base64::Engine as _;
+                // Parameters are space-separated, so a name with a space in it
+                // would end the frame early. The original base64s it.
+                let name = base64::engine::general_purpose::STANDARD
+                    .encode(nickname.as_bytes());
+                Frame::new("LoginRoom")
+                    .param("rid", room_id)
+                    .param("did", device_id)
+                    .param("sid", session_id)
+                    .param("name", name.trim())
+            }
             Command::Logout { room_id } => Frame::new("LogoutRoom").param("rid", room_id),
             Command::AttachBooth {
                 booth_id,
@@ -185,9 +203,7 @@ pub fn event_for(frame: &Frame) -> Option<CollaboEvent> {
 
     match frame.command.as_str() {
         "LoginRoomResult" => Some(CollaboEvent::LoggedIn {
-            // `status` is the server's own word; anything but "true" is a
-            // refusal, and the reason is in `msg`.
-            ok: frame.get("status") == Some("true"),
+            ok: succeeded(frame),
             message: frame.get("msg").map(str::to_string),
             room_type: frame.get("rtype").map(str::to_string),
             user_id: frame.get("uid").map(str::to_string),
@@ -233,16 +249,75 @@ pub fn event_for(frame: &Frame) -> Option<CollaboEvent> {
             sequence: frame.get_i64("seq").unwrap_or(0),
             user_id: frame.get("uid").map(str::to_string),
             own_echo: frame.get_i64("self") == Some(1),
-            payload: frame.payload.clone(),
+            payload: direction_payload(frame),
+        }),
+        "AttachBoothResult" => Some(CollaboEvent::BoothAttached {
+            booth_id: frame
+                .get("bid")
+                .map(str::to_string)
+                .unwrap_or_else(|| frame.booth_id.clone()),
+            ok: succeeded(frame),
         }),
         "PostDataResult" => Some(CollaboEvent::PostAck {
             booth_id: frame.booth_id.clone(),
             packet_no: frame.packet_no.clone(),
-            ok: frame.get("status") == Some("true"),
+            ok: succeeded(frame),
         }),
         "Finish" => Some(CollaboEvent::Finished),
         _ => None,
     }
+}
+
+/// Whether a `*Result` frame reports success.
+///
+/// `status` is an error *code*, not a boolean: the relay answers `status:0` to
+/// everything it accepted. Reading it as `"true"` marks every successful login
+/// and every successful booth attach as a failure, which looks exactly like
+/// being refused.
+fn succeeded(frame: &Frame) -> bool {
+    match frame.get("status") {
+        Some("0") | Some("true") => true,
+        Some(_) => false,
+        None => true,
+    }
+}
+
+/// Prints every frame when `METAMOJI_COLLABO_TRACE` is set.
+///
+/// The relay says why it refused something in parameters this module does not
+/// model, and there is no other way to see them: the connection is TLS to a
+/// port that speaks a protocol no proxy understands.
+fn trace(frame: &Frame) {
+    if std::env::var_os("METAMOJI_COLLABO_TRACE").is_none() {
+        return;
+    }
+    eprintln!(
+        "<- [{}] {} {:?}{}",
+        frame.booth_id,
+        frame.command,
+        frame.params,
+        if frame.payload.is_empty() {
+            String::new()
+        } else {
+            format!(" +{} bytes", frame.payload.len())
+        }
+    );
+}
+
+/// The bytes of a received edit.
+///
+/// `binaryData` and `data` are exclusive (§5): the binary path puts the payload
+/// after the header, the text path base64-encodes it into a parameter. Reading
+/// only the first drops every edit that arrived the other way.
+fn direction_payload(frame: &Frame) -> Vec<u8> {
+    if !frame.payload.is_empty() {
+        return frame.payload.clone();
+    }
+    use base64::Engine as _;
+    frame
+        .get("data")
+        .and_then(|text| base64::engine::general_purpose::STANDARD.decode(text).ok())
+        .unwrap_or_default()
 }
 
 /// A live connection. Dropping the sender closes it.
@@ -323,6 +398,7 @@ where
 
             decoder.push(&buffer[..count]);
             while let Some(frame) = decoder.next_frame() {
+                trace(&frame);
                 if frame.command == "Ping" {
                     // Answered here rather than surfaced: nothing above this
                     // layer can do anything useful with a ping.

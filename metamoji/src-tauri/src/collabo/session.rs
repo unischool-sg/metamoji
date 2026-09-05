@@ -34,24 +34,60 @@ struct Active {
 
 pub struct ClassroomState {
     active: Mutex<Option<Active>>,
-    device_id: String,
+    /// Ours to invent, and the seed for the registration below.
     device_code: String,
+    /// The service's answer to that code. `None` until we have asked.
+    device_id: Mutex<Option<String>>,
+    /// Where the pair is kept, so we register once per install.
+    store_path: Option<std::path::PathBuf>,
 }
 
 impl ClassroomState {
-    /// `device_id`/`device_code` are stable per install — the original keeps
-    /// the same pair in user defaults and the relay uses them to recognise a
-    /// reconnecting device rather than treating it as a second participant.
-    pub fn new(device_id: String, device_code: String) -> Self {
+    /// `device_code` is ours; `device_id` is the collabo service's answer to it
+    /// and cannot be invented — every command carries both in its `authInfo`
+    /// and an unregistered pair is refused with "bad user".
+    pub fn new(
+        device_code: String,
+        device_id: Option<String>,
+        store_path: Option<std::path::PathBuf>,
+    ) -> Self {
         Self {
             active: Mutex::new(None),
-            device_id,
             device_code,
+            device_id: Mutex::new(device_id),
+            store_path,
         }
     }
 
-    pub fn rest<'a>(&self, cloud: &'a CloudClient) -> CollaboRest<'a> {
-        CollaboRest::new(cloud, self.device_id.clone(), self.device_code.clone())
+    /// Registers this install if it has not been, and returns its device id.
+    pub async fn device_id(&self, cloud: &CloudClient) -> AppResult<String> {
+        if let Some(id) = self.device_id.lock().unwrap().clone() {
+            return Ok(id);
+        }
+        let id = CollaboRest::new(cloud, String::new(), self.device_code.clone())
+            .create_unique_id()
+            .await?;
+        *self.device_id.lock().unwrap() = Some(id.clone());
+        self.persist(&id);
+        Ok(id)
+    }
+
+    fn persist(&self, device_id: &str) {
+        let Some(path) = self.store_path.as_ref() else {
+            return;
+        };
+        let json = serde_json::json!({
+            "deviceId": device_id,
+            "deviceCode": self.device_code,
+        });
+        if let Ok(bytes) = serde_json::to_vec_pretty(&json) {
+            let _ = std::fs::write(path, bytes);
+        }
+    }
+
+    pub async fn rest<'a>(&self, cloud: &'a CloudClient) -> AppResult<CollaboRest<'a>> {
+        let device_id = self.device_id(cloud).await?;
+        Ok(CollaboRest::new(cloud, device_id, self.device_code.clone()))
     }
 
     pub fn room_id(&self) -> Option<String> {
@@ -72,8 +108,10 @@ impl ClassroomState {
         // a state the rest of the app has no way to represent.
         self.leave().await;
 
+        let device_id = self.device_id(cloud).await?;
         let relay = self
             .rest(cloud)
+            .await?
             .login_room(room_id, room_password)
             .await?;
 
@@ -89,7 +127,7 @@ impl ClassroomState {
             .commands
             .send(Command::Login {
                 room_id: room_id.to_string(),
-                drive_id: drive_id.to_string(),
+                device_id: device_id.clone(),
                 session_id: relay.session_id.clone(),
                 nickname: nickname.to_string(),
             })

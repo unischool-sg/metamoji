@@ -320,6 +320,11 @@ impl CloudClient {
         restrict_permissions(path);
     }
 
+    /// The tenant's own host, where everything but school lookup lives.
+    pub fn rest_host(&self) -> Option<String> {
+        self.inner.lock().unwrap().rest_host.clone()
+    }
+
     pub fn root_server(&self) -> String {
         self.inner.lock().unwrap().root_server.clone()
     }

@@ -20,14 +20,55 @@ fn push(line: &str) -> Frame {
 fn login_carries_the_four_identifiers() {
     let frame = round_trip(&Command::Login {
         room_id: "R1".into(),
-        drive_id: "D1".into(),
+        device_id: "DEV1".into(),
         session_id: "S1".into(),
         nickname: "山田".into(),
     });
     assert_eq!(frame.command, "LoginRoom");
     assert_eq!(frame.booth_id, "*", "room-level commands use the `*` channel");
     assert_eq!(frame.get("rid"), Some("R1"));
-    assert_eq!(frame.get("name"), Some("山田"));
+    // `did` is the collabo device id, not the drive id. Send the drive id and
+    // the relay lets you in as a `visitor` who cannot attach a single booth.
+    assert_eq!(frame.get("did"), Some("DEV1"));
+    assert_eq!(frame.get("sid"), Some("S1"));
+    // Base64: parameters are space-separated, and a nickname may contain one.
+    assert_eq!(frame.get("name"), Some("5bGx55Sw"));
+}
+
+#[test]
+fn a_result_reports_success_as_status_zero() {
+    // `status` is an error code, not a boolean. Reading it as `"true"` marks
+    // every successful login and booth attach as a failure.
+    let ok = decode("*\tS1\tcmd:AttachBoothResult bid:b1 status:0");
+    assert!(matches!(
+        event_for(&ok),
+        Some(CollaboEvent::BoothAttached { ok: true, .. })
+    ));
+    let refused = decode("*\tS1\tcmd:AttachBoothResult bid:b1 status:12");
+    assert!(matches!(
+        event_for(&refused),
+        Some(CollaboEvent::BoothAttached { ok: false, .. })
+    ));
+}
+
+#[test]
+fn an_edit_may_arrive_base64_in_a_parameter_instead_of_as_bytes() {
+    // §5: `binaryData` and `data` are exclusive. Reading only the binary path
+    // silently drops every edit that came the other way.
+    let frame = decode("b1\tS1\tcmd:PostData seq:5 data:AQID");
+    match event_for(&frame) {
+        Some(CollaboEvent::Direction { payload, sequence, .. }) => {
+            assert_eq!(payload, vec![1, 2, 3]);
+            assert_eq!(sequence, 5);
+        }
+        other => panic!("{other:?}"),
+    }
+}
+
+fn decode(line: &str) -> Frame {
+    let mut decoder = Decoder::default();
+    decoder.push(format!("\n{line}\n").as_bytes());
+    decoder.next_frame().expect("one whole frame")
 }
 
 #[test]

@@ -586,7 +586,7 @@ pub async fn classroom_create_room(
     // `cosmos/*` puts the user id in its `authInfo` part, so it needs the same
     // repair the drive service does.
     cloud.ensure_complete().await?;
-    classroom.rest(&cloud).create_room(&title, &room_type).await
+    classroom.rest(&cloud).await?.create_room(&title, &room_type).await
 }
 
 #[tauri::command]
@@ -624,7 +624,7 @@ pub async fn classroom_members(
     classroom: State<'_, ClassroomState>,
     room_id: String,
 ) -> AppResult<Vec<CollaboMember>> {
-    classroom.rest(&cloud).member_list(&room_id).await
+    classroom.rest(&cloud).await?.member_list(&room_id).await
 }
 
 #[tauri::command]

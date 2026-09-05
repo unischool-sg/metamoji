@@ -155,7 +155,11 @@ impl Decoder {
         let line: Vec<u8> = self.buffer.drain(..end).collect();
         // Drop the terminator too, so a payload begins at offset 0.
         self.buffer.remove(0);
-        let line = String::from_utf8_lossy(&line).to_string();
+        // The server ends its header lines with CRLF. Left on, the carriage
+        // return rides along on the *last* parameter's value, which is how
+        // `status:0` arrives as `"0\r"` and compares equal to nothing.
+        let line = String::from_utf8_lossy(&line);
+        let line = line.strip_suffix('\r').unwrap_or(&line).to_string();
 
         let mut parts = line.splitn(3, '\t');
         let booth_id = parts.next().unwrap_or("*").to_string();
