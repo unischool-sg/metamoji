@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "metamoji-web",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": ["-c", "cd metamoji && exec bun run dev"],
+      "port": 1420
+    }
+  ]
+}

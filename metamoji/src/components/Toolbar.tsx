@@ -1,27 +1,31 @@
+import { Icon, type IconName } from "./Icon";
 import { TOOLS, type ToolId } from "../editor/tools";
 import { useTranslation } from "../i18n/useTranslation";
 import { useEditorStore } from "../store/editorStore";
 
 /**
- * Tool glyphs.
+ * Tool icons.
  *
  * docs/02 §4 found the original's UI is built from 531 custom layouts and that
- * its Android drawables are not reusable, so these are new. Text glyphs keep the
- * build dependency-free; swapping in an icon set later touches only this map.
+ * its Android drawables are not reusable, so the icon set had to be new. These
+ * are Material Symbols, chosen for what the tool does rather than for what it
+ * looks like — the marquee is `crop_free` (a selection frame) rather than a
+ * plain square, so it does not read as "insert rectangle" next to the shape
+ * tool.
  */
-const GLYPHS: Record<ToolId, string> = {
-  pen: "✎",
-  eraser: "⌫",
-  select: "⬚",
-  lasso: "◌",
-  text: "T",
-  sticky: "🗒",
-  shape: "◇",
-  form: "▦",
-  image: "🖼",
-  survey: "▤",
-  laser: "◉",
-  pan: "✥",
+const ICONS: Record<ToolId, IconName> = {
+  pen: "stylus",
+  eraser: "ink_eraser",
+  select: "crop_free",
+  lasso: "lasso_select",
+  text: "text_fields",
+  sticky: "sticky_note_2",
+  shape: "shapes",
+  form: "table",
+  image: "image",
+  survey: "bar_chart",
+  laser: "ads_click",
+  pan: "pan_tool",
 };
 
 export function Toolbar() {
@@ -41,9 +45,7 @@ export function Toolbar() {
             title={`${t(tool.label)} (${tool.shortcut})`}
             onClick={() => setTool(tool.id)}
           >
-            <span className="tool-btn__glyph" aria-hidden>
-              {GLYPHS[tool.id]}
-            </span>
+            <Icon name={ICONS[tool.id]} />
             <span className="sr-only">{t(tool.label)}</span>
           </button>
         </div>

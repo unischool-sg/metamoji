@@ -13,6 +13,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 
+import { Icon } from "../components/Icon";
 import { useTranslation } from "../i18n/useTranslation";
 import * as api from "../ipc/api";
 import type { Room } from "../sync/client";
@@ -115,8 +116,10 @@ export function ClassroomScreen() {
     return (
       <Shell title={t("教室")} onBack={() => navigate("/")}>
         <div className="library__empty">
+          <Icon name="school" size={48} />
           <p>{t("教室を使うにはサインインが必要です。")}</p>
           <button type="button" className="btn btn--primary" onClick={() => navigate("/login")}>
+            <Icon name="login" size={18} />
             {t("サインイン")}
           </button>
         </div>
@@ -129,7 +132,7 @@ export function ClassroomScreen() {
       <Shell title={t("教室")} onBack={() => navigate("/")}>
         <section className="settings" style={{ maxWidth: 640 }}>
           <h2>{t("参加する")}</h2>
-          <div className="setting-row">
+          <div className="setting-row field" style={{ flexDirection: "row", alignItems: "center" }}>
             <input
               type="text"
               inputMode="numeric"
@@ -159,7 +162,7 @@ export function ClassroomScreen() {
                 onClick={() => void act(() => enter(item.id))}
               >
                 {item.name}
-                <span style={{ marginLeft: "auto", color: "var(--color-text-muted)" }}>
+                <span style={{ marginLeft: "auto", color: "var(--md-sys-color-on-surface-variant)" }}>
                   {item.joinCode}
                 </span>
               </button>
@@ -167,10 +170,16 @@ export function ClassroomScreen() {
           </div>
 
           <button type="button" className="btn" style={{ width: "100%" }} onClick={create}>
-            {t("+ 教室を作る")}
+            <Icon name="add" size={18} />
+            {t("教室を作る")}
           </button>
 
-          {error && <div className="notice">{error}</div>}
+          {error && (
+            <div className="notice notice--error">
+              <Icon name="error" size={20} />
+              <span>{error}</span>
+            </div>
+          )}
         </section>
       </Shell>
     );
@@ -188,6 +197,16 @@ export function ClassroomScreen() {
       extra={
         <>
           <span className="save-chip" data-state={connection === "online" ? undefined : "dirty"}>
+            <Icon
+              name={
+                connection === "online"
+                  ? "check_circle"
+                  : connection === "connecting"
+                    ? "pending"
+                    : "cloud_off"
+              }
+              size={16}
+            />
             {connection === "online"
               ? t("接続中")
               : connection === "connecting"
@@ -203,13 +222,19 @@ export function ClassroomScreen() {
       <main className="settings" style={{ maxWidth: 900 }}>
         {notice && (
           <div className="notice resume">
-            <span>{notice}</span>
-            <button type="button" className="btn" onClick={clearNotice}>
+            <Icon name="campaign" size={20} />
+            <span style={{ flex: 1 }}>{notice}</span>
+            <button type="button" className="btn btn--text" onClick={clearNotice}>
               {t("閉じる")}
             </button>
           </div>
         )}
-        {error && <div className="notice">{error}</div>}
+        {error && (
+          <div className="notice notice--error">
+            <Icon name="error" size={20} />
+            <span>{error}</span>
+          </div>
+        )}
 
         {role === "teacher" && (
           <section>
@@ -221,6 +246,7 @@ export function ClassroomScreen() {
                 disabled={busy}
                 onClick={() => void act(() => setLocked(!room.locked))}
               >
+                <Icon name={room.locked ? "lock_open" : "lock_clock"} size={18} />
                 {room.locked ? t("ロックを解除") : t("締切・ロック")}
               </button>
               <button
@@ -229,9 +255,11 @@ export function ClassroomScreen() {
                 disabled={busy}
                 onClick={() => void act(() => setAttention(attention ? null : "*"))}
               >
+                <Icon name="front_hand" size={18} />
                 {attention ? t("注目を解除") : t("注目させる")}
               </button>
               <button type="button" className="btn" disabled={busy} onClick={distributeCurrent}>
+                <Icon name="co_present" size={18} />
                 {t("ノートを配信")}
               </button>
               <button
@@ -240,6 +268,7 @@ export function ClassroomScreen() {
                 disabled={busy}
                 onClick={() => void act(() => refreshPresence())}
               >
+                <Icon name="refresh" size={18} />
                 {t("更新")}
               </button>
             </div>
@@ -275,9 +304,10 @@ export function ClassroomScreen() {
                     </div>
                     <button
                       type="button"
-                      className="btn"
+                      className="btn btn--text"
                       onClick={() => void act(() => setAttention(entry.userId))}
                     >
+                      <Icon name="front_hand" size={18} />
                       {t("注目")}
                     </button>
                   </div>
@@ -323,8 +353,9 @@ function Shell({
   return (
     <div className="app">
       <header className="topbar">
-        <button type="button" onClick={onBack}>
-          {t("← 一覧")}
+        <button type="button" className="icon-btn" onClick={onBack} title={t("ノート一覧に戻る")}>
+          <Icon name="arrow_back" />
+          <span className="sr-only">{t("ノート一覧に戻る")}</span>
         </button>
         <span className="topbar__title">{title}</span>
         {extra}

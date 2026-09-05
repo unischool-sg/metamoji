@@ -7,6 +7,7 @@
  * than handing back a note that looks subtly wrong with no explanation.
  */
 
+import { Icon } from "./Icon";
 import { useTranslation } from "../i18n/useTranslation";
 import type { ImportReport } from "../ipc/api";
 
@@ -35,7 +36,7 @@ export function ImportReportDialog({ report, onClose }: Props) {
 
         {kinds.length > 0 && (
           <>
-            <h3 style={{ fontSize: 12, color: "var(--color-text-muted)", margin: "0 0 6px" }}>
+            <h3 className="dialog__subhead">
               {t("取り込んだ要素")}
             </h3>
             <ul className="report-list">
@@ -49,7 +50,8 @@ export function ImportReportDialog({ report, onClose }: Props) {
         )}
 
         {report.warnings.length > 0 && (
-          <div className="notice" style={{ marginTop: "var(--space-4)" }}>
+          <div className="notice notice--warning" style={{ marginTop: "var(--space-4)" }}>
+            <Icon name="warning" size={20} />
             <ul className="report-list" style={{ margin: 0 }}>
               {report.warnings.map((warning) => (
                 <li key={warning}>{warning}</li>
@@ -59,7 +61,7 @@ export function ImportReportDialog({ report, onClose }: Props) {
         )}
 
         <div className="dialog__actions">
-          <button type="button" className="btn btn--primary" onClick={onClose}>
+          <button type="button" className="btn btn--text" onClick={onClose}>
             {t("閉じる")}
           </button>
         </div>

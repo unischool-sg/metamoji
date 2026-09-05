@@ -9,6 +9,7 @@
 
 import { useState } from "react";
 
+import { Icon, type IconName } from "./Icon";
 import { useTranslation } from "../i18n/useTranslation";
 import { UnitProperties } from "./UnitProperties";
 
@@ -153,7 +154,7 @@ function EraserSection() {
           </button>
         ))}
       </div>
-      <p style={{ fontSize: 12, color: "var(--color-text-muted)", lineHeight: 1.6 }}>
+      <p className="setting-note">
         触れたストロークを1本ずつ消します。
       </p>
     </>
@@ -180,7 +181,7 @@ function SelectionSection() {
     <>
       <h2>{t("選択")}</h2>
       {!has ? (
-        <p style={{ fontSize: 12, color: "var(--color-text-muted)", lineHeight: 1.6 }}>
+        <p className="setting-note">
           オブジェクトをクリック、または範囲をドラッグして選択します。
         </p>
       ) : (
@@ -296,14 +297,14 @@ function LassoSection() {
   );
 }
 
-const SHAPES: { id: ShapeKind; label: string; glyph: string }[] = [
-  { id: "rect", label: "長方形", glyph: "▭" },
-  { id: "roundRect", label: "角丸", glyph: "▢" },
-  { id: "ellipse", label: "楕円", glyph: "◯" },
-  { id: "triangle", label: "三角形", glyph: "△" },
-  { id: "diamond", label: "菱形", glyph: "◇" },
-  { id: "line", label: "直線", glyph: "╱" },
-  { id: "arrow", label: "矢印", glyph: "↗" },
+const SHAPES: { id: ShapeKind; label: string; icon: IconName }[] = [
+  { id: "rect", label: "長方形", icon: "rectangle" },
+  { id: "roundRect", label: "角丸", icon: "rounded_corner" },
+  { id: "ellipse", label: "楕円", icon: "circle" },
+  { id: "triangle", label: "三角形", icon: "change_history" },
+  { id: "diamond", label: "菱形", icon: "diamond" },
+  { id: "line", label: "直線", icon: "horizontal_rule" },
+  { id: "arrow", label: "矢印", icon: "north_east" },
 ];
 
 function ShapeSection() {
@@ -328,7 +329,7 @@ function ShapeSection() {
             title={t(shape.label)}
             onClick={() => setShapeKind(shape.id)}
           >
-            <span aria-hidden>{shape.glyph}</span>
+            <Icon name={shape.icon} size={20} />
             <span className="sr-only">{t(shape.label)}</span>
           </button>
         ))}
@@ -371,7 +372,7 @@ function ShapeSection() {
         ))}
       </div>
 
-      <p style={{ fontSize: 12, color: "var(--color-text-muted)", lineHeight: 1.6 }}>
+      <p className="setting-note">
         ドラッグで大きさを決めます。Shift で正方形・正円になります。
       </p>
     </>
@@ -405,7 +406,7 @@ function FormSection() {
           </button>
         ))}
       </div>
-      <p style={{ fontSize: 12, color: "var(--color-text-muted)", lineHeight: 1.6 }}>
+      <p className="setting-note">
         ドラッグで大きさを決めます。行数・列数は配置後に変更できます。
       </p>
     </>
@@ -417,7 +418,7 @@ function LaserSection() {
   return (
     <>
       <h2>{t("レーザーポインタ")}</h2>
-      <p style={{ fontSize: 12, color: "var(--color-text-muted)", lineHeight: 1.6 }}>
+      <p className="setting-note">
         軌跡は少し経つと消え、ノートには保存されません。
       </p>
     </>
@@ -434,7 +435,7 @@ function StickySection() {
           <span key={color} className="swatch" style={{ background: color }} />
         ))}
       </div>
-      <p style={{ fontSize: 12, color: "var(--color-text-muted)", lineHeight: 1.6 }}>
+      <p className="setting-note">
         キャンバスをクリックすると付箋を置きます。ダブルクリックで文字を編集できます。
       </p>
     </>
@@ -587,18 +588,18 @@ function LayerSection() {
               <button
                 type="button"
                 className="layer-row__toggle"
-                title={layer.visible ? "非表示にする" : "表示する"}
+                title={layer.visible ? t("非表示にする") : t("表示する")}
                 onClick={() => setLayerVisible(layer.id, !layer.visible)}
               >
-                {layer.visible ? "◉" : "◎"}
+                <Icon name={layer.visible ? "visibility" : "visibility_off"} size={18} />
               </button>
               <button
                 type="button"
                 className="layer-row__toggle"
-                title={layer.locked ? "ロックを解除" : "ロックする"}
+                title={layer.locked ? t("ロックを解除") : t("ロックする")}
                 onClick={() => setLayerLocked(layer.id, !layer.locked)}
               >
-                {layer.locked ? "🔒" : "🔓"}
+                <Icon name={layer.locked ? "lock" : "lock_open"} size={18} />
               </button>
 
               {editingId === layer.id ? (
@@ -634,7 +635,7 @@ function LayerSection() {
                 disabled={index === page.layers.length - 1}
                 onClick={() => reorderLayer(index, index + 1)}
               >
-                ↑
+                <Icon name="arrow_upward" size={18} />
               </button>
               <button
                 type="button"
@@ -643,7 +644,7 @@ function LayerSection() {
                 disabled={index === 0}
                 onClick={() => reorderLayer(index, index - 1)}
               >
-                ↓
+                <Icon name="arrow_downward" size={18} />
               </button>
               <button
                 type="button"
@@ -652,7 +653,7 @@ function LayerSection() {
                 disabled={page.layers.length <= 1}
                 onClick={() => deleteLayer(layer.id)}
               >
-                ✕
+                <Icon name="delete" size={18} />
               </button>
             </div>
           );
@@ -660,7 +661,8 @@ function LayerSection() {
       </div>
 
       <button type="button" className="btn" style={{ width: "100%" }} onClick={addLayer}>
-        + レイヤーを追加
+        <Icon name="add" size={18} />
+        {t("レイヤーを追加")}
       </button>
     </>
   );

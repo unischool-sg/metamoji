@@ -12,6 +12,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 
+import { Icon } from "./Icon";
 import { useTranslation } from "../i18n/useTranslation";
 import { renderPageToDataUrl, thumbnailScale } from "../io/pageRender";
 import type { AssetResolver } from "../render/renderer";
@@ -117,16 +118,24 @@ export function PageStrip({
           <div className="page-strip__footer">
             <span>{index + 1}</span>
             <span className="page-strip__actions">
-              <button type="button" title={t("このページを複製")} onClick={() => onDuplicate(index)}>
-                ⧉
+              <button
+                type="button"
+                className="icon-btn icon-btn--sm"
+                title={t("このページを複製")}
+                onClick={() => onDuplicate(index)}
+              >
+                <Icon name="content_copy" size={18} />
+                <span className="sr-only">{t("このページを複製")}</span>
               </button>
               <button
                 type="button"
+                className="icon-btn icon-btn--sm"
                 title={t("このページを削除")}
                 onClick={() => onDelete(index)}
                 disabled={doc.pages.length <= 1}
               >
-                ✕
+                <Icon name="delete" size={18} />
+                <span className="sr-only">{t("このページを削除")}</span>
               </button>
             </span>
           </div>
@@ -134,7 +143,8 @@ export function PageStrip({
       ))}
 
       <button type="button" className="page-strip__add" onClick={onAdd}>
-        {t("+ ページ")}
+        <Icon name="add" size={18} />
+        {t("ページを追加")}
       </button>
     </aside>
   );

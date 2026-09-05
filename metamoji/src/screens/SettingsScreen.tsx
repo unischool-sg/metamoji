@@ -9,6 +9,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 
+import { Icon } from "../components/Icon";
 import * as api from "../ipc/api";
 import type { AppStatus } from "../ipc/api";
 import { LOCALE_NAMES, setLocale, type Locale } from "../i18n";
@@ -30,8 +31,14 @@ export function SettingsScreen() {
   return (
     <div className="app">
       <header className="topbar">
-        <button type="button" onClick={() => navigate("/")}>
-          {t("← 一覧")}
+        <button
+          type="button"
+          className="icon-btn"
+          onClick={() => navigate("/")}
+          title={t("ノート一覧に戻る")}
+        >
+          <Icon name="arrow_back" />
+          <span className="sr-only">{t("ノート一覧に戻る")}</span>
         </button>
         <span className="topbar__title">{t("設定")}</span>
       </header>

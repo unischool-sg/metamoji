@@ -9,6 +9,7 @@
  */
 
 import { PEN_COLORS } from "../editor/tools";
+import { Icon, type IconName } from "./Icon";
 import { useTranslation } from "../i18n/useTranslation";
 import { STICKY_COLORS } from "../model/factory";
 import type { ModelId, Page, TextAlign, Unit } from "../model/types";
@@ -21,10 +22,10 @@ const FONT_FAMILIES = [
   { id: "sans-serif", label: "ゴシック" },
   { id: "monospace", label: "等幅" },
 ];
-const ALIGNS: { id: TextAlign; label: string; glyph: string }[] = [
-  { id: "left", label: "左揃え", glyph: "⬅" },
-  { id: "center", label: "中央揃え", glyph: "↔" },
-  { id: "right", label: "右揃え", glyph: "➡" },
+const ALIGNS: { id: TextAlign; label: string; icon: IconName }[] = [
+  { id: "left", label: "左揃え", icon: "format_align_left" },
+  { id: "center", label: "中央揃え", icon: "format_align_center" },
+  { id: "right", label: "右揃え", icon: "format_align_right" },
 ];
 
 export function UnitProperties() {
@@ -136,17 +137,19 @@ export function UnitProperties() {
           </div>
 
           <h2>{t("配置")}</h2>
-          <div className="width-row">
+          {/* Three mutually exclusive options: Material's segmented button. */}
+          <div className="segmented" role="group" aria-label={t("配置")}>
             {ALIGNS.map((align) => (
               <button
                 key={align.id}
                 type="button"
-                className="width-btn"
+                className="seg-btn"
                 aria-pressed={unit.align === align.id}
                 title={t(align.label)}
                 onClick={() => update(t("配置を変更"), { align: align.id })}
               >
-                {align.glyph}
+                <Icon name={align.icon} size={18} />
+                <span className="sr-only">{t(align.label)}</span>
               </button>
             ))}
           </div>
@@ -309,7 +312,8 @@ export function UnitProperties() {
                     update(t("選択肢を削除"), { choices, result });
                   }}
                 >
-                  ✕
+                  <Icon name="delete" size={18} />
+                  <span className="sr-only">{t("削除")}</span>
                 </button>
               </div>
             ))}
@@ -325,7 +329,8 @@ export function UnitProperties() {
               })
             }
           >
-            {t("+ 選択肢を追加")}
+            <Icon name="add" size={18} />
+            {t("選択肢を追加")}
           </button>
 
           <h2>{t("回答方式")}</h2>

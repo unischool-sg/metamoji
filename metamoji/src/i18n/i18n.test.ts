@@ -83,3 +83,60 @@ describe("the English dictionary", () => {
     }
   });
 });
+
+/**
+ * Keying on the source string means a rename in a component silently orphans
+ * its translation — nothing throws, the English build just reverts to Japanese
+ * for that one label. These two tests are what make the dictionary
+ * maintainable.
+ */
+describe("dictionary coverage", () => {
+  /**
+   * Every app source file, read at build time by Vite. `import.meta.glob` is
+   * used rather than `node:fs` so the test needs no Node type definitions and
+   * resolves paths the same way the bundler does.
+   */
+  const SOURCES = import.meta.glob("../**/*.{ts,tsx}", {
+    query: "?raw",
+    import: "default",
+    eager: true,
+  }) as Record<string, string>;
+
+  function scan(pattern: RegExp): Set<string> {
+    const found = new Set<string>();
+    for (const [path, source] of Object.entries(SOURCES)) {
+      if (path.includes(".test.")) continue;
+      for (const m of source.matchAll(pattern)) {
+        found.add(m[1].replace(/\\"/g, '"'));
+      }
+    }
+    return found;
+  }
+
+  /** Strings handed to `t()` as a literal. */
+  const translated = () => scan(/\bt\(\s*"((?:[^"\\]|\\.)*)"/g);
+
+  /**
+   * Anything that could reach `t()` indirectly: labels are also passed as
+   * `t(tool.label)` over a table of them, and those are exactly the entries an
+   * orphan check must not flag. Japanese literals catch most; the `label:`
+   * scan catches the ones that happen to be ASCII ("SSO", "QR コード").
+   */
+  const indirect = () =>
+    new Set([
+      ...scan(/"((?:[^"\\]|\\.)*[ぁ-んァ-ヶ一-龯][^"\\]*)"/g),
+      ...scan(/\blabel:\s*"((?:[^"\\]|\\.)*)"/g),
+    ]);
+
+  it("translates every string the app asks for", () => {
+    const missing = [...translated()].filter((s) => !(s in en));
+    expect(missing, "add these to en.ts").toEqual([]);
+  });
+
+  it("has no entries the app no longer uses", () => {
+    const live = indirect();
+    const orphans = Object.keys(en).filter((key) => !live.has(key));
+    expect(orphans, "remove these from en.ts, or a rename dropped a label")
+      .toEqual([]);
+  });
+});

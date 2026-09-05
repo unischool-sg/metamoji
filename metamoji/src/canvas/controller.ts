@@ -31,6 +31,7 @@ import type {
   Unit,
 } from "../model/types";
 import { currentLayer } from "../model/types";
+import { canvasTheme, onCanvasThemeChange } from "./theme";
 import {
   HANDLE_CURSORS,
   HANDLE_SIZE,
@@ -157,6 +158,8 @@ export class CanvasController {
   /** Ensures the automatic fit-to-page happens once per opened document. */
   private hasFitted = false;
 
+  private detachTheme: (() => void) | null = null;
+
   constructor(private callbacks: ControllerCallbacks) {}
 
   // -- lifecycle -----------------------------------------------------------
@@ -179,6 +182,8 @@ export class CanvasController {
     overlay.addEventListener("wheel", this.onWheel, { passive: false });
     overlay.addEventListener("dblclick", this.onDoubleClick);
 
+    this.detachTheme = onCanvasThemeChange(() => this.invalidateAll());
+
     this.resize();
     this.startLoop();
   }
@@ -193,6 +198,8 @@ export class CanvasController {
       overlay.removeEventListener("wheel", this.onWheel);
       overlay.removeEventListener("dblclick", this.onDoubleClick);
     }
+    this.detachTheme?.();
+    this.detachTheme = null;
     if (this.frame) cancelAnimationFrame(this.frame);
     this.frame = 0;
     this.scene = null;
@@ -358,25 +365,20 @@ export class CanvasController {
     this.sceneDirty = false;
 
     ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
-    ctx.fillStyle = "#3a3f4b";
-    ctx.fillRect(0, 0, scene.clientWidth, scene.clientHeight);
-
     const page = this.page();
-    if (!page) return;
+    if (!page) {
+      ctx.fillStyle = canvasTheme().workspace;
+      ctx.fillRect(0, 0, scene.clientWidth, scene.clientHeight);
+      return;
+    }
 
-    // A drop shadow behind the paper is what makes the page read as a sheet
-    // rather than as the window background.
-    ctx.save();
-    ctx.translate(this.viewport.tx, this.viewport.ty);
-    ctx.scale(this.viewport.scale, this.viewport.scale);
-    ctx.shadowColor = "rgba(0,0,0,0.35)";
-    ctx.shadowBlur = 24 / this.viewport.scale;
-    ctx.shadowOffsetY = 6 / this.viewport.scale;
-    ctx.fillStyle = page.paperColor;
-    ctx.fillRect(0, 0, page.paperWidth, page.paperHeight);
-    ctx.restore();
-
+    // The workspace and the sheet's shadow are `renderPage`'s job, not this
+    // function's: `renderPage` opens by clearing the canvas, so anything
+    // painted here first would be wiped — invisibly, because an opaque canvas
+    // clears to black and black is what a dark workspace looks like.
     renderPage(ctx, page, {
+      background: canvasTheme().workspace,
+      pageShadow: true,
       viewport: this.viewport,
       viewWidth: scene.clientWidth,
       viewHeight: scene.clientHeight,
@@ -411,7 +413,7 @@ export class CanvasController {
 
     if (this.gesture?.kind === "lasso" && this.gesture.path) {
       const path = this.gesture.path;
-      ctx.strokeStyle = "#32a5ff";
+      ctx.strokeStyle = canvasTheme().selection;
       ctx.lineWidth = 1.5 / this.viewport.scale;
       ctx.setLineDash([5 / this.viewport.scale, 4 / this.viewport.scale]);
       ctx.beginPath();
@@ -422,27 +424,27 @@ export class CanvasController {
       ctx.closePath();
       ctx.stroke();
       ctx.setLineDash([]);
-      ctx.fillStyle = "rgba(50, 165, 255, 0.10)";
+      ctx.fillStyle = canvasTheme().selectionFill;
       ctx.fill();
     }
 
     if (this.gesture?.kind === "frame" && this.gesture.marquee) {
       const r = normalizeRect(this.gesture.marquee);
-      ctx.strokeStyle = "#32a5ff";
+      ctx.strokeStyle = canvasTheme().selection;
       ctx.lineWidth = 1.5 / this.viewport.scale;
       ctx.strokeRect(r.x, r.y, r.width, r.height);
-      ctx.fillStyle = "rgba(50, 165, 255, 0.08)";
+      ctx.fillStyle = canvasTheme().selectionFillFaint;
       ctx.fillRect(r.x, r.y, r.width, r.height);
     }
 
     if (this.gesture?.kind === "marquee" && this.gesture.marquee) {
       const r = normalizeRect(this.gesture.marquee);
-      ctx.strokeStyle = "#32a5ff";
+      ctx.strokeStyle = canvasTheme().selection;
       ctx.lineWidth = 1 / this.viewport.scale;
       ctx.setLineDash([6 / this.viewport.scale, 4 / this.viewport.scale]);
       ctx.strokeRect(r.x, r.y, r.width, r.height);
       ctx.setLineDash([]);
-      ctx.fillStyle = "rgba(50, 165, 255, 0.10)";
+      ctx.fillStyle = canvasTheme().selectionFill;
       ctx.fillRect(r.x, r.y, r.width, r.height);
     }
 
@@ -484,7 +486,7 @@ export class CanvasController {
       const b = this.laserTrail[i];
       const life = (b.until - now) / LASER_FADE_MS;
       ctx.globalAlpha = Math.max(0, Math.min(1, life)) * 0.8;
-      ctx.strokeStyle = "#ff3b30";
+      ctx.strokeStyle = canvasTheme().laser;
       ctx.lineWidth = 4 / this.viewport.scale;
       ctx.beginPath();
       ctx.moveTo(a.x, a.y);
@@ -494,7 +496,7 @@ export class CanvasController {
 
     const head = this.laserTrail[this.laserTrail.length - 1];
     ctx.globalAlpha = 0.9;
-    ctx.fillStyle = "#ff3b30";
+    ctx.fillStyle = canvasTheme().laser;
     ctx.beginPath();
     ctx.arc(head.x, head.y, 5 / this.viewport.scale, 0, Math.PI * 2);
     ctx.fill();
@@ -529,14 +531,14 @@ export class CanvasController {
         ctx.translate(-cx, -cy);
       }
 
-      ctx.strokeStyle = "#32a5ff";
+      ctx.strokeStyle = canvasTheme().selection;
       ctx.lineWidth = 1.5 / this.viewport.scale;
       ctx.strokeRect(unit.x, unit.y, unit.width, unit.height);
 
       if (units.length === 1) {
         const positions = handlePositions(unit);
         const size = HANDLE_SIZE / this.viewport.scale;
-        ctx.fillStyle = "#ffffff";
+        ctx.fillStyle = canvasTheme().handleFill;
         for (const [name, p] of Object.entries(positions)) {
           if (name === "move") continue;
           if (name === "rotate") {

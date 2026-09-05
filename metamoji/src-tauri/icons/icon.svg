@@ -1,0 +1,26 @@
+<!--
+  The application icon.
+
+  Source of truth: the PNG/ICNS/ICO files beside it are generated from this by
+  `bun run gen:icon` (which calls `tauri icon`), so edit here, never there.
+
+  Shape and colour follow Material: a solid `primary-container` squircle — the
+  brand blue that `docs/09` §5 records and that seeds the whole palette — with a
+  white sheet and one ink stroke over it. The stroke runs past the sheet's edge
+  on purpose; it is the one mark that says "handwriting" rather than "document".
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <!-- macOS insets its icons; 824 of 1024 is the standard live area. -->
+  <rect x="100" y="100" width="824" height="824" rx="185" fill="#32a5ff"/>
+
+  <rect x="286" y="248" width="452" height="528" rx="28" fill="#ffffff"/>
+
+  <g stroke="#c3d5e6" stroke-width="13" stroke-linecap="round">
+    <line x1="348" y1="376" x2="676" y2="376"/>
+    <line x1="348" y1="464" x2="676" y2="464"/>
+    <line x1="348" y1="552" x2="676" y2="552"/>
+    <line x1="348" y1="640" x2="676" y2="640"/>
+  </g>
+
+  <path d="M 336 612 C 404 470 452 470 486 560 C 520 650 566 650 620 528 C 664 428 730 380 796 372" fill="none" stroke="#00395f" stroke-width="42" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

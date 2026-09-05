@@ -17,6 +17,7 @@ import { TextEditOverlay } from "../components/TextEditOverlay";
 import { Menu } from "../components/Menu";
 import { useTranslation } from "../i18n/useTranslation";
 import { PageStrip } from "../components/PageStrip";
+import { Icon, type IconName } from "../components/Icon";
 import { Toolbar } from "../components/Toolbar";
 import { TOOLS } from "../editor/tools";
 import * as api from "../ipc/api";
@@ -542,12 +543,13 @@ export function EditorScreen() {
     return (
       <div className="app">
         <header className="topbar">
-          <button type="button" onClick={() => navigate("/")}>
-            {t("← 一覧")}
-          </button>
+          <BackButton onClick={() => navigate("/")} />
         </header>
         <div className="loading">
-          <div className="notice">{t("ノートを開けませんでした: {error}", { error: loadError })}</div>
+          <div className="notice notice--error">
+            <Icon name="error" size={20} />
+            <span>{t("ノートを開けませんでした: {error}", { error: loadError })}</span>
+          </div>
         </div>
       </div>
     );
@@ -567,38 +569,47 @@ export function EditorScreen() {
   return (
     <div className="app">
       <header className="topbar">
-        <button type="button" onClick={() => navigate("/")} title={t("ノート一覧に戻る")}>
-          {t("← 一覧")}
-        </button>
+        <BackButton onClick={() => navigate("/")} />
         <span className="topbar__title">{doc.meta.title}</span>
         <span className="save-chip" data-state={saveState}>
+          <Icon name={saveIcon(saveState)} size={16} />
           {t(saveLabel(saveState))}
         </span>
-        {busy && <span className="save-chip">{busy}</span>}
+        {busy && (
+          <span className="save-chip">
+            <Icon name="pending" size={16} />
+            {busy}
+          </span>
+        )}
         <div className="topbar__spacer" />
 
         <Menu
           label={t("ファイル")}
+          icon="description"
           items={[
             {
               id: "import-pdf",
               label: t("PDF を取り込む…"),
+              icon: "file_open",
               onSelect: () => void importPdf(),
             },
             {
               id: "export-pdf",
               label: t("PDF で書き出す…"),
+              icon: "picture_as_pdf",
               separatorBefore: true,
               onSelect: () => void exportPdf(),
             },
             {
               id: "export-png",
               label: t("このページを画像で書き出す…"),
+              icon: "image",
               onSelect: () => void exportPng(),
             },
             {
               id: "save",
               label: t("保存"),
+              icon: "save",
               shortcut: "⌘S",
               separatorBefore: true,
               onSelect: () => void save(),
@@ -608,15 +619,18 @@ export function EditorScreen() {
 
         <button
           type="button"
+          className="icon-btn"
           onClick={() => setShowPages((v) => !v)}
           aria-pressed={showPages}
           title={t("ページ一覧")}
         >
-          {t("ページ")}
+          <Icon name="note_stack" />
+          <span className="sr-only">{t("ページ一覧")}</span>
         </button>
 
         <button
           type="button"
+          className="icon-btn"
           onClick={() => {
             controllerRef.current?.cancelGesture();
             undo();
@@ -624,10 +638,12 @@ export function EditorScreen() {
           disabled={!canUndo}
           title={`${t("元に戻す")} (Cmd+Z)`}
         >
-          ↺ {t("元に戻す")}
+          <Icon name="undo" />
+          <span className="sr-only">{t("元に戻す")}</span>
         </button>
         <button
           type="button"
+          className="icon-btn"
           onClick={() => {
             controllerRef.current?.cancelGesture();
             redo();
@@ -635,7 +651,8 @@ export function EditorScreen() {
           disabled={!canRedo}
           title={`${t("やり直す")} (Cmd+Shift+Z)`}
         >
-          ↻ {t("やり直す")}
+          <Icon name="redo" />
+          <span className="sr-only">{t("やり直す")}</span>
         </button>
       </header>
 
@@ -680,39 +697,93 @@ export function EditorScreen() {
       <footer className="statusbar">
         <button
           type="button"
+          className="icon-btn icon-btn--sm"
           onClick={() => setPageIndex(pageIndex - 1)}
           disabled={pageIndex === 0}
+          title={t("前のページ")}
         >
-          ‹
+          <Icon name="keyboard_arrow_left" size={20} />
+          <span className="sr-only">{t("前のページ")}</span>
         </button>
-        <span>
+        <span className="statusbar__pages">
           {pageIndex + 1} / {doc.pages.length}
         </span>
         <button
           type="button"
+          className="icon-btn icon-btn--sm"
           onClick={() => setPageIndex(pageIndex + 1)}
           disabled={pageIndex >= doc.pages.length - 1}
+          title={t("次のページ")}
         >
-          ›
+          <Icon name="keyboard_arrow_right" size={20} />
+          <span className="sr-only">{t("次のページ")}</span>
         </button>
-        <button type="button" onClick={addPage}>
-          {t("+ ページ")}
+        <button
+          type="button"
+          className="icon-btn icon-btn--sm"
+          onClick={addPage}
+          title={t("ページを追加")}
+        >
+          <Icon name="add" size={20} />
+          <span className="sr-only">{t("ページを追加")}</span>
         </button>
 
         <div className="statusbar__spacer" />
 
-        <button type="button" onClick={() => controllerRef.current?.zoomBy(1 / 1.25)}>
-          −
+        <button
+          type="button"
+          className="icon-btn icon-btn--sm"
+          onClick={() => controllerRef.current?.zoomBy(1 / 1.25)}
+          title={t("縮小")}
+        >
+          <Icon name="zoom_out" size={20} />
+          <span className="sr-only">{t("縮小")}</span>
         </button>
-        <button type="button" onClick={() => controllerRef.current?.fitPage()}>
-          {t("全体表示")}
+        <button
+          type="button"
+          className="icon-btn icon-btn--sm"
+          onClick={() => controllerRef.current?.fitPage()}
+          title={t("全体表示")}
+        >
+          <Icon name="fit_screen" size={20} />
+          <span className="sr-only">{t("全体表示")}</span>
         </button>
-        <button type="button" onClick={() => controllerRef.current?.zoomBy(1.25)}>
-          ＋
+        <button
+          type="button"
+          className="icon-btn icon-btn--sm"
+          onClick={() => controllerRef.current?.zoomBy(1.25)}
+          title={t("拡大")}
+        >
+          <Icon name="zoom_in" size={20} />
+          <span className="sr-only">{t("拡大")}</span>
         </button>
       </footer>
     </div>
   );
+}
+
+/** Material's top-app-bar leading navigation icon. */
+function BackButton({ onClick }: { onClick: () => void }) {
+  const { t } = useTranslation();
+  return (
+    <button type="button" className="icon-btn" onClick={onClick} title={t("ノート一覧に戻る")}>
+      <Icon name="arrow_back" />
+      <span className="sr-only">{t("ノート一覧に戻る")}</span>
+    </button>
+  );
+}
+
+function saveIcon(state: string): IconName {
+  switch (state) {
+    case "saving":
+      return "pending";
+    case "dirty":
+      return "edit";
+    case "error":
+      return "error";
+    default:
+      return "check_circle";
+  }
 }
 
 function saveLabel(state: string): string {

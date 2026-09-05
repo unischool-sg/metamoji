@@ -42,6 +42,21 @@ export interface RenderOptions {
   hiddenUnitIds?: ReadonlySet<string>;
   /** Draw the paper background. Off for transparent exports. */
   paper?: boolean;
+  /**
+   * The workspace colour behind the sheet, painted across the whole view.
+   *
+   * It has to be passed in rather than laid down by the caller beforehand:
+   * `renderPage` clears the canvas as its first act, so anything painted first
+   * is wiped — and on an opaque canvas "cleared" means black, not transparent.
+   * That is the same trap that once made every exported PDF page black
+   * (`io/pageRender.test.ts`).
+   */
+  background?: string;
+  /**
+   * Drop shadow under the sheet. On-screen only: an export has no workspace to
+   * cast a shadow onto, and a thumbnail is already framed by its own border.
+   */
+  pageShadow?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -57,8 +72,24 @@ export function renderPage(
 
   ctx.save();
   ctx.clearRect(0, 0, opts.viewWidth, opts.viewHeight);
+  if (opts.background) {
+    ctx.fillStyle = opts.background;
+    ctx.fillRect(0, 0, opts.viewWidth, opts.viewHeight);
+  }
   ctx.translate(vp.tx, vp.ty);
   ctx.scale(vp.scale, vp.scale);
+
+  // A drop shadow is what makes the page read as a sheet lying on the
+  // workspace rather than as the window background.
+  if (opts.pageShadow) {
+    ctx.save();
+    ctx.shadowColor = "rgba(0, 0, 0, 0.3)";
+    ctx.shadowBlur = 24 / vp.scale;
+    ctx.shadowOffsetY = 6 / vp.scale;
+    ctx.fillStyle = page.paperColor;
+    ctx.fillRect(0, 0, page.paperWidth, page.paperHeight);
+    ctx.restore();
+  }
 
   if (opts.paper !== false) drawPaper(ctx, page);
 

@@ -10,6 +10,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 
+import { Icon } from "./Icon";
 import { useTranslation } from "../i18n/useTranslation";
 import type { NoteSummary } from "../ipc/api";
 import { hasLocalChanges, runSync, type SyncOutcome } from "../sync/engine";
@@ -62,7 +63,8 @@ export function SyncButton({ notes, onSynced }: Props) {
 
   if (!token) {
     return (
-      <button type="button" onClick={() => navigate("/login")}>
+      <button type="button" className="btn btn--text" onClick={() => navigate("/login")}>
+        <Icon name="login" size={18} />
         {t("サインイン")}
       </button>
     );
@@ -70,15 +72,24 @@ export function SyncButton({ notes, onSynced }: Props) {
 
   return (
     <>
-      <button type="button" onClick={() => void sync()} disabled={busy !== null} title={t("同期")}>
+      <button
+        type="button"
+        className="btn btn--text"
+        onClick={() => void sync()}
+        disabled={busy !== null}
+        title={t("同期")}
+      >
+        <Icon name={busy ? "pending" : "cloud_sync"} size={18} />
         {busy ?? (pending > 0 ? `${t("同期")} (${pending})` : t("同期"))}
       </button>
       <button
         type="button"
-        title={user?.displayName ?? ""}
+        className="icon-btn"
+        title={`${t("サインアウト")}${user?.displayName ? ` — ${user.displayName}` : ""}`}
         onClick={() => void signOut()}
       >
-        {t("サインアウト")}
+        <Icon name="logout" />
+        <span className="sr-only">{t("サインアウト")}</span>
       </button>
 
       {(outcome || error) && (
@@ -104,32 +115,42 @@ function SyncResult({
 
   return (
     <div className="sync-toast" role="status">
-      {error && <div>{t("同期に失敗しました")}: {error}</div>}
-
-      {outcome && !error && (
-        <>
+      <div className="sync-toast__body">
+        {error && (
           <div>
-            {t("同期しました")} — ↑{outcome.pushed} ↓{outcome.pulled}
-            {outcome.deleted > 0 && ` 🗑${outcome.deleted}`}
+            {t("同期に失敗しました")}: {error}
           </div>
-          {outcome.conflicts.map((conflict) => (
-            <div key={conflict.id} className="sync-toast__conflict">
-              {t(
-                "{title} は別の端末でも編集されていたため、この端末の版を複製として残しました。",
-                { title: conflict.title },
-              )}
-            </div>
-          ))}
-          {outcome.errors.map((message) => (
-            <div key={message} className="sync-toast__conflict">
-              {message}
-            </div>
-          ))}
-        </>
-      )}
+        )}
 
-      <button type="button" onClick={onDismiss}>
-        ✕
+        {outcome && !error && (
+          <>
+            <div>
+              {t("同期しました")} — {t("送信 {pushed} 件、受信 {pulled} 件", {
+                pushed: outcome.pushed,
+                pulled: outcome.pulled,
+              })}
+              {outcome.deleted > 0 && t("、削除 {deleted} 件", { deleted: outcome.deleted })}
+            </div>
+            {outcome.conflicts.map((conflict) => (
+              <div key={conflict.id} className="sync-toast__conflict">
+                {t(
+                  "{title} は別の端末でも編集されていたため、この端末の版を複製として残しました。",
+                  { title: conflict.title },
+                )}
+              </div>
+            ))}
+            {outcome.errors.map((message) => (
+              <div key={message} className="sync-toast__conflict">
+                {message}
+              </div>
+            ))}
+          </>
+        )}
+      </div>
+
+      <button type="button" className="icon-btn icon-btn--sm" onClick={onDismiss} title={t("閉じる")}>
+        <Icon name="close" size={20} />
+        <span className="sr-only">{t("閉じる")}</span>
       </button>
     </div>
   );
