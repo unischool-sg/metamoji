@@ -113,10 +113,14 @@ pub fn parse(bytes: Vec<u8>) -> AppResult<Listing> {
             .and_then(|list| list.iter().position(|child| child == id))
             .unwrap_or(usize::MAX)
     };
+    // Each folder is ranked within *its own* parent. Ranking both sides against
+    // `a`'s parent reads the right way round but is not a total order — swap the
+    // arguments and the answer changes — and Rust's sort detects that and
+    // panics, taking the whole class box down with it.
     folders.sort_by(|a, b| {
-        let parent = a.parent_path.clone().unwrap_or_else(|| "/".to_string());
-        rank(&parent, &a.name)
-            .cmp(&rank(&parent, &b.name))
+        let rank_of = |f: &DriveFolder| rank(f.parent_path.as_deref().unwrap_or("/"), &f.name);
+        rank_of(a)
+            .cmp(&rank_of(b))
             .then_with(|| a.abs_path.cmp(&b.abs_path))
     });
     documents.sort_by(|a, b| {

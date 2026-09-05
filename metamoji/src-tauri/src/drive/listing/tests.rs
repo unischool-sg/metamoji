@@ -269,3 +269,44 @@ fn something_that_is_not_a_zip_says_so() {
     let err = parse(b"not a zip at all".to_vec()).unwrap_err().to_string();
     assert!(err.contains("開けません"), "{err}");
 }
+
+#[test]
+fn folders_in_different_parents_do_not_crash_the_sort() {
+    // Ranking both sides against the *first* folder's parent reads the right
+    // way round but is not a total order: a nested folder ranks first inside
+    // its own parent, a top-level one ranks first inside the root, and asked
+    // either way round the comparator answers "less". Rust's sort notices and
+    // panics, taking the whole class box down with it — which is what 中学1年3組
+    // did, with 48 folders across a dozen parents.
+    let mut defs = Vec::new();
+    let mut top = String::new();
+    let mut nested = String::new();
+    for i in 0..20 {
+        defs.push(format!(r#"{{"absPath":"/t{i}/"}}"#));
+        top.push_str(&format!("t{i}/"));
+        defs.push(format!(r#"{{"absPath":"/t0/n{i}/"}}"#));
+        nested.push_str(&format!("n{i}/"));
+    }
+    let defs = format!("[{}]", defs.join(","));
+    let orders = format!(
+        r#"[{{"absPath":"/","childrenOrder":"/{top}"}},
+            {{"absPath":"/t0/","childrenOrder":"/{nested}"}}]"#
+    );
+
+    let listing = parse(archive(&[
+        ("folderdefs_1.json", &defs),
+        ("childrenorders_1.json", &orders),
+    ]))
+    .unwrap();
+
+    assert_eq!(listing.folders.len(), 40);
+    // Each folder ranks within its own parent, so the nested ones come out in
+    // the order /t0/ gave them.
+    let nested_order: Vec<&str> = listing
+        .folders
+        .iter()
+        .filter(|f| f.parent_path.as_deref() == Some("/t0/"))
+        .map(|f| f.name.as_str())
+        .collect();
+    assert_eq!(nested_order[..3], ["n0", "n1", "n2"]);
+}
