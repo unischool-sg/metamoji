@@ -70,11 +70,25 @@ export interface ImportReport {
   warnings: string[];
 }
 
+/** What a class note's classroom room added on top of the downloaded file. */
+export interface RoomPull {
+  directions: number;
+  units: number;
+  strokes: number;
+  assets: number;
+  /** Edit kinds the app received but does not apply, named and counted. */
+  unsupported: string[];
+  /** Set when the room could not be reached; the note still opens. */
+  error: string | null;
+}
+
 export interface AtdocImportResult {
   tree: GenericTree;
   report: ImportReport;
   /** The document's own title, when it has one. */
   title: string | null;
+  /** Absent for a file on disk, which belongs to no room. */
+  room: RoomPull | null;
 }
 
 export interface ExportPagePayload {

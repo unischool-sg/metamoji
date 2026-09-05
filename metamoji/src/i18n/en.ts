@@ -164,6 +164,9 @@ export const en: Record<string, string> = {
   "取り込む": "Import",
   "取り込み中…": "Importing…",
   "ノートを取り込んでいます…": "Importing the note…",
+  "教室から書き込みを取り込んでいます…": "Fetching classroom edits…",
+  "ノートは取り込みましたが、教室につながらなかったので書き込みは入っていません: {error}":
+    "The note was imported, but the classroom could not be reached, so the writing on it is missing: {error}",
   "新規ノート": "New note",
   "まだノートがありません。": "No notes yet.",
   "最初のノートを作成": "Create your first note",

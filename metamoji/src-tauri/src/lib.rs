@@ -30,6 +30,8 @@ pub struct AtdocImportResult {
     /// The document's own title, when it has one. The caller decides whether to
     /// use it — a class-box record's title is fresher, a file name is not.
     pub title: Option<String>,
+    /// What the note's classroom room added, for a note that has one.
+    pub room: Option<collabo::pull::RoomPull>,
 }
 
 /// Imports a `.atdoc` file the user picked in a dialog.
@@ -51,6 +53,8 @@ fn atdoc_import(
         tree: result.tree,
         report: result.report,
         title: result.title,
+        // A file on disk belongs to no room.
+        room: None,
     })
 }
 

@@ -11,7 +11,7 @@ use base64::Engine as _;
 use tauri::State;
 
 use crate::cloud::{ClassBox, ClassGroup, CloudClient, CloudSession, DriveEntry, School};
-use crate::collabo::session::{ClassroomState, CollaboMember, CollaboRoom, EnterResult};
+use crate::collabo::{self, session::{ClassroomState, CollaboMember, CollaboRoom, EnterResult}};
 use crate::drive::{self, listing::Listing, DriveClient};
 use crate::error::{AppError, AppResult};
 use crate::model::{AppStatus, GenericTree, NoteSummary};
@@ -739,8 +739,14 @@ pub async fn classbox_revision(
 /// unchanged. That is the payoff for having built import against the real
 /// format rather than a simplification of it.
 #[tauri::command]
+// Eight arguments because four of them are injected state: the note store, the
+// tenant session, the classroom registration and the drive client are four
+// different services, and a struct wrapping them would only hide that.
+#[allow(clippy::too_many_arguments)]
 pub async fn classbox_open_note(
     state: State<'_, AppState>,
+    cloud: State<'_, CloudClient>,
+    classroom: State<'_, ClassroomState>,
     drive: State<'_, DriveClient>,
     drive_id: String,
     document_id: String,
@@ -751,16 +757,60 @@ pub async fn classbox_open_note(
         .document_data(&drive_id, &document_id, revision.as_deref())
         .await?;
     let result = crate::atdoc::import(file.bytes, &new_root_id)?;
+    let mut tree = result.tree;
     // The note does not exist yet — `library_create` writes the tree a moment
     // from now — but its asset store does, because opening one creates it. The
     // PDF a class handout is built on lands here rather than travelling to the
     // webview as base64 and back.
     store_imported_assets(&state, &new_root_id, result.assets)?;
+
+    // The file the drive hands out holds only what the teacher put in it.
+    // Everything the student wrote is in the note's room, so opening the note
+    // means asking the room for its history as well.
+    let room = match room_id_of(&drive, &drive_id, &document_id).await {
+        Some(room_id) => {
+            match collabo::pull::fetch(&cloud, &classroom, &room_id, &mut tree).await {
+                Ok((pull, assets)) => {
+                    let store = state.note(&new_root_id)?;
+                    let store = store.lock().unwrap();
+                    for (ticket, mime, bytes) in assets {
+                        store.put_asset(&ticket, &mime, &bytes)?;
+                    }
+                    Some(pull)
+                }
+                // A room that cannot be reached is worth saying so about, but
+                // it must not stop the note opening: the handout itself is
+                // already downloaded and readable.
+                Err(err) => Some(collabo::pull::RoomPull {
+                    error: Some(err.to_string()),
+                    ..Default::default()
+                }),
+            }
+        }
+        None => None,
+    };
+
     Ok(crate::AtdocImportResult {
-        tree: result.tree,
+        tree,
         report: result.report,
         title: result.title,
+        room,
     })
+}
+
+/// The room a class-box document belongs to, if it has one.
+///
+/// The drive's own record is the authority here; the note carries a room id in
+/// its share settings too, but that one is whatever was true when the file was
+/// last written.
+async fn room_id_of(drive: &DriveClient, drive_id: &str, document_id: &str) -> Option<String> {
+    let envelope = drive.document_meta(drive_id, document_id).await.ok()?;
+    envelope
+        .get("meta")
+        .and_then(|meta| meta.get("roomId"))
+        .and_then(|v| v.as_str())
+        .filter(|id| !id.is_empty())
+        .map(str::to_string)
 }
 
 /// Writes the binaries an import lifted out of the model tree into the note's

@@ -211,6 +211,9 @@ export function LibraryScreen() {
     setBusy(t("ノートを取り込んでいます…"));
     try {
       const noteId = newNoteId();
+      // The download is the teacher's copy; the room holds everyone's
+      // writing, and `classboxOpenNote` waits for both.
+      setBusy(t("教室から書き込みを取り込んでいます…"));
       const result = await api.classboxOpenNote(view.id, documentId, noteId);
       await renderBackgrounds(noteId, result.tree);
       const summary = await api.libraryCreate(
@@ -219,6 +222,18 @@ export function LibraryScreen() {
         // there does not rewrite the document inside it.
         title ?? result.title ?? t("クラスボックスのノート"),
       );
+      // The note is in the library either way. But if the classroom could not
+      // be reached, everything written on it is missing, and opening it
+      // straight away would look like the note is simply blank.
+      if (result.room?.error) {
+        await refresh();
+        setError(
+          t("ノートは取り込みましたが、教室につながらなかったので書き込みは入っていません: {error}", {
+            error: result.room.error,
+          }),
+        );
+        return;
+      }
       navigate(`/note/${summary.id}`);
     } catch (err) {
       setError(String(err));
