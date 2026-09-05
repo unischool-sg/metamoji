@@ -9,6 +9,7 @@
 //!
 //! `docs/typespec/classroom/collabo-socket-protocol.md` documents both.
 
+pub mod direction;
 pub mod rest;
 pub mod session;
 pub mod socket;

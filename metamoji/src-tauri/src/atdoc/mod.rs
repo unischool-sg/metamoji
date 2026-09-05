@@ -315,9 +315,16 @@ fn note_meta(props: &mut serde_json::Map<String, Value>, edit: impl FnOnce(&mut 
     props.insert(writer::META_KEY.into(), Value::Object(meta));
 }
 
+/// Marks a model as one the original left unparented.
+pub fn mark_detached(props: &mut serde_json::Map<String, Value>) {
+    note_meta(props, |meta| {
+        meta.insert("detached".into(), Value::Bool(true));
+    });
+}
+
 /// Records that this app added `keys` to a model the document already had, so
 /// the writer can take them off again.
-pub(super) fn mark_injected(props: &mut serde_json::Map<String, Value>, keys: &[&str]) {
+pub fn mark_injected(props: &mut serde_json::Map<String, Value>, keys: &[&str]) {
     note_meta(props, |meta| {
         let mut list = match meta.remove("injected") {
             Some(Value::Array(items)) => items,
