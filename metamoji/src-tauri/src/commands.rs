@@ -585,6 +585,9 @@ pub async fn classroom_create_room(
     title: String,
     room_type: String,
 ) -> AppResult<CollaboRoom> {
+    // `cosmos/*` puts the user id in its `authInfo` part, so it needs the same
+    // repair the drive service does.
+    cloud.ensure_complete().await?;
     classroom.rest(&cloud).create_room(&title, &room_type).await
 }
 
@@ -598,6 +601,7 @@ pub async fn classroom_enter(
     nickname: String,
     room_password: Option<String>,
 ) -> AppResult<EnterResult> {
+    cloud.ensure_complete().await?;
     classroom
         .enter(
             &app,
@@ -681,6 +685,14 @@ pub async fn classbox_open(
     // what turns "could not open the class" into something actionable — the
     // steps fail for very different reasons and are fixed in different files.
     let step = |name: &'static str| move |e: AppError| step_failed(name, e);
+
+    // A session stored by an older build may lack the user id the drive service
+    // authenticates with. Repairing it here costs one request and saves the
+    // user an instruction they should not have to follow.
+    cloud
+        .ensure_complete()
+        .await
+        .map_err(step("サインインの更新"))?;
 
     let home = cloud.drive_home(&drive_id).await.map_err(step("場所の取得"))?;
     let (user_id, password, qwd) = cloud

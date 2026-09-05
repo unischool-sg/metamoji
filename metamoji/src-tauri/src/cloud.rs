@@ -356,6 +356,27 @@ impl CloudClient {
         &self.locale
     }
 
+    /// Refreshes a session that is missing something later calls need.
+    ///
+    /// A session saved by a build that read the user id from one key only can
+    /// be complete enough to look signed in — the name and school are there —
+    /// and still be useless to the drive service, which authenticates with the
+    /// id. The credential is on hand, so the fix is a silent re-login rather
+    /// than an instruction to sign out and back in.
+    pub async fn ensure_complete(&self) -> AppResult<()> {
+        let incomplete = self
+            .inner
+            .lock()
+            .unwrap()
+            .session
+            .as_ref()
+            .is_some_and(|s| s.user_id.is_empty());
+        if incomplete {
+            self.reauthenticate().await?;
+        }
+        Ok(())
+    }
+
     /// The credential in the shape the drive service's login wants.
     pub fn drive_credential(&self) -> Option<(String, Option<String>, Option<String>)> {
         let inner = self.inner.lock().unwrap();
@@ -700,12 +721,7 @@ impl CloudClient {
     ///   passed in rather than returned; the login response has no such fields
     /// * `coLoginId` — the id that was typed
     fn finish_login(&self, school: &School, body: Map<String, Value>) -> AppResult<CloudSession> {
-        let str_of = |key: &str| {
-            body.get(key)
-                .and_then(Value::as_str)
-                .filter(|s| !s.is_empty())
-                .map(str::to_string)
-        };
+        let str_of = |key: &str| scalar_str(body.get(key));
 
         let login_name = str_of("loginName").unwrap_or_default();
         let session = CloudSession {
@@ -729,8 +745,14 @@ impl CloudClient {
         if session.user_id.is_empty() {
             // Everything downstream authenticates with this. Failing here names
             // the cause; failing later names a symptom three services away.
+            // Name the *types* of the id fields, not only the keys: a key that
+            // is present but null or an object reads as "missing" here, and the
+            // difference is the whole answer.
+            let shape = |key: &str| format!("{key}={}", json_kind(body.get(key)));
             return Err(AppError::other(format!(
-                "サインインの応答にユーザー ID がありません(応答のキー: {})",
+                "サインインの応答からユーザー ID を読めません({}, {})(応答のキー: {})",
+                shape("uuid"),
+                shape("userId"),
                 body.keys().cloned().collect::<Vec<_>>().join(", ")
             )));
         }
@@ -1140,6 +1162,36 @@ fn annotate(err: AppError, where_: &str, body: &Map<String, Value>) -> AppError 
     } else {
         format!("{err} — {where_}(応答のキー: {keys})")
     })
+}
+
+/// `CmUtils.toString(Object)` — a scalar in whatever type the server chose.
+///
+/// This API is not consistent about it: ids and versions come back as strings
+/// in some responses and numbers in others, and `as_str()` alone silently reads
+/// a numeric id as absent.
+fn scalar_str(value: Option<&Value>) -> Option<String> {
+    match value? {
+        Value::String(s) if !s.is_empty() => Some(s.clone()),
+        Value::String(_) => None,
+        Value::Number(n) => Some(n.to_string()),
+        Value::Bool(b) => Some(b.to_string()),
+        // `null`, an array or an object: nothing a string field can carry.
+        _ => None,
+    }
+}
+
+/// The JSON type of a value, for error messages.
+fn json_kind(value: Option<&Value>) -> &'static str {
+    match value {
+        None => "なし",
+        Some(Value::Null) => "null",
+        Some(Value::String(s)) if s.is_empty() => "空文字",
+        Some(Value::String(_)) => "文字列",
+        Some(Value::Number(_)) => "数値",
+        Some(Value::Bool(_)) => "真偽値",
+        Some(Value::Array(_)) => "配列",
+        Some(Value::Object(_)) => "オブジェクト",
+    }
 }
 
 fn opt_str(body: &Map<String, Value>, key: &str) -> Option<String> {

@@ -720,3 +720,104 @@ async fn a_login_response_with_no_user_id_fails_at_the_login() {
     assert!(err.contains("loginName"), "{err}");
     assert!(client.session().is_none(), "a broken session is not kept");
 }
+
+#[tokio::test]
+async fn a_session_missing_its_user_id_repairs_itself() {
+    // A build that read the id from one key only could store a session that
+    // looks signed in — name, school, credential all present — and is useless
+    // to the drive service. Telling the user to sign out and back in is an
+    // instruction the app can carry out itself.
+    let path = temp_path("incomplete.json");
+    let _ = std::fs::remove_file(&path);
+
+    {
+        let stub = stub(vec![
+            ("200 OK", SCHOOL_OK.to_string()),
+            ("200 OK", login_ok()),
+        ]);
+        let client = client_at(&path);
+        client.set_root_server(&stub.base);
+        client.login("school01", "student01", "hunter2").await.unwrap();
+    }
+
+    // Blank the id the way the older parse would have left it.
+    let mut saved: serde_json::Value =
+        serde_json::from_str(&std::fs::read_to_string(&path).unwrap()).unwrap();
+    saved["session"]["userId"] = serde_json::json!("");
+
+    let stub = stub(vec![("200 OK", login_ok())]);
+    for key in ["root_server", "rest_host"] {
+        saved[key] = serde_json::json!(stub.base);
+    }
+    saved["school"]["serverUrl"] = serde_json::json!(stub.base);
+    std::fs::write(&path, serde_json::to_vec(&saved).unwrap()).unwrap();
+
+    let client = client_at(&path);
+    assert_eq!(client.session().unwrap().user_id, "");
+
+    client.ensure_complete().await.unwrap();
+    assert_eq!(client.session().unwrap().user_id, "u-1");
+
+    // One request, and it was the login — no prompt, no sign-out.
+    let seen = stub.seen.recv().unwrap();
+    assert_eq!(seen.path, "/mmjeditor2/2.0/users3/login");
+}
+
+#[tokio::test]
+async fn a_complete_session_is_left_alone() {
+    // `ensure_complete` runs before every class-box open; it must not cost a
+    // login each time.
+    let stub = stub(vec![
+        ("200 OK", SCHOOL_OK.to_string()),
+        ("200 OK", login_ok()),
+    ]);
+    let client = client();
+    client.set_root_server(&stub.base);
+    client.login("school01", "student01", "x").await.unwrap();
+
+    let _ = stub.seen.recv().unwrap();
+    let _ = stub.seen.recv().unwrap();
+
+    client.ensure_complete().await.unwrap();
+    assert!(
+        stub.seen.try_recv().is_err(),
+        "a complete session must make no request"
+    );
+}
+
+#[tokio::test]
+async fn a_numeric_user_id_is_read_as_one() {
+    // This API is not consistent about scalar types — `CmUtils.toString` exists
+    // precisely because of it. `as_str()` alone reads a numeric id as absent,
+    // and the failure then surfaces from the drive service as a rejected
+    // password.
+    let stub = stub(vec![
+        ("200 OK", SCHOOL_OK.to_string()),
+        ("200 OK", r#"{"uuid":12345,"loginName":"student01"}"#.to_string()),
+    ]);
+    let client = client();
+    client.set_root_server(&stub.base);
+
+    let session = client.login("school01", "student01", "x").await.unwrap();
+    assert_eq!(session.user_id, "12345");
+}
+
+#[tokio::test]
+async fn a_null_user_id_says_it_is_null_rather_than_missing() {
+    // "the key is not there" and "the key is there and null" need different
+    // fixes, and the message is the only place that distinction can surface.
+    let stub = stub(vec![
+        ("200 OK", SCHOOL_OK.to_string()),
+        ("200 OK", r#"{"uuid":null,"loginName":"student01"}"#.to_string()),
+    ]);
+    let client = client();
+    client.set_root_server(&stub.base);
+
+    let err = client
+        .login("school01", "student01", "x")
+        .await
+        .unwrap_err()
+        .to_string();
+    assert!(err.contains("uuid=null"), "{err}");
+    assert!(err.contains("userId=なし"), "{err}");
+}
