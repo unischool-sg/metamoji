@@ -1614,6 +1614,13 @@ input.layer-row__name {
   color: var(--md-sys-color-on-surface);
 }
 
+/* A note explains the control above it; the next control needs air. */
+.setting-note + .field,
+.setting-note + .segmented,
+.setting-note + .notice {
+  margin-top: var(--space-4);
+}
+
 .setting-note {
   margin: 0;
   font-size: var(--md-sys-typescale-body-medium-size);

@@ -1,4 +1,7 @@
 pub mod atdoc;
+pub mod cloud;
+#[cfg(test)]
+mod cloud_wire_tests;
 mod commands;
 mod error;
 pub mod export;
@@ -57,6 +60,37 @@ fn export_pdf(
     export::write_pdf(&path, &title, &pages)
 }
 
+/// The three environment values the ClassShare protocol wants on every
+/// request. All three are best-effort: the server treats them as telemetry, so
+/// a wrong guess costs nothing and an error would cost a sign-in.
+fn device_name() -> String {
+    std::env::var("HOSTNAME")
+        .or_else(|_| std::env::var("COMPUTERNAME"))
+        .ok()
+        .filter(|s| !s.is_empty())
+        .unwrap_or_else(|| "desktop".to_string())
+}
+
+fn locale() -> String {
+    std::env::var("LANG")
+        .ok()
+        .and_then(|lang| lang.split('.').next().map(str::to_string))
+        .filter(|s| !s.is_empty() && s != "C" && s != "POSIX")
+        .unwrap_or_else(|| "ja_JP".to_string())
+}
+
+fn timezone() -> String {
+    // `/etc/localtime` is a symlink into the zoneinfo tree on macOS and Linux;
+    // its tail is the IANA name. Windows has no equivalent, hence the fallback.
+    std::fs::read_link("/etc/localtime")
+        .ok()
+        .and_then(|path| {
+            let path = path.to_string_lossy().to_string();
+            path.split_once("zoneinfo/").map(|(_, tz)| tz.to_string())
+        })
+        .unwrap_or_else(|| "Asia/Tokyo".to_string())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -71,6 +105,15 @@ pub fn run() {
             let state = AppState::boot(data_dir)?;
             let status = state.status();
             app.manage(state);
+
+            // The cloud client is separate from `AppState` on purpose: it holds
+            // a network session, not application data, and nothing in the
+            // library needs it.
+            app.manage(cloud::CloudClient::new(
+                device_name(),
+                locale(),
+                timezone(),
+            )?);
 
             // The frontend gates on this exactly as the original gated on
             // `StartupViewModel.isNeedLogin` (docs/14 §3).
@@ -106,6 +149,14 @@ pub fn run() {
             commands::asset_list,
             commands::file_read_data_url,
             commands::file_write_bytes,
+            commands::cloud_root_server,
+            commands::cloud_set_root_server,
+            commands::cloud_resolve_school,
+            commands::cloud_class_groups,
+            commands::cloud_login,
+            commands::cloud_classroom_login,
+            commands::cloud_logout,
+            commands::cloud_session,
             atdoc_import,
             atdoc_probe,
             export_pdf,

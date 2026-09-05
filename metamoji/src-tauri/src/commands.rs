@@ -10,6 +10,7 @@ use std::path::PathBuf;
 use base64::Engine as _;
 use tauri::State;
 
+use crate::cloud::{ClassGroup, CloudClient, CloudSession, School};
 use crate::error::{AppError, AppResult};
 use crate::model::{AppStatus, GenericTree, NoteSummary};
 use crate::state::AppState;
@@ -453,4 +454,73 @@ fn mime_for_path(path: &str) -> &'static str {
     } else {
         "application/octet-stream"
     }
+}
+
+// ---------------------------------------------------------------------------
+// MetaMoJi cloud sign-in
+// ---------------------------------------------------------------------------
+//
+// The password crosses this boundary once, on its way to `cloud.rs`, and is
+// never stored or echoed back. What comes back is an identity; the session
+// itself is a cookie held in the Rust process (see `cloud.rs`).
+
+#[tauri::command]
+pub fn cloud_root_server(cloud: State<'_, CloudClient>) -> String {
+    cloud.root_server()
+}
+
+#[tauri::command]
+pub fn cloud_set_root_server(cloud: State<'_, CloudClient>, url: String) {
+    cloud.set_root_server(&url);
+}
+
+/// Looks up which server a 学校ID lives on. Also the cheapest way to tell the
+/// user their school id is wrong before they have typed a password.
+#[tauri::command]
+pub async fn cloud_resolve_school(
+    cloud: State<'_, CloudClient>,
+    co_login_id: String,
+) -> AppResult<School> {
+    cloud.resolve_school(&co_login_id).await
+}
+
+#[tauri::command]
+pub async fn cloud_class_groups(
+    cloud: State<'_, CloudClient>,
+    co_login_id: String,
+) -> AppResult<Vec<ClassGroup>> {
+    cloud.class_groups(&co_login_id).await
+}
+
+#[tauri::command]
+pub async fn cloud_login(
+    cloud: State<'_, CloudClient>,
+    co_login_id: String,
+    login_name: String,
+    password: String,
+) -> AppResult<CloudSession> {
+    cloud.login(&co_login_id, &login_name, &password).await
+}
+
+#[tauri::command]
+pub async fn cloud_classroom_login(
+    cloud: State<'_, CloudClient>,
+    co_login_id: String,
+    class_group_id: String,
+    id_number: String,
+    password: String,
+) -> AppResult<CloudSession> {
+    cloud
+        .classroom_login(&co_login_id, &class_group_id, &id_number, &password)
+        .await
+}
+
+#[tauri::command]
+pub async fn cloud_logout(cloud: State<'_, CloudClient>) -> AppResult<()> {
+    cloud.logout().await
+}
+
+#[tauri::command]
+pub fn cloud_session(cloud: State<'_, CloudClient>) -> Option<CloudSession> {
+    cloud.session()
 }

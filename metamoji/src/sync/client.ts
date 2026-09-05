@@ -95,6 +95,11 @@ export class SyncClient {
     this.token = token;
   }
 
+  /** Whether this client has a session. Read by callers that must not try. */
+  hasToken(): boolean {
+    return this.token !== null;
+  }
+
   /**
    * Repoints the client at a different server.
    *

@@ -13,7 +13,7 @@ import { ClassroomSession, type ConnectionState } from "../classroom/session";
 import { applyCompound, type CompoundEdit } from "../editor/delta";
 import { beginOfflineEditing, mergeOfflineEditing } from "../editor/offline";
 import type { Member, PresenceEntry, RelayDirection, Room, RoomRole } from "../sync/client";
-import { useAuthStore } from "./authStore";
+import { referenceClient } from "../sync/referenceBackend";
 import { useEditorStore } from "./editorStore";
 
 export interface MonitorEntry extends PresenceEntry {
@@ -56,7 +56,7 @@ export const useClassroomStore = create<ClassroomState>((set, get) => ({
   lastNotice: null,
 
   enter: async (roomId) => {
-    const client = useAuthStore.getState().client;
+    const client = referenceClient;
     const detail = await client.room(roomId);
 
     get().session?.disconnect();
@@ -168,21 +168,21 @@ export const useClassroomStore = create<ClassroomState>((set, get) => ({
   setLocked: async (locked) => {
     const room = get().room;
     if (!room) return;
-    await useAuthStore.getState().client.setLocked(room.id, locked);
+    await referenceClient.setLocked(room.id, locked);
     set({ room: { ...room, locked } });
   },
 
   setAttention: async (userId) => {
     const room = get().room;
     if (!room) return;
-    await useAuthStore.getState().client.setAttention(room.id, userId);
+    await referenceClient.setAttention(room.id, userId);
     set({ attention: userId });
   },
 
   refreshPresence: async () => {
     const room = get().room;
     if (!room || get().role !== "teacher") return;
-    const result = await useAuthStore.getState().client.presence(room.id);
+    const result = await referenceClient.presence(room.id);
     set({
       presence: Object.fromEntries(result.presence.map((p) => [p.userId, p])),
       online: new Set(result.online),

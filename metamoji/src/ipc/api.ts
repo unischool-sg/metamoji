@@ -321,3 +321,102 @@ export async function exportPdf(
   if (!isTauri()) throw new Error("PDF の書き出しはデスクトップアプリでのみ利用できます");
   return invoke("export_pdf", { path, title, pages });
 }
+
+// ---------------------------------------------------------------------------
+// MetaMoJi cloud sign-in
+// ---------------------------------------------------------------------------
+//
+// These go to Rust rather than being `fetch`ed from here for two reasons:
+// `mps.metamoji.com` sends no CORS headers for a `tauri://localhost` origin, and
+// the session is a cookie the protocol expects a real jar to hold. See
+// `src-tauri/src/cloud.rs`.
+
+export interface School {
+  serverUrl: string;
+  coLoginId: string;
+  isClassRoom: boolean;
+  isOnPremise: boolean;
+}
+
+export interface ClassGroup {
+  name: string;
+  id: string;
+  /** 出席番号. Empty when the school does not publish them. */
+  idNumbers: string[];
+}
+
+export interface CloudSession {
+  userId: string;
+  loginName: string;
+  name: string;
+  email: string | null;
+  coLoginId: string;
+  companyId: string | null;
+  companyName: string | null;
+  isClassRoom: boolean;
+  isOnPremise: boolean;
+  restHost: string;
+}
+
+/** Signing in needs the network stack in Rust; there is no browser stand-in. */
+function requireTauri(): void {
+  if (!isTauri()) {
+    throw new Error(
+      "サインインはデスクトップアプリでのみ利用できます(ブラウザからは MetaMoJi のサーバーに接続できません)。",
+    );
+  }
+}
+
+export async function cloudRootServer(): Promise<string> {
+  if (!isTauri()) return "https://mps.metamoji.com/";
+  return invoke<string>("cloud_root_server");
+}
+
+export async function cloudSetRootServer(url: string): Promise<void> {
+  if (!isTauri()) return;
+  return invoke<void>("cloud_set_root_server", { url });
+}
+
+export async function cloudResolveSchool(coLoginId: string): Promise<School> {
+  requireTauri();
+  return invoke<School>("cloud_resolve_school", { coLoginId });
+}
+
+export async function cloudClassGroups(coLoginId: string): Promise<ClassGroup[]> {
+  requireTauri();
+  return invoke<ClassGroup[]>("cloud_class_groups", { coLoginId });
+}
+
+export async function cloudLogin(
+  coLoginId: string,
+  loginName: string,
+  password: string,
+): Promise<CloudSession> {
+  requireTauri();
+  return invoke<CloudSession>("cloud_login", { coLoginId, loginName, password });
+}
+
+export async function cloudClassroomLogin(
+  coLoginId: string,
+  classGroupId: string,
+  idNumber: string,
+  password: string,
+): Promise<CloudSession> {
+  requireTauri();
+  return invoke<CloudSession>("cloud_classroom_login", {
+    coLoginId,
+    classGroupId,
+    idNumber,
+    password,
+  });
+}
+
+export async function cloudLogout(): Promise<void> {
+  if (!isTauri()) return;
+  return invoke<void>("cloud_logout");
+}
+
+export async function cloudSession(): Promise<CloudSession | null> {
+  if (!isTauri()) return null;
+  return invoke<CloudSession | null>("cloud_session");
+}

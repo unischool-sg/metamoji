@@ -12,13 +12,55 @@
   図形、表・罫線、テキスト、付箋、画像、アンケート、レーザーポインタ、
   複数ページとレイヤー、PDF 入出力、`.atdoc` 取り込み、
   フォルダ・タグ・全文検索、日本語/英語。
-- **B. クラウド同期** — 自前バックエンドに対するリビジョン同期。
-  競合は `docs/12` §4 のサーバー優先 + 複製保存。
+- **B. クラウド同期** — リビジョン同期。競合は `docs/12` §4 の
+  サーバー優先 + 複製保存。
 - **C. 教室協働** — WebSocket リレー、Direction 配信、教師用の操作
   (締切・ロック / 注目 / 配信 / モニタリング)、オフライン編集。
 
 B と C のサーバーは [`../server/`](../server/) の参照実装。
-`docs/03` §2 のとおり MetaMoJi 社のサーバーには接続しない。
+
+## サインイン
+
+サインインは **MetaMoJi のサーバー**(`mps.metamoji.com`)に対して行う。
+`docs/typespec/auth/auth.tsp` のプロトコルを実装したもので、
+実装は [`src-tauri/src/cloud.rs`](src-tauri/src/cloud.rs)。
+
+| 方式 | 入力 | 元ドライバー(`docs/14` §1) |
+|---|---|---|
+| 学校ID とユーザーID | 学校ID + ユーザーID + パスワード | `NormalLoginDriver` |
+| 簡易ログイン | 学校ID + クラス + 出席番号 + パスワード | `SimpleLoginDriver` |
+| QR コード | `$cid=…,uid=…` + パスワード | `QRCodeParser` → `NormalLoginDriver` |
+| SSO | — | `SSODriver`(未実装) |
+
+**2段階**になっている。学校IDだけでは接続先が決まらないため、まず
+`GET <root>mpsroot/RequestServlet?coLoginId=…` でテナントのサーバーを引き、
+その上で `POST <server>mmjeditor2/2.0/users3/login` を投げる。UI に「確認」
+ボタンがあるのはそのためで、パスワードを入力する前に学校IDの誤りが分かる。
+
+**HTTP は Rust 側で行う。** `mps.metamoji.com` が `tauri://localhost`
+オリジンに CORS を返す理由はないので、WebView からの `fetch` は端末を出る前に
+ブロックされる。セッションが Cookie であることも Rust 側に置く理由になっている。
+
+**セッションは永続化しない。** 元アプリは `qwd`(パスワード相当のトークン)を
+保存してサイレント再ログインするが、それを `localStorage` に置くと WebView 上の
+任意のコードから読める。Cookie は Rust プロセスが持ち、プロセスとともに消える
+── 起動のたびに入力を求める代わりに、資格情報がディスクに残らない。
+
+### 同期・教室機能について
+
+**B と C は現在 UI から到達できない。** どちらも `server/` の参照バックエンド
+向けに作られていて、MetaMoJi のサーバー側に対応する API 系統(ノート・ドライブ・
+協働編集など12系統)はこのビルドでは未実装のため。コード
+(`sync/`、`store/classroomStore.ts`、`server/`)とそのテストはそのまま残して
+あり、[`src/sync/referenceBackend.ts`](src/sync/referenceBackend.ts) に
+セッションを与えれば戻る。
+
+### 検証について
+
+学校のアカウントを持っていないため、**実サーバーに対する動作確認はしていない。**
+代わりに `src-tauri/src/cloud_wire_tests.rs` が、文書化されたワイヤ形式どおりの
+リクエストが出ていることをスタブサーバーに対して検証している ── URL の組み立て、
+`X-DM-*` ヘッダ、共通パラメータ、`errorCode` の扱い、テナントホストの切り替え。
 
 ## 意図的に実装しないもの
 
@@ -175,6 +217,8 @@ Shadow DOM を混ぜると得より面倒が多い。ステートレイヤー・
 | `docs/05` §8: インク幾何はネイティブの `DrawUnitComponent` 内にあり IModel には露出しない | `DrawUnitComponent.smali` は `System.loadLibrary` のスタブで、native メソッドを1つも宣言していない。ストローク座標は通常の `PointArray` プロパティとして保存されている |
 
 `docs/04` §3 §5 にも2点の誤りがあり、コード中のコメントに記録した。
+`docs/14` §1 のログイン成功条件も逆になっている(`src-tauri/src/cloud.rs` の
+`check_error_code` を参照)。
 
 ### 復元できるもの / できないもの
 

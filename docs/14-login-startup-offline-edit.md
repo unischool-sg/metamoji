@@ -5,7 +5,17 @@
 共通の抽象基底`LoginDriver`(`UtImmortalTaskBase`を継承、画面回転等の構成変更を跨いで生存するダイアログ所有タスク)がテンプレートメソッドパターンで統一フローを定義:
 
 1. `rawLogin()` → 抽象`loginProc()`をIOディスパッチャで実行、`CsResponseBaseAbstract`を返す
-2. エラーコードが特定値(0x67/0x7b)以外ならエラー
+2. エラーコードが0以外ならエラー
+
+   > **訂正(2026-09-05)**: 本節はもともと「エラーコードが特定値(0x67/0x7b)以外ならエラー」
+   > と記載していたが、これは逆である。`LoginDriver.setError`
+   > ([apk/smali_classes2/com/metamoji/li/driver/LoginDriver.smali:1366](../apk/smali_classes2/com/metamoji/li/driver/LoginDriver.smali))
+   > はどちらの分岐でも `LoginError` を構築しており、`0x67`
+   > (`INVALID_EMAIL_EXCEPTION`)と `0x7b`(`CAN_NOT_LOGIN_EXCEPTION`)が変えるのは
+   > **メッセージの出所だけ** ── この2つに限りサーバーの `errorMessage` ではなく
+   > クライアント側の定型文を出す。IDとパスワードのどちらが誤りかをサーバーが
+   > 明かさない設計であり、実装側もそれを保つ必要がある
+   > (Tauri版の実装は `metamoji/src-tauri/src/cloud.rs` の `check_error_code`)。
 3. 成功時 `afterLoginProc(response)` → `CsDCUserInfo`にuserId/email/companyId/restHost/password/qwd等を書き込み、`CabinetUserManager.UpdateUserInfoCacheAsync`でキャッシュ更新
 
 ### 各ドライバーの具体的フロー

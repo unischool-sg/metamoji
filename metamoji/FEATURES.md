@@ -58,9 +58,26 @@
 - [x] 日本語 / 英語(i18n)
 - [x] クラッシュ復旧(セッション復元)
 
-## スコープ B — クラウド同期(自前バックエンド)
+## サインイン — MetaMoJi のサーバー
 
-- [x] ログイン画面と `LoginStrategy`(通常 / QR、SSO は差し込み口のみ)
+- [x] 学校ID + ユーザーID + パスワード(`NormalLoginDriver`)
+- [x] 簡易ログイン: 学校ID + クラス + 出席番号 + パスワード(`SimpleLoginDriver`)
+- [x] 学校IDからテナントサーバーを解決(`mpsroot/RequestServlet`)
+- [x] クラス一覧の取得(`/users3/getclassroominfo`)
+- [x] QR コードによる学校ID・ユーザーIDの読み込み
+- [x] サインアウト(`/users3/logout`)
+- [ ] SSO — Tauri のディープリンク待ち(`docs/14` §4)
+- [ ] Google サインイン — SDK が必要
+
+実サーバーに対する動作確認は未実施(学校アカウントを持っていないため)。
+ワイヤ形式は `src-tauri/src/cloud_wire_tests.rs` がスタブに対して検証している。
+
+## スコープ B — クラウド同期(参照バックエンド)
+
+> **現在 UI から到達できない。** サインインが MetaMoJi のサーバーに移り、
+> そちらのノート API 系統は未実装のため。コードとテストは残してあり、
+> `src/sync/referenceBackend.ts` にセッションを与えれば戻る。
+
 - [x] 同期クライアント(リビジョン方式、`docs/12` §4 準拠)
 - [x] 競合解決(サーバー優先 + 複製保存)
 - [x] オフライン編集(`docs/14` §2 のレイヤー分離方式)
@@ -70,7 +87,9 @@
 `EditSession` の `ModelChanged` を購読する observer を足すだけで編集経路に入れる。
 `revision` と `AppStatus.needsLogin` は既に存在する。
 
-## スコープ C — 教室協働
+## スコープ C — 教室協働(参照バックエンド)
+
+> B と同じ理由で、現在 UI から到達できない。
 
 - [x] ルーム作成 / 参加(参加コード)
 - [x] WebSocket リレー(`docs/06` §7 の JSON エンベロープ)

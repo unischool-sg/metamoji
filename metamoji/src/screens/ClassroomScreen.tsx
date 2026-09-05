@@ -17,6 +17,7 @@ import { Icon } from "../components/Icon";
 import { useTranslation } from "../i18n/useTranslation";
 import * as api from "../ipc/api";
 import type { Room } from "../sync/client";
+import { referenceBackendAvailable, referenceClient } from "../sync/referenceBackend";
 import { useAuthStore } from "../store/authStore";
 import { useClassroomStore } from "../store/classroomStore";
 
@@ -26,8 +27,8 @@ export function ClassroomScreen() {
   const navigate = useNavigate();
   const { t } = useTranslation();
 
-  const token = useAuthStore((s) => s.token);
-  const client = useAuthStore((s) => s.client);
+  const session = useAuthStore((s) => s.session);
+  const client = referenceClient;
 
   const room = useClassroomStore((s) => s.room);
   const role = useClassroomStore((s) => s.role);
@@ -48,14 +49,14 @@ export function ClassroomScreen() {
   const [busy, setBusy] = useState(false);
 
   const loadRooms = useCallback(async () => {
-    if (!token) return;
+    if (!referenceBackendAvailable()) return;
     try {
       setRooms((await client.rooms()).rooms);
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     }
-  }, [client, token]);
+  }, [client]);
 
   useEffect(() => {
     void loadRooms();
@@ -112,16 +113,21 @@ export function ClassroomScreen() {
       await client.distribute(room.id, note.id, note.title, JSON.stringify(tree));
     });
 
-  if (!token) {
+  if (!referenceBackendAvailable()) {
     return (
       <Shell title={t("教室")} onBack={() => navigate("/")}>
         <div className="library__empty">
           <Icon name="school" size={48} />
-          <p>{t("教室を使うにはサインインが必要です。")}</p>
-          <button type="button" className="btn btn--primary" onClick={() => navigate("/login")}>
-            <Icon name="login" size={18} />
-            {t("サインイン")}
-          </button>
+          <p>
+            {t(
+              "教室機能はこのビルドの参照バックエンド向けに作られており、MetaMoJi のサーバーの協働編集 API は実装していません。",
+            )}
+          </p>
+          <p className="setting-note">
+            {session
+              ? t("サインイン中のアカウントでは教室に参加できません。")
+              : t("サインインしても教室は利用できません。")}
+          </p>
         </div>
       </Shell>
     );

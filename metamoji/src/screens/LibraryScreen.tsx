@@ -15,7 +15,7 @@ import { Icon } from "../components/Icon";
 import { ImportReportDialog } from "../components/ImportReportDialog";
 import { useTranslation } from "../i18n/useTranslation";
 import { Menu } from "../components/Menu";
-import { SyncButton } from "../components/SyncButton";
+import { AccountButton } from "../components/AccountButton";
 import * as api from "../ipc/api";
 import type { Folder, ImportReport, ListQuery, NoteSort, NoteSummary, Tag } from "../ipc/api";
 import { toGeneric } from "../model/converter";
@@ -208,7 +208,7 @@ export function LibraryScreen() {
           <Icon name="file_open" size={18} />
           {importing ? t("取り込み中…") : t("取り込む")}
         </button>
-        <SyncButton notes={notes} onSynced={() => void refresh()} />
+        <AccountButton />
         <button
           type="button"
           className="icon-btn"

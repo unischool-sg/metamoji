@@ -206,26 +206,34 @@ export const en: Record<string, string> = {
   "スキーマバージョン": "Schema version",
   "手書き文字認識": "Handwriting recognition",
 
-  // -- sync and sign-in ------------------------------------------------------
+  // -- sign-in ---------------------------------------------------------------
   "サインイン": "Sign in",
   "サインアウト": "Sign out",
-  "接続先": "Server",
-  "サーバー": "Server address",
-  "自前で動かしているサーバーのアドレスを指定します。":
-    "Point this at a server you run yourself.",
   "サインイン方法": "Sign-in method",
-  "ID とパスワード": "ID and password",
+  "学校ID とユーザーID": "School ID and user ID",
+  "簡易ログイン(クラスと出席番号)": "Simple sign-in (class and number)",
   "QR コード": "QR code",
   "SSO": "SSO",
-  "QR コードの内容": "QR code contents",
-  "ログイン ID": "Login ID",
+  "学校 ID": "School ID",
+  "学校から配布された ID を入力します。": "The ID your school issued.",
+  "確認": "Check",
+  "確認中…": "Checking…",
+  "接続先: {server}": "Server: {server}",
+  "ユーザー ID": "User ID",
+  "クラス": "Class",
+  "先に学校 ID を確認してください": "Check the school ID first",
+  "クラスが登録されていません": "No classes registered",
+  "出席番号": "Roll number",
+  "選択してください": "Choose one",
   "パスワード": "Password",
-  "表示名": "Display name",
-  "アカウントを作成": "Create an account",
-  "既存のアカウントを使う": "Use an existing account",
-  "作成してサインイン": "Create and sign in",
+  "QR コードの内容": "QR code contents",
+  "QR コードには学校 ID とユーザー ID が入っています。パスワードは入っていないため、下に入力してください。":
+    "A QR code carries the school ID and the user ID, never a password — type that below.",
+  "接続先": "Server",
+  "ルートサーバー": "Root server",
+  "通常は変更しません。学校がサーバーを自前で運用している場合(オンプレミス)のみ、配布されたアドレスを入力します。":
+    "Leave this alone unless your school runs the service on-premises, in which case use the address it gave you.",
   "接続中…": "Connecting…",
-  "同期": "Sync",
 
   // -- classroom -------------------------------------------------------------
   "アンケート": "Survey",
@@ -263,7 +271,11 @@ export const en: Record<string, string> = {
   "参加": "Join",
   "自分の教室": "My classrooms",
   "教室を作る": "Create a classroom",
-  "教室を使うにはサインインが必要です。": "Sign in to use classrooms.",
+  "教室機能はこのビルドの参照バックエンド向けに作られており、MetaMoJi のサーバーの協働編集 API は実装していません。":
+    "The classroom features were built against this repository's reference backend; MetaMoJi's own collaboration API is not implemented here.",
+  "サインイン中のアカウントでは教室に参加できません。":
+    "The account you are signed in with cannot join a classroom.",
+  "サインインしても教室は利用できません。": "Signing in will not make the classroom available.",
   "接続中": "Connected",
   "接続しています…": "Connecting…",
   "オフライン": "Offline",

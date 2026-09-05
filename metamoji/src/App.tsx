@@ -1,5 +1,7 @@
+import { useEffect } from "react";
 import { createHashRouter, RouterProvider } from "react-router";
 
+import { useAuthStore } from "./store/authStore";
 import { EditorScreen } from "./screens/EditorScreen";
 import { LibraryScreen } from "./screens/LibraryScreen";
 import { ClassroomScreen } from "./screens/ClassroomScreen";
@@ -22,5 +24,13 @@ const router = createHashRouter([
 ]);
 
 export default function App() {
+  // The sign-in session lives in the Rust process, not here, so the frontend
+  // has to ask for it — otherwise a webview reload would look like a sign-out
+  // to every screen that shows the account.
+  const init = useAuthStore((s) => s.init);
+  useEffect(() => {
+    void init();
+  }, [init]);
+
   return <RouterProvider router={router} />;
 }
