@@ -8,7 +8,7 @@ use crate::drive::DriveClient;
 use crate::test_support::stub;
 
 fn client() -> DriveClient {
-    DriveClient::new("ja_JP".into(), "desktop;macos;".into()).unwrap()
+    DriveClient::new("ja_JP".into(), "desktop;macos;1".into()).unwrap()
 }
 
 #[tokio::test]
@@ -35,7 +35,10 @@ async fn login_posts_raw_json_not_a_form() {
     let body = seen.json();
     assert_eq!(body["userId"], "u-1");
     assert_eq!(body["password"], "hunter2");
-    assert!(body.get("qwd").is_none(), "one credential, not both");
+    // Present and null, not absent: `SdLoginParams.toMap()` always puts all
+    // three, and omitting the unused one answers 500.
+    assert!(body.get("qwd").is_some(), "qwd must be present");
+    assert!(body["qwd"].is_null());
     assert!(
         !seen.body.contains("requestBody"),
         "the key is internal to the client: {}",
@@ -51,7 +54,7 @@ async fn the_drive_headers_are_the_sd_ones() {
 
     let seen = stub.seen.recv().unwrap();
     assert_eq!(seen.header("user-agent"), Some("MMJSdCloudService/1.0"));
-    assert_eq!(seen.header("x-dm-device"), Some("desktop;macos;"));
+    assert_eq!(seen.header("x-dm-device"), Some("desktop;macos;1"));
     assert_eq!(seen.header("x-dm-locale"), Some("ja_JP"));
     // `X-DM-AppVersion` belongs to the *other* client. `SdHttpClient` does not
     // send it, and sending it anyway is the kind of difference that is

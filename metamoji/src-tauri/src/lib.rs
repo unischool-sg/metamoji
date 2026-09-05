@@ -123,10 +123,14 @@ fn locale() -> String {
 }
 
 /// `X-DM-Device`, which `SdHttpClient` formats as
-/// `"{Build.MODEL};Android;{SDK_INT}"`. There is no honest Android answer from
-/// a desktop, so this says what the machine actually is.
+/// `"{Build.MODEL};Android;{SDK_INT}"` — three `;`-separated fields, the last
+/// an integer.
+///
+/// There is no honest Android answer from a desktop, so this says what the
+/// machine is. It keeps the *shape* though: an empty third field is the kind of
+/// thing a server-side `parseInt` turns into a 500.
 fn device_header() -> String {
-    format!("desktop;{};", std::env::consts::OS)
+    format!("Desktop;{};1", std::env::consts::OS)
 }
 
 fn timezone() -> String {

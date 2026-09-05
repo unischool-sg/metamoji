@@ -126,14 +126,18 @@ impl DriveClient {
         password: Option<&str>,
         qwd: Option<&str>,
     ) -> AppResult<()> {
+        // All three keys, always. `SdLoginParams.toMap()` puts `userId`,
+        // `password` and `qwd` in unconditionally, and `CmJson.createJsonValue`
+        // turns a null into `JSONObject.NULL` rather than dropping the key — so
+        // the wire always carries three fields, one of them `null`. Omitting
+        // the unused one is not equivalent: it answers 500.
         let mut body = Map::new();
         body.insert("userId".into(), json!(user_id));
-        if let Some(password) = password {
-            body.insert("password".into(), json!(password));
-        }
-        if let Some(qwd) = qwd {
-            body.insert("qwd".into(), json!(qwd));
-        }
+        body.insert(
+            "password".into(),
+            password.map(|p| json!(p)).unwrap_or(Value::Null),
+        );
+        body.insert("qwd".into(), qwd.map(|q| json!(q)).unwrap_or(Value::Null));
 
         let url = format!("{home_dir}rest/users/login");
         let response = self
