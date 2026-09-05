@@ -21,8 +21,10 @@
 //! Each of those is a way to get it wrong while looking right, which is why
 //! this is a separate client rather than a few more methods on `CloudClient`.
 
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 use std::time::Duration;
+
+use reqwest_cookie_store::CookieStoreMutex;
 
 use serde::Serialize;
 use serde_json::{json, Map, Value};
@@ -65,6 +67,7 @@ struct Session {
 
 pub struct DriveClient {
     http: reqwest::Client,
+    cookies: Arc<CookieStoreMutex>,
     session: Mutex<Option<Session>>,
     locale: String,
     device: String,
@@ -72,11 +75,12 @@ pub struct DriveClient {
 
 impl DriveClient {
     pub fn new(locale: String, device: String) -> AppResult<Self> {
+        // Its own jar. Sharing one with `CloudClient` would let a tenant
+        // cookie be sent to a drive host and vice versa, which is exactly the
+        // separation `SdHttpClient.mCustomCookieStore` maintains.
+        let cookies = Arc::new(CookieStoreMutex::default());
         let http = reqwest::Client::builder()
-            // Its own jar. Sharing one with `CloudClient` would let a tenant
-            // cookie be sent to a drive host and vice versa, which is exactly
-            // the separation `SdHttpClient.mCustomCookieStore` maintains.
-            .cookie_store(true)
+            .cookie_provider(Arc::clone(&cookies))
             .user_agent(USER_AGENT)
             .timeout(Duration::from_secs(60))
             .build()
@@ -84,6 +88,7 @@ impl DriveClient {
 
         Ok(Self {
             http,
+            cookies,
             session: Mutex::new(None),
             locale,
             device,
@@ -139,6 +144,11 @@ impl DriveClient {
         );
         body.insert("qwd".into(), qwd.map(|q| json!(q)).unwrap_or(Value::Null));
 
+        // `executeLoginWithParams` calls `setDiscardCookie(true)` first: the
+        // login is where a session begins, so presenting an old one to it is at
+        // best pointless and at worst confusing to the server.
+        self.cookies.lock().unwrap().clear();
+
         let url = format!("{home_dir}rest/users/login");
         let response = self
             .http
@@ -153,8 +163,9 @@ impl DriveClient {
             .await
             .map_err(|e| AppError::other(format!("クラスボックスに接続できません: {e}")))?;
 
-        let json = read_json(response, "POST /rest/users/login").await?;
-        check_error(&json).map_err(|e| annotate(e, "POST /rest/users/login"))?;
+        let where_ = format!("POST {url}");
+        let json = read_json(response, &where_).await?;
+        check_error(&json).map_err(|e| annotate(e, &where_))?;
 
         *self.session.lock().unwrap() = Some(Session {
             home_dir: home_dir.to_string(),
@@ -361,14 +372,34 @@ async fn read_json(response: reqwest::Response, where_: &str) -> AppResult<Map<S
         Ok(Value::Object(map)) => {
             if !status.is_success() && map.get("errorCode").is_none() {
                 return Err(AppError::other(format!(
-                    "サーバーエラー (HTTP {status}) — {where_}"
+                    "サーバーエラー (HTTP {status}) — {where_}(応答: {})",
+                    excerpt(&text)
                 )));
             }
             Ok(map)
         }
         _ => Err(AppError::other(format!(
-            "クラスボックスの応答を解釈できません (HTTP {status}) — {where_}"
+            "クラスボックスの応答を解釈できません (HTTP {status}) — {where_}(応答: {})",
+            excerpt(&text)
         ))),
+    }
+}
+
+/// A short piece of the response body, for errors.
+///
+/// Only ever reached on a failure, where the body is the server's own
+/// diagnostic — a message or a stack trace, not the user's notes. Truncated
+/// because a stack trace is pages long and the first line is the useful part.
+fn excerpt(text: &str) -> String {
+    let trimmed = text.trim().replace(['\n', '\r'], " ");
+    if trimmed.is_empty() {
+        return "(空)".to_string();
+    }
+    let limit = 200;
+    if trimmed.chars().count() <= limit {
+        trimmed
+    } else {
+        format!("{}…", trimmed.chars().take(limit).collect::<String>())
     }
 }
 

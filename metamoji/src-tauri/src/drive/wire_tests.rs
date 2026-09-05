@@ -103,3 +103,64 @@ async fn an_expired_drive_session_is_renewed_with_the_same_credential() {
     assert_eq!(seen[2].json()["password"], "hunter2");
     assert_eq!(seen[3].path, "/rest/drives/d-1/lastupdaterevision");
 }
+
+#[tokio::test]
+async fn a_failure_shows_the_full_url_and_the_servers_own_text() {
+    // Two rounds were spent guessing which call failed and why. The host
+    // matters here in a way it does not for the tenant: `homeDir` is issued per
+    // drive and a wrong one is invisible from the path alone. The body is the
+    // server's diagnostic on a 500, not the user's data.
+    let stub = stub(vec![(
+        "500 Internal Server Error",
+        r#"{"trace":"java.lang.NullPointerException at Login.java:42"}"#.to_string(),
+    )]);
+
+    let client = client();
+    let err = client
+        .login(&stub.base, "u-1", Some("x"), None)
+        .await
+        .unwrap_err()
+        .to_string();
+
+    assert!(err.contains("500"), "{err}");
+    assert!(err.contains(&stub.base), "the URL is the missing half: {err}");
+    assert!(err.contains("NullPointerException"), "{err}");
+}
+
+#[tokio::test]
+async fn a_stale_cookie_is_dropped_before_signing_in() {
+    // `executeLoginWithParams` calls `setDiscardCookie(true)`. A login is where
+    // a session starts; presenting an old one to it is at best pointless.
+    let stub = stub(vec![
+        ("200 OK", "{}".to_string()),
+        ("200 OK", "{}".to_string()),
+    ]);
+
+    let client = client();
+    client.login(&stub.base, "u-1", Some("x"), None).await.unwrap();
+    // The stub set `JSESSIONID` on that reply; the second login must not send
+    // it back.
+    client.login(&stub.base, "u-1", Some("x"), None).await.unwrap();
+
+    let _ = stub.seen.recv().unwrap();
+    let second = stub.seen.recv().unwrap();
+    assert!(
+        second.header("cookie").is_none(),
+        "a login must start from a clean jar: {:?}",
+        second.header("cookie")
+    );
+}
+
+#[tokio::test]
+async fn a_very_long_error_body_is_truncated() {
+    let stub = stub(vec![("500 Internal Server Error", "x".repeat(5000))]);
+    let client = client();
+    let err = client
+        .login(&stub.base, "u-1", Some("x"), None)
+        .await
+        .unwrap_err()
+        .to_string();
+    // A stack trace is pages long; the first line is the useful part.
+    assert!(err.len() < 600, "{}", err.len());
+    assert!(err.contains('…'), "{err}");
+}
