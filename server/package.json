@@ -1,0 +1,12 @@
+{
+  "name": "metamoji-server",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Reference sync and classroom backend for the MetaMoJi desktop app",
+  "scripts": {
+    "start": "bun run src/index.ts",
+    "dev": "bun --watch run src/index.ts",
+    "test": "bun test"
+  }
+}
