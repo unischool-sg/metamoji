@@ -356,9 +356,9 @@ export function ClassroomScreen() {
                   <Icon name="warning" size={20} />
                   <span>
                     {t(
-                      "中身を解釈できませんでした({count} 個のモデル、未知の種別: {types})。",
+                      "中身を解釈できませんでした({count} 件のレコード、未知の項目: {types})。",
                       {
-                        count: store.listing.modelCount,
+                        count: store.listing.recordCount,
                         types: store.listing.unrecognised.join(", "),
                       },
                     )}

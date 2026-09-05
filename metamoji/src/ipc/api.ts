@@ -582,12 +582,13 @@ export interface DriveDocument {
 export interface ClassBoxListing {
   documents: DriveDocument[];
   /**
-   * Model types in the listing that the decoder did not recognise. Non-empty
-   * means the schema guess is incomplete — an unreadable class box and an
-   * empty one must not look the same.
+   * Entries in the archive that were not document JSON. Non-empty means the
+   * archive holds more than the decoder understands — an unreadable class box
+   * and an empty one must not look the same.
    */
   unrecognised: string[];
-  modelCount: number;
+  /** Records seen, deleted ones included. */
+  recordCount: number;
 }
 
 export async function classboxOpen(driveId: string): Promise<ClassBoxListing> {

@@ -290,8 +290,8 @@ export const en: Record<string, string> = {
     "You do not belong to any class yet — join one below.",
   "クラスボックスのノート": "Notes in the class box",
   "ノートはまだありません。": "No notes yet.",
-  "中身を解釈できませんでした({count} 個のモデル、未知の種別: {types})。":
-    "Could not read the contents ({count} models; unknown types: {types}).",
+  "中身を解釈できませんでした({count} 件のレコード、未知の項目: {types})。":
+    "Could not read the contents ({count} records; unrecognised entries: {types}).",
   "端末に複製して開きます": "Opens as a copy on this device",
   "参加者": "Participants",
   "参加している人はいません。": "Nobody has joined.",

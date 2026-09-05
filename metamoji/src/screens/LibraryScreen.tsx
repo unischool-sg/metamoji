@@ -797,8 +797,8 @@ function ClassBoxGrid({
           <div className="notice notice--warning">
             <Icon name="warning" size={20} />
             <span>
-              {t("中身を解釈できませんでした({count} 個のモデル、未知の種別: {types})。", {
-                count: listing.modelCount,
+              {t("中身を解釈できませんでした({count} 件のレコード、未知の項目: {types})。", {
+                count: listing.recordCount,
                 types: listing.unrecognised.join(", "),
               })}
             </span>
